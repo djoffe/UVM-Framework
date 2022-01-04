@@ -13,25 +13,27 @@ from shutil import copyfile
 
 class Merge:
 
-  def __init__(self,outdir,skip_missing_blocks,root,quiet=False):
-    self.regen = Regen(root)
-    self.skipped_files = 0
-    self.copied_files = 0
-    self.root = root
-    self.copied_old_files = 0
-    self.found_blocks = 0
-    self.ignored_blocks = 0
+  def __init__(self,outdir,skip_missing_blocks,new_root,old_root,quiet=False):
+    self.regen = Regen()
+    self.copied_files = []
+    self.new_root = new_root
+    self.old_root = old_root
+    self.copied_old_files = []
+    self.found_blocks = {}
+    self.new_blocks = {}
     self.outdir = os.path.abspath(os.path.normpath(outdir))
     self.missing_blocks = {}
     self.skip_missing_blocks = skip_missing_blocks
     self.quiet = quiet
     self.new_directories = []
+    self.yaml_imported = False
 
   def replace_basedir(self, p, old_basedir, new_basedir):
     r = re.sub(r"^"+old_basedir+os.sep+r"(.*)",r"{0}{1}\1".format(new_basedir,os.sep),p)
     return os.path.normpath(r)
 
   def load_yaml(self,fname):
+    self.yaml_imported = True
     try:
       fs = open(fname)
     except IOError:
@@ -49,77 +51,94 @@ class Merge:
     except MultipleInvalid as e:
       resp = humanize_error(rd,e).split('\n')
       raise UserError("Validation of regeneration YAML failed:\n{0}".format(pprint.pformat(resp,indent=2)))
-    self.rd = data
+    self.rd = {}
+    for f in data:
+      abs_f = os.path.abspath(os.path.normpath(f))
+      self.rd[abs_f] = data[f]
 
-  def file_begin(self,fname):
-    ## Figure out path of this new file in the 'old' directory structure
-    self.old_fname = self.replace_basedir(fname,self.root,self.old_root)
-    ## Figure out path of this new file to be placed in 'merged' directory structure
-    outfile = self.replace_basedir(fname,self.root,self.outdir)
-    ## Check if 'merged' file exists, skip if it does and we're not overwriting
-    if os.path.exists(outfile) & (self.overwrite == False):
-      if (self.quiet == False):
-        print("SKIPPED file {0}, already exists in output directory".format(fname))
-      self.skipped_files += 1
-      return False
-    ## Check to see if the 'old' file we're looking for is in the data structure
-    if not self.old_fname in self.rd:
-      ## If it isn't there, this will need to be copied. Try to create necessary
-      ## path structure in 'merged' output directory area if it isn't already there
-      if not os.path.exists(os.path.dirname(outfile)):
+  def file_begin(self,fname,ignore_unmatched=False):
+    ## For clarity, use variable "new_fname" to differentiate it from old_fname
+    new_fname = fname
+    ## Figure out path of this new file in the 'old' directory structure (may not exist in 'old')
+    self.old_fname = self.replace_basedir(new_fname,self.new_root,self.old_root)
+    ## Check if old file doesn't exist in the new. If it doesn't, we need to copy from new to old
+    if not os.path.exists(self.old_fname):
+      if not os.path.exists(os.path.dirname(self.old_fname)):
+        ## Path to this file doesn't exist, need to create it
         try:
-          os.makedirs(os.path.dirname(outfile))
-        except OSError as e:
-          raise UserError("Unable to create path to new output file {0}: {1}".format(outfile,e.strerror))
+          os.makedirs(os.path.dirname(self.old_fname))
+        except:
+          raise UserError("Unable to create new path {0} during merge. Permissions issue?".format(os.path.dirname(self.old_fname)))
       try:
-        ## and then copy the file over from 'old' to 'merged'
-        copyfile(fname,outfile)
-      except IOError:
-        raise UserError("Unable to copy file {0} to {1}".format(fname,outfile))
-      if (self.quiet == False):
-        print("COPIED new file from {0}".format(fname))
-      self.copied_files += 1
+        copyfile(new_fname,self.old_fname)
+      except:
+        raise UserError("Unable to copy {0} over to {1} during merge. Permissions issue?".format(new_fname,self.old_fname))
+      ## Make note of this file we copied over for later reporting
+      self.copied_files.append(self.old_fname)
+      ## Function returns False if we do not need to process this file any further
       return False
-    ## Even if the file is in the data structure, path in 'merged' directory may not exist yet.
-    if not os.path.exists(os.path.dirname(outfile)):
+    elif not (self.old_fname in self.rd):
+      ## File was found to exist in original source but was not parsed. This is a fatal error (shouldn't happen) unless we're doing a YAML import in which case we can ignore.
+      if not self.yaml_imported:
+        raise UserError("Internal error - Source file {0} was not properly parsed for named blocks".format(self.old_fname))
+      return False
+    else:
+      ## Matched old_fname up with something in the data structure, which means we have a match between old and new.
+      ## In this case we will be overwriting this file with a newly merged version
+      ## First step is to delete the old file
       try:
-        os.makedirs(os.path.dirname(outfile))
-      except OSError as e:
-        raise UserError("Unable to create path to new output file {0}: {1}".format(outfile,e.strerror))
-    ## Log the directory in 'new' for later use when determining what to copy
-    fname_dir = os.path.dirname(fname)
-    if not fname_dir in self.new_directories:
-      self.new_directories.append(fname_dir)
-    ## As a last step, open the file in the 'merged' output space
-    try:
-      self.ofs = open(outfile,'w')
-    except IOError:
-      raise UserError("Unable to create output file {0}".format(outfile))
-    ## Function returns true if we are now processing the file contents
-    return True
+        os.remove(self.old_fname)
+      except:
+        raise UserError("Unable to overwrite source file {0} with merged data. Permissions issue?".format(self.old_fname))
+      # Now re-open the same file for recreation
+      try:
+        self.ofs = open(self.old_fname, 'w')
+      except IOError:
+        raise UserError("Unable to create output file {0}".format(outfile))
+      ## Function returns true if we are now processing the file contents
+      return True
 
   def block_begin(self,fname,line,label_name,begin_line):
+    ## For clarity, use "new_fname" instead of fname
+    new_fname = fname
+    ## Write the incoming line regardless of next steps
     self.ofs.write(line)
     if not label_name in self.rd[self.old_fname]:
-      # This labeled block was not in the data structure. Note this and move on
-      if (self.quiet == False):
-        print("Found new block \"{0}\" in file {1}, wasn't in old source".format(label_name, fname))
-      self.ignored_blocks += 1
+      # This labeled block was not in the data structure. Note this and move on (it's ok, it just means the label is new)
+      if (self.old_fname not in self.new_blocks):
+        self.new_blocks[self.old_fname] = []
+      self.new_blocks[self.old_fname].append(label_name)
     else:
-      self.found_blocks += 1
+      # This labeled block was found in the data structure, write the block contents out and make note of the
+      # activity
+      if (self.old_fname not in self.found_blocks):
+        self.found_blocks[self.old_fname] = []
+      self.found_blocks[self.old_fname].append({'name':label_name})
+      try:
+        self.found_blocks[self.old_fname][-1]['begin'] = self.rd[self.old_fname][label_name]['begin_line']
+        self.found_blocks[self.old_fname][-1]['end'] = self.rd[self.old_fname][label_name]['end_line']
+      except KeyError:
+        self.found_blocks[self.old_fname][-1]['begin'] = 0
+        self.found_blocks[self.old_fname][-1]['end'] = 0
+        pass
       self.ofs.write(self.rd[self.old_fname][label_name]['content'])
       self.block_copied = True
+      # Also update the data structure to note that the label was used (we track this later on)
       self.rd[self.old_fname][label_name]['block_used'] = True
 
   def block_end(self,fname,line,label_name,end_line):
+    # At the end of each block, clear the block_copied flag and write the line out
     self.block_copied = False
     self.ofs.write(line)
 
   def block_inside(self,fname,label_name,content,lnum):
+    # Only write out the contents of the block if we didn't copy it from the data structure earlier.
+    # This happens only if the block is new and we didn't find it in the old source
     if self.block_copied == False:
       self.ofs.write(content)
 
   def block_outside(self,fname,line,lnum):
+    # Outside of any block, just copy the line over
     self.ofs.write(line)
 
   def file_end(self,fname):
@@ -138,48 +157,13 @@ class Merge:
           else:
             self.missinb_blocks[self.old_fname].append(l)
         else:
-          raise UserError('Label "{0}" in file "{1}" was not found in new output "{2}"'.format(l,self.old_fname,fname))
+          raise UserError('Potential loss of hand edits:\n  File: {0}\n  Label: "{1}"\nUse --merge_skip_missing_blocks to proceed and produce list of labels at end'.format(self.old_fname,l))
 
-  def parse_file(self,fname,overwrite=False):
-    self.overwrite=overwrite
+  def parse_file(self,fname):
     self.regen.parse_file(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
 
-  def traverse_dir(self,fname,overwrite=False):
-    self.overwrite=overwrite
+  def traverse_dir(self,fname):
     self.regen.traverse_dir(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
-
-  def copy_old_files(self,dname,overwrite=False):
-    ## Input is the 'new' directory. Make sure it's absolute before proceeding (we don't really need this)
-    new_root = os.path.abspath(dname)
-    ## Iterate through all of the directories we found when parsing through the 'new' directory tree
-    for dir in self.new_directories:
-      # Find the equivalent path in the 'old' directory
-      od = self.replace_basedir(dir, self.root, self.old_root)
-      ## Walk through all of the files in each of these 'old' directories
-      root,dirs,files = next(os.walk(od))
-      for f in files:
-        # Go through all files listed in each 'old' directory . If they do not exist in the input (new) directory then copy the original
-        # into the merged output directory. Don't do it if the file is already there unless --overwrite
-        # Important note, we are only going to copy 'old files from underenath structure that matches directories in
-        # 'new'. If there is any adjacent directory structure in 'old' it will not be copied over to 'merged'
-        newfile = dir+os.sep+f
-        oldfile = root+os.sep+f
-        outfile = self.replace_basedir(oldfile, self.old_root,self.outdir)
-        if not os.path.exists(newfile):
-          if (not os.path.exists(outfile)) | (overwrite==True):
-            if not os.path.exists(os.path.dirname(outfile)):
-              try:
-                os.makedirs(os.path.dirname(outfile))
-              except OSError as e:
-                raise UserError("Unable to create path to copied file {0}: {1}".format(outfile, e.strerror))
-            try:
-              copyfile(oldfile, outfile)
-            except IOError as e:
-              raise UserError("Unable to copy file {0} to {1}: {2}".format(oldfile, outfile, e.strerror))
-            self.copied_old_files += 1
-            if (self.quiet == False):
-              print("COPIED old file from {0}".format(oldfile))
-
 
 class Parse:
 
@@ -188,7 +172,7 @@ class Parse:
     self.root = root
     self.block_count = 0
     self.quiet = quiet
-    self.regen = Regen(root)
+    self.regen = Regen()
     self.cleanup = cleanup
 
   def str_presenter(self, dumper, data):
@@ -232,8 +216,14 @@ class Parse:
 
 class Regen:
 
-  def __init__(self,root):
-    self.root = root
+  # This class is designed to traverse a given starting directory and walk through all underlying hierarchy, parsing
+  # each file along the way. For each file that is parsed there are hooks defined at different points:
+  # - Just prior to opening a given file
+  # - When a new label in the file has been found
+  # - When the end of a labeled block has been found
+  # - For each line of the file whle inside of a labeled block
+  # - For each line of the file while outside of a labeled block
+  # - When finished parsing the given file
 
   def traverse_dir(self,dname,pre_open_fn=None,block_begin_fn=None,block_end_fn=None,block_inside_fn=None,post_open_fn=None,block_outside_fn=None):
     dname = os.path.normpath(dname)

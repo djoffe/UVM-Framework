@@ -43,15 +43,19 @@ else
   GCC_COMP_ARCH = -m32
 endif
 
+export {{name}}_IF_DPI_SRC ?= $({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/dpi
+
 C_FILE_COMPILE_LIST_{{name}}_pkg	= \
 {% for cFile in DPIFiles %}
-	$({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/dpi/{{cFile}} \
+	$({{name}}_IF_DPI_SRC)/{{cFile}} \
 {% endfor %}
 
 O_FILE_COMPILE_LIST_{{name}}_pkg = $(notdir $(C_FILE_COMPILE_LIST_{{name}}_pkg:.c=.o))
 
-GCC_COMP_ARGS_{{name}}_pkg	+= -I$({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/dpi \
+GCC_COMP_ARGS_{{name}}_pkg	+= -I$({{name}}_IF_DPI_SRC) \
 	-fPIC {{DPICompArgs}}
+
+GCC_COMP_ARGS_{{name}}_pkg	+= $({{name}}_IF_GCC_COMP_ARGUMENTS)
 
 GCC_LINK_ARGS_{{name}}_pkg	+= \
 	{{DPILinkArgs}} \

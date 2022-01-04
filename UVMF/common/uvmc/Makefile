@@ -6,7 +6,7 @@ else
   MACHINE_ARCH ?= -32
 endif
 
-UVMC_VER           ?= 2.3.1
+UVMC_VER           ?= 2.3.2
 UVM_VER            ?= 1.1d
 COMMON_VSIM_ARGS   += -t ns
 

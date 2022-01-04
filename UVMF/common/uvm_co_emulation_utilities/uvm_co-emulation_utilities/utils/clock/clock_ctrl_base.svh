@@ -11,8 +11,8 @@ class clock_ctrl_base extends uvm_object;
   
   //Associative array to hold counters for clock advance hits based on
   //string index
-  local static int stats_hash[string] = '{default:0};
-  local static bit collectStats;
+  protected static int stats_hash[string] = '{default:0};
+  protected static bit collectStats;
 
   function new(string name = "clock_ctrl");
     super.new(name);

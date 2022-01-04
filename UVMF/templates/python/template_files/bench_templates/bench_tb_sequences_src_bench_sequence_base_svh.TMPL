@@ -24,7 +24,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
 {% if bfm.initResp == 'INITIATOR' %}
-{% if inFactReady == True %}
+{% if inFactEnabled == True %}
   typedef {{bfm.ifPkg}}_sequence_base {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_base_seq_t;
 {% endif %}
   typedef {{bfm.ifPkg}}_random_sequence {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_random_seq_t;

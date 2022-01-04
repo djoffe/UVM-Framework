@@ -30,9 +30,9 @@
 // revision number and notes.
 //
 // Define the major and minor UVMF release number
-`define UVMF_MAJOR_VERSION 2019
-`define UVMF_MINOR_VERSION 4
-`define UVMF_PATCH_VERSION "_5"
+`define UVMF_MAJOR_VERSION 2020
+`define UVMF_MINOR_VERSION 1
+`define UVMF_PATCH_VERSION ""
 
 class uvmf_version;
   static bit b = print_version();
@@ -46,7 +46,7 @@ class uvmf_version;
     $display("----------------------------------------------------------------");
     $display("//  UVM Framework ");
     $display("//  Version %0d.%0d%s" , `UVMF_MAJOR_VERSION , `UVMF_MINOR_VERSION, `UVMF_PATCH_VERSION);
-    $display("//  (C) 2019 Mentor Graphics Corporation");
+    $display("//  (C) 2020 Mentor Graphics Corporation");
     $display("//  All Rights Reserved.");
     $display("----------------------------------------------------------------");
     $display("\n");

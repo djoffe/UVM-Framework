@@ -30,9 +30,9 @@ uvmf:
           value: "TEST_CP_OUT_ADDR_WIDTH"
         - name: "UDP_DATA_WIDTH"   
           value: "TEST_UDP_DATA_WIDTH"   
-      # If the infact_ready flag is uncommented and set to "True" then
+      # If the infact_enabled flag is uncommented and set to "True" then
       #  this bench would include additional code to allow for inFact tests
-      # infact_ready : "True"
+      # infact_enabled : "True"
       clock_half_period : "6ns"
       clock_phase_offset : "21ns"
       reset_assertion_level : "True"

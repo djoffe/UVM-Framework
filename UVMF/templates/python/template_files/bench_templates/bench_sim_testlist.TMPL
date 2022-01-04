@@ -17,7 +17,7 @@ TB_INFO {{name}} { UVMF_VIP_LIBRARY_HOME=../../../../../../../../verification_ip
 TB {{name}}
 # pragma uvmf custom regression_suite begin
 TEST test_top 3
-{% if inFactReady %}
+{% if inFactEnabled %}
 TEST infact_test_base 3
 {% endif %}
 # pragma uvmf custom regression_suite end

@@ -1,0 +1,4 @@
+vi ./environment_templates/environment_pkg_mtlb.TMPL
+vi ./environment_templates/predictor_mtlb.TMPL
+vi ./interface_templates/interface_pkg_mtlb.TMPL
+vi ./interface_templates/interface_DPI_stimgen_sequence_mtlb.TMPL

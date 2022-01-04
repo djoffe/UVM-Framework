@@ -2,6 +2,33 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
+2020.1    03/31/2020  General Updates:
+                        - Updated RMDB flow for 2020.1 coverage switches
+                        - Updated UVM Connect version to default to 2.3.2
+                        - VRM update for build_task action to *correctly* forward STDERR on to vrun.
+                        - Updated UVM Co-Emulation Utilities to 1.4.2.  
+                          This fixes a local/protected issue in the clock and reset ctrl bases and fixes a timeunit/timeprecision issue in the clock_test
+                        - Fixed code coverage run flow
+                        - Updated YAML ref guide for merging
+                        - Fixed QVIP/VIP examples that were using a deprecated sequence
+                        - Removed "build_exec" INI var and "BUILD_EXEC" RMDB param. 
+                          Implemented "exec -ignorestderr make..." for build_task action to *correctly* forward STDERR on to vrun and deal with past 
+                          unexplained errors during build_task that had to be worked around with a Tcl catch{}
+                        - Update VRM flow to work with new SV-apps integration. 
+                        - initial inFact SV Apps integration
+
+                      Generator Updates:
+                        - Added MATLAB/Simulink integration flow and documentation.
+                        - Replaced API based ALU tutorial with YAML based.
+                          API interface to UVMF code generator slowly being deprecated.
+                        - Added new merging pragma blocks
+                        - Implemented merge in place capability
+                        - Added merge pragmas to regmodel.  
+                        - Added example registers and register fields to generated regmodel.
+
+                      Resolved enhancement and service request Jira items:
+                        UVM-1392, UVM-1402
+
 2019.4_5  11/12/2019  General Updates:
                         - Support for relative paths in test list INCLUDE directives.
                         - Support for windows Tcl-based flow

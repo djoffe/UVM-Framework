@@ -190,13 +190,6 @@ import {{name}}_pkg::*;
   // ****************************************************************************  
 {% if veloceReady %}            
   task do_monitor(output {{name}}_monitor_s {{name}}_monitor_struct);
-    // UVMF_CHANGE_ME : Implement protocol monitoring.  The commented reference code 
-    // below are examples of how to capture signal values and assign them to 
-    // structure members.  All available input signals are listed.  The 'while' 
-    // code example shows how to wait for a synchronous flow control signal.  This
-    // task should return when a complete transfer has been observed.  Once this task is
-    // exited with captured values, it is then called again to wait for and observe 
-    // the next transfer. One clock cycle is consumed between calls to do_monitor.
     //
     // Available struct members:
     // {% for txn in transVars %}
@@ -214,13 +207,6 @@ import {{name}}_pkg::*;
 {% endfor %}
 {% else %}
   task do_monitor();
-    // UVMF_CHANGE_ME : Implement protocol monitoring.  The commented reference code 
-    // below are examples of how to capture signal values and assign them to 
-    // transaction variables.  All available input signals are listed.  The 'while' 
-    // code example shows how to wait for a synchronous flow control signal.  This
-    // task should return when a complete transfer has been observed.  Once this task is
-    // exited with captured values, it is then called again to wait for and observe 
-    // the next transfer. One clock cycle is consumed between calls to do_monitor.
     //
     // Available struct members:
     // {% for txn in transVars %}
@@ -238,6 +224,13 @@ import {{name}}_pkg::*;
 {% endfor %}
 {% endif %}
     // pragma uvmf custom do_monitor begin
+    // UVMF_CHANGE_ME : Implement protocol monitoring.  The commented reference code 
+    // below are examples of how to capture signal values and assign them to 
+    // structure members.  All available input signals are listed.  The 'while' 
+    // code example shows how to wait for a synchronous flow control signal.  This
+    // task should return when a complete transfer has been observed.  Once this task is
+    // exited with captured values, it is then called again to wait for and observe 
+    // the next transfer. One clock cycle is consumed between calls to do_monitor.
     @(posedge {{clock}}_i);
     @(posedge {{clock}}_i);
     @(posedge {{clock}}_i);

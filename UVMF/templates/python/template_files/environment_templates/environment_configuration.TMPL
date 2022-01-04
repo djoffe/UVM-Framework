@@ -185,6 +185,7 @@ typedef {{sub_env.envPkg}}_env_configuration{{macro.paramUseNested(sub_env.param
 {% for agent in agents %}
      {{agent.name}}_config.initialize( interface_activity[{{agent.agentIndex}}], {environment_path,".{{agent.name}}"}, interface_names[{{agent.agentIndex}}]);
      {{agent.name}}_config.initiator_responder = {{agent.initResp}};
+     // {{agent.name}}_config.has_coverage = 1;
 {% endfor %}
 
 {% for regModel in regModels %}
@@ -193,6 +194,7 @@ typedef {{sub_env.envPkg}}_env_configuration{{macro.paramUseNested(sub_env.param
     if (register_model == null) begin
       {{name}}_rm = {{name}}_reg_model::type_id::create("{{name}}_rm");
       {{name}}_rm.build();
+      {{name}}_rm.lock_model();
 {% if regModel.adapterType != 'None' %}
       enable_reg_adaptation = {% if regModel.useAdapter %}1{% else %}0{% endif %};
 {% endif %}

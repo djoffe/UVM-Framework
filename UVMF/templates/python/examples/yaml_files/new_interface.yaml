@@ -11,6 +11,7 @@ uvmf:
       reset_assertion_level: "True"
       ## Set this flag to disable generation of this interface
 #      existing_library_component : "True"
+      infact_ready: "True"
 #      parameters:
 #        - name: "IF_PARAMETER"
 #          type: "parameter_type"
@@ -38,7 +39,7 @@ uvmf:
 #          reset_value: "'bz"
       transaction_vars:
         - name: "transaction_variable_name"  
-          type: "transaction_variable_type"
+          type: "bit" # transaction_variable_type
           isrand: "False"
           iscompare: "True" 
 #      transaction_constraints:

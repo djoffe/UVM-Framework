@@ -48,7 +48,7 @@ package {{name}}_tests_pkg;
    `include "src/test_top.svh"
    `include "src/register_test.svh"
    `include "src/example_derived_test.svh"
-{% if inFactReady %}
+{% if inFactEnabled %}
    `include "src/infact_test_base.svh"
 {% endif %}
 

@@ -550,13 +550,14 @@ class RegModelClass(BaseElementClass):
     self.busMap = busMap
 
 class analysisComponentClass(BaseElementClass):
-  def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList):
+  def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList,mtlbReady=False):
     super(analysisComponentClass,self).__init__(name)
     self.keyword = keyword
     self.analysisExports = []
     self.analysisPorts = []
     self.qvipAnalysisExports = []
     self.parameters = []
+    self.mtlbReady = mtlbReady
     for aeName in aeDict:
       self.analysisExports.append(AnalysisExportClass(aeName,aeDict[aeName]))
     for apName in apDict:
@@ -572,7 +573,7 @@ class analysisComponentClass(BaseElementClass):
         pass
 
 class BfmClass(BaseElementClass):
-  def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName):
+  def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName,inFactReady,portsList):
     super(BfmClass,self).__init__(name)
     self.ifPkg = ifPkg
     self.clk = clk
@@ -581,6 +582,10 @@ class BfmClass(BaseElementClass):
     self.sub_env_path = sub_env_path
     self.initResp = initResp
     self.agent_inst_name = agentInstName
+    self.inFactReady = inFactReady
+    self.portList= []
+    for portName in portsList:
+      self.portList.append(portName)
     self.parameters = []
     for parameterName in parametersDict:
       self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
@@ -719,6 +724,7 @@ class InterfaceClass(BaseGeneratorClass):
     self.responseList = []
     self.responseVarNames = []
     self.enableFunctionalCoverage = False
+    self.mtlbReady = False
 
   def initTemplateVars(self,template):
     template['sigs'] = self.ports
@@ -755,6 +761,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['svLibNames'] = self.svLibNames
     template['vipLibEnvVariable'] = self.vipLibEnvVariable
     template['enableFunctionalCoverage'] = self.enableFunctionalCoverage
+    template['mtlbReady'] = self.mtlbReady
     return template
 
   def addPort(self,name,width,dir,rstValue='\'bz', type='tri'):
@@ -840,6 +847,8 @@ class InterfaceClass(BaseGeneratorClass):
             ud = ""
             pass
           self.DPITransDecl.append(TransClass(a['name'],a['type'],False,False,ud))
+    if self.mtlbReady:
+      self.conditional_array.append('mtlbReady')
     super(InterfaceClass,self).create(desired_template,parser)
     # Generation of DPI link files
     if ( self.useDpiLink ):
@@ -934,6 +943,7 @@ class EnvironmentClass(BaseGeneratorClass):
     self.uvmc_cpp_link_args = ""
     self.analysis_ports = []
     self.analysis_exports = []
+    self.mtlbReady = False
 
   def initTemplateVars(self,template):
     template['typedefs'] = self.typedefs
@@ -976,6 +986,7 @@ class EnvironmentClass(BaseGeneratorClass):
     template['DPILinkArgs'] = self.DPILinkArgs
     template['soName'] = self.soName
     template['svLibNames'] = self.svLibNames
+    template['mtlbReady'] = self.mtlbReady
     return template
 
   def addTypedef(self,name,type):
@@ -1050,10 +1061,10 @@ class EnvironmentClass(BaseGeneratorClass):
     """Add a constraint to the config class's Constraint item definition"""
     self.configVarsConstraints.append(ConstraintsClass(name,type))
 
-  def defineAnalysisComponent(self,keyword,name,exportDict,portDict,qvipExportDict={},parametersList=[]):
+  def defineAnalysisComponent(self,keyword,name,exportDict,portDict,qvipExportDict={},parametersList=[],mtlbReady=False):
     """Defines a type of analysis component for use later on."""
     ## Register the desired analysis component on the types array
-    self.analysisComponentTypes.append(analysisComponentClass(keyword,name,exportDict,portDict,qvipExportDict,parametersList))
+    self.analysisComponentTypes.append(analysisComponentClass(keyword,name,exportDict,portDict,qvipExportDict,parametersList,mtlbReady))
     self.addAnalysisComponentType(name)
     ## Add any non-existent imp-decl calls based on contents of the aeDict
     for aeName in exportDict:
@@ -1086,6 +1097,8 @@ class EnvironmentClass(BaseGeneratorClass):
     """Environment class specific create function - allows for the production of multiple analysis component files"""
     ## Prepand the environment config typedef to the front of all util component instantiations, too
     ## Need to do this before call to super.create since these changes will be needed then
+    if self.mtlbReady:
+      self.conditional_array.append('mtlbReady')
     for ac in self.analysisComponents:
       ac.parameters = [ParameterValueClass("CONFIG_T", "CONFIG_T")] + ac.parameters
     super(EnvironmentClass,self).create(desired_template,parser)
@@ -1153,7 +1166,7 @@ class BenchClass(BaseGeneratorClass):
     self.resource_parameter_names = []
     self.veloceReady = True
     self.useCoEmuClkRstGen = False
-    self.inFactReady = False
+    self.inFactEnabled = False
     self.clockHalfPeriod = '5ns'
     self.clockPhaseOffset = '9ns'
     self.resetAssertionLevel = False
@@ -1164,6 +1177,7 @@ class BenchClass(BaseGeneratorClass):
     self.envParamDefs = []
     self.additionalTops = []
     self.topEnvHasRegisterModel = False
+    self.mtlbReady = False
     for parameterName in parametersDict:
       self.envParamDefs.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
@@ -1182,7 +1196,7 @@ class BenchClass(BaseGeneratorClass):
     template['qvip_pkg_env_variables'] = self.qvip_pkg_env_variables
     template['veloceReady'] = self.veloceReady
     template['useCoEmuClkRstGen'] = self.useCoEmuClkRstGen
-    template['inFactReady'] = self.inFactReady
+    template['inFactEnabled'] = self.inFactEnabled
     template['clockHalfPeriod'] = self.clockHalfPeriod
     template['clockPhaseOffset'] = self.clockPhaseOffset
     template['resetAssertionLevel'] = self.resetAssertionLevel
@@ -1195,13 +1209,16 @@ class BenchClass(BaseGeneratorClass):
     template['additionalTops'] = self.additionalTops
     template['topEnvHasRegisterModel'] = self.topEnvHasRegisterModel
     template['svLibNames'] = self.svLibNames
+    template['mtlbReady'] = self.mtlbReady
     return template
 
   ## Overload of the create function - insert some conditional considerations
   def create(self,desired_template='all',parser=None):
     """Bench class specific create function - allows for the production of conditional files"""
-    if self.inFactReady == True:
-      self.conditional_array.append('infact_ready')
+    if self.inFactEnabled == True:
+      self.conditional_array.append('infact_enabled')
+    if self.mtlbReady:
+      self.conditional_array.append('mtlbReady')
     super(BenchClass,self).create(desired_template,parser)
 
   def addVinfoDependency(self,name):
@@ -1217,12 +1234,12 @@ class BenchClass(BaseGeneratorClass):
     """Add a vmap command to bench makefile"""
     self.vmaps.append(VmapClass(name,dirName))
 
-  def addBfm(self,name,ifPkg,clk,rst,activity,parametersDict={},sub_env_path='environment',initResp='INITIATOR',vipLibEnvVariable='UVMF_VIP_LIBRARY_HOME',agentInstName='agent_inst_name'):
+  def addBfm(self,name,ifPkg,clk,rst,activity,parametersDict={},sub_env_path='environment',initResp='INITIATOR',vipLibEnvVariable='UVMF_VIP_LIBRARY_HOME',agentInstName='agent_inst_name',inFactReady=False,portList=[]):
     """Add a BFM instantiation to the definition of this bench class"""
     package_name=name+"_BFM"
     value_name=name+"_BFM"
     self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,"",""))
-    self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName))
+    self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName,inFactReady,portList))
     if (ifPkg not in self.bfm_packages):
       self.bfm_packages.append(ifPkg)
       self.bfm_pkg_env_variables.append(BfmPkgClass(name,ifPkg,vipLibEnvVariable))

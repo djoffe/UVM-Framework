@@ -24,7 +24,7 @@
       <parameter name="mergeoptions">-testassociated (%EXTRA_MERGE_OPTIONS%)</parameter>
       <parameter name="HTML_REPORT_ARGS" type="tcl">[getIniVar html_report_args]</parameter>
       <parameter name="USE_INFACT" type="tcl">[getIniVar use_infact]</parameter>
-      <parameter name="INFACT_INI"/>
+      <parameter name="INFACT_ENABLED"/>
       <parameter name="INFACTSDM_INI" type="tcl">[getInfactSdmIni (%DATADIR%)]</parameter>
       <parameter name="USE_VIS" type="tcl">[getIniVar use_vis]</parameter>
       <parameter name="USE_VINFO" type="tcl">[getIniVar use_vinfo]</parameter>
@@ -38,7 +38,6 @@
       <parameter name="exclusionfile" type="tcl">[getIniVar exclusionfile]</parameter>
       <parameter name="PRE_RUN_DOFILE" type="tcl">[getIniVar pre_run_dofile]</parameter>
       <parameter name="PRE_VSIM_DOFILE" type="tcl">[getIniVar pre_vsim_dofile]</parameter>
-      <parameter name="BUILD_EXEC" type="tcl">[getIniVar build_exec]</parameter>
       <parameter name="RUN_EXEC" type="tcl">[getIniVar run_exec]</parameter>
       <parameter name="USE_TEST_DOFILE" type="tcl">[getIniVar use_test_dofile]</parameter>
       <parameter name="USE_JOB_MGMT_RUN" type="tcl">[getIniVar use_job_mgmt_run]</parameter>
@@ -115,7 +114,7 @@
     </members>
   </runnable>
   
-  <runnable name="start_infact_sdm_task" type="task" if="&quot;(%INFACT_INI%)&quot;!=&quot;&quot;">
+  <runnable name="start_infact_sdm_task" type="task" if="&quot;(%INFACT_ENABLED%)&quot;==&quot;1&quot;">
   	<execScript launch="exec">
   		<command>
 			if test (%USE_INFACT%) -eq 1; then
@@ -125,7 +124,7 @@
   	</execScript>
   </runnable>
   
-  <runnable name="stop_infact_sdm_task" type="task" if="&quot;(%INFACT_INI%)&quot;!=&quot;&quot;">
+  <runnable name="stop_infact_sdm_task" type="task" if="&quot;(%INFACT_ENABLED%)&quot;==&quot;1&quot;">
   	<execScript launch="exec">
   		<command>
 			if test (%USE_INFACT%) -eq 1; then
@@ -152,7 +151,7 @@
     <execScript launch="vsim" mintimeout="(%BUILD_TIMEOUT%)" usestderr="(%USESTDERR%)">
       <command>switch (%PLATFORM%) {</command>
       <command>  unix {</command>
-      <command>    (%BUILD_EXEC%) make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) USE_INFACT=(%USE_INFACT%) (%CODE_COVERAGE%) (%CC_TYPES%) (%CC_TARGET%) (%EXTRABUILDCMD%) (%VRUN_EXTRA_BUILD_CMD%)</command>
+      <command>    exec -ignorestderr make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) USE_INFACT=(%USE_INFACT%) (%CODE_COVERAGE%) (%CC_TYPES%) (%CC_TARGET%) (%EXTRABUILDCMD%) (%VRUN_EXTRA_BUILD_CMD%)</command>
       <command>  }</command>
       <command>  windows {</command>
       <command>    do (%VRUNDIR%)/compile.do;</command>
@@ -219,7 +218,7 @@
          (%RUN_EXEC%) vsim -batch -lib (%TASKDIR%)/../../build_task/work (%TOP%)
          -do "test.do" -suppress 8887 -permit_unmatched_virtual_intf                                                        
          +UVM_TESTNAME=(%UVM_TESTNAME%) +vrm_in_use (%MVCSWITCH%) (%CODE_COVERAGE%)  
-         +UVM_VERBOSITY=(%UVM_VERBOSITY%) -solvefaildebug +UVM_NO_RELNOTES (%VIS_ARGS%) (%INFACT_INI%) (%INFACTSDM_INI%)
+         +UVM_VERBOSITY=(%UVM_VERBOSITY%) -solvefaildebug +UVM_NO_RELNOTES (%VIS_ARGS%) (%INFACTSDM_INI%)
          -sv_seed (%seed%) -uvmcontrol=(%UVM_DEBUG_CONTROL%) +notimingchecks (%EXTRARUNCMD%) (%EXTRA_VSIM_OPTIONS%) (%EXTRA_VSIM_ARGS_FOR_TESTCASE%)
       </command>
       <!-- Following command modifies the design hierarchy in the UCDB to match a mapping defined in the test list with TB_MAP -->
@@ -312,6 +311,7 @@
       <command>(%GRIDCOMMAND_REPORT%)</command>
     </method>
     <execScript mintimeout="(%REPORT_TIMEOUT%)" usestderr="(%USESTDERR%)">
+      <command>file delete -force (%VRUNDIR%)/covhtmlreport</command>
       <command>vcover report -html (%mergefile%) (%HTML_REPORT_ARGS%)</command>
     </execScript>
   </runnable>
