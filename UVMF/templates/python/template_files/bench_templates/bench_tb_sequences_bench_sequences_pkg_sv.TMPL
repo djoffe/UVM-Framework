@@ -24,45 +24,39 @@
 {% block contents %}
 
 package {{name}}_sequences_pkg;
-
-   import uvm_pkg::*;
-   import questa_uvm_pkg::*;
-   import uvmf_base_pkg::*;
+  import uvm_pkg::*;
+  import uvmf_base_pkg::*;
 {% for bfm in bfm_pkgs %}
-   import {{bfm}}_pkg::*;
+  import {{bfm}}_pkg::*;
+  import {{bfm}}_pkg_hdl::*;
 {% endfor %}
-   import {{name}}_parameters_pkg::*;
-   import {{env_name}}_env_pkg::*;
+  import {{name}}_parameters_pkg::*;
+  import {{env_name}}_env_pkg::*;
 {% if qvip_bfm_pkgs|length > 0 %}
-   import mvc_pkg::*;
+  import mvc_pkg::*;
 {% endif %}
 {% for ext_import in external_imports %}
-   import {{ext_import}}::*;
+  import {{ext_import}}::*;
 {% endfor %}
-
 {% if useCoEmuClkRstGen %}
-   import clock_pkg::*;
-   import reset_pkg::*;
+  import clock_pkg::*;
+  import reset_pkg::*;
 {% endif %}
-  
-   `include "uvm_macros.svh"
-
+{% if topEnvHasRegisterModel %}
+  import {{env_name}}_reg_pkg::*;
+{% endif %}
+  `include "uvm_macros.svh"
 {% if inFactReady %}
-   `include "src/infact_{{name}}_bench_transactions.svh"
+  `include "src/infact_{{name}}_bench_transactions.svh"
 {% endif %}
-   `include "src/{{name}}_bench_sequence_base.svh"
-   `include "src/example_derived_test_sequence.svh"
-{% if inFactReady %}
-`ifdef INFACT_ENABLE_COMPILE
-{% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
-   `include "infact_proj_dir/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
-{% endif %}   
-{% endfor %}
-   `include "src/infact_{{name}}_bench_sequence_base.svh"
-`endif
-{% endif %}
-
+  `include "src/{{name}}_bench_sequence_base.svh"
+  `include "src/example_derived_test_sequence.svh"
 endpackage
+
+
+// UVMF_CHANGE_ME : When adding new sequences to the src directory
+//    be sure to add the sequence file here so that it will be
+//    compiled as part of the sequence package.  Be sure to place
+//    the new sequence after any base sequences of the new sequence.
 
 {% endblock %}

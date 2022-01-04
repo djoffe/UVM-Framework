@@ -7,8 +7,8 @@ class base_test extends uvm_test;
   // Must be extended clock_ctrl object and not clock_ctrl_base because
   // bfm is set here.  Usage elsewhere in testbench can just use a
   // clock_ctrl_base handle.
-  clock_ctrl #(shared_params_pkg::CLK_PHASE_OFFSET_IN_PS,
-               shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS) clk_ctrl[shared_params_pkg::NUM_CLK_RSTS];
+  clock_ctrl #(shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS,
+               shared_params_pkg::CLK_PHASE_OFFSET_IN_PS) clk_ctrl[shared_params_pkg::NUM_CLK_RSTS];
   
   //variable: reset_ctrl
   //Reset Proxy Object used to control Reset
@@ -40,7 +40,7 @@ class base_test extends uvm_test;
 
   function void build_phase(uvm_phase phase);
     //Temp handle to clock_bfm and reset_bfm
-    virtual clock_bfm #(shared_params_pkg::CLK_PHASE_OFFSET_IN_PS, shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS) clk_bfm;
+    virtual clock_bfm #(shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS, shared_params_pkg::CLK_PHASE_OFFSET_IN_PS) clk_bfm;
     virtual sync_reset_bfm #(shared_params_pkg::RST_POLARITY) sync_rst_bfm;
     virtual async_reset_bfm #(shared_params_pkg::ASYNC_RST_POLARITY,
                               shared_params_pkg::ASYNC_INIT_IDLE_TIME_IN_PS,
@@ -54,9 +54,9 @@ class base_test extends uvm_test;
     
     // Create the clock ctrl
     for (int ii = 0; ii < shared_params_pkg::NUM_CLK_RSTS; ii++) begin
-      clk_ctrl[ii] = clock_ctrl #(shared_params_pkg::CLK_PHASE_OFFSET_IN_PS, shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS)::type_id::create($sformatf("clk_ctrl%0d", ii));
+      clk_ctrl[ii] = clock_ctrl #(shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS, shared_params_pkg::CLK_PHASE_OFFSET_IN_PS)::type_id::create($sformatf("clk_ctrl%0d", ii));
       //Set the bfm handle in the clk_ctrl
-      if (!uvm_config_db#(virtual clock_bfm #(shared_params_pkg::CLK_PHASE_OFFSET_IN_PS, shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS))::get(this, "", $sformatf("clk%0d_if_h", ii), clk_bfm)) begin
+      if (!uvm_config_db#(virtual clock_bfm #(shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS, shared_params_pkg::CLK_PHASE_OFFSET_IN_PS))::get(this, "", $sformatf("clk%0d_if_h", ii), clk_bfm)) begin
         `uvm_fatal(report_id, $sformatf("Could not get the Clock %0d BFM Interface", ii))
       end
       clk_ctrl[ii].set_bfm(clk_bfm);

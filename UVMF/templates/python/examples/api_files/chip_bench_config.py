@@ -30,6 +30,9 @@ ben.clockPhaseOffset = '21ns'
 ben.resetAssertionLevel = True
 ben.resetDuration = '250ns'
 
+# Let bench know that top-env underneath has a register model
+ben.topEnvHasRegisterModel = True
+
 ## Specify the BFM's contained in this bench
 ##   addAgent(<agent_handle_name>,<agent_type_name>,<clock_name>,<reset_name>,<activity>,<{bfmParameter:value},<pathToSubEnvironmentsForTransactionViewing>)
 
@@ -37,7 +40,7 @@ ben.resetDuration = '250ns'
 ben.addBfm('block_a_env_control_plane_in',      'mem', 'clock', 'reset','ACTIVE', {},'environment.block_a_env', agentInstName="control_plane_in")
 ben.addBfm('block_a_env_control_plane_out',     'mem', 'clock', 'reset','PASSIVE', {},'environment.block_a_env', agentInstName="control_plane_out")
 ben.addBfm('block_a_env_secure_data_plane_in',  'pkt', 'pclk', 'prst','ACTIVE',   {},'environment.block_a_env', agentInstName="secure_data_plane_in")
-ben.addBfm('block_a_env_secure_data_plane_out', 'pkt', 'pclk', 'prst', 'ACTIVE',{},'environment.block_a_env', agentInstName="secure_data_plane_out")
+ben.addBfm('block_a_env_secure_data_plane_out', 'pkt', 'pclk', 'prst', 'ACTIVE', {},'environment.block_a_env',  initResp = 'RESPONDER', agentInstName="secure_data_plane_out")
 
 ## block b environment BFM's in the same order listed in block b config file
 ben.addBfm('block_b_env_control_plane_in',       'mem', 'clock', 'reset','PASSIVE',{'ADDR_WIDTH':'TEST_CP_IN_ADDR_WIDTH','DATA_WIDTH':'TEST_CP_IN_DATA_WIDTH'},'environment.block_b_env', agentInstName="control_plane_in")

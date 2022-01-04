@@ -44,8 +44,8 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
   `uvm_component_param_utils( uvmf_in_order_race_scoreboard #(T))
 
    // Analysis fifo to queue up expected & actual transactions.
-   uvm_tlm_analysis_fifo #(T) expected_results_af;
-   uvm_tlm_analysis_fifo #(T) actual_results_af;
+   T expected_results_q [$];
+   T actual_results_q   [$];
 
    // FUNCTION: new - Constructor
    function new(string name, uvm_component parent );
@@ -56,15 +56,13 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
    // Construct the analysis fifos
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-      expected_results_af=new("expected_results_af",this);
-      actual_results_af=new("actual_results_af",this);
    endfunction
 
    // FUNCTION: 
    // Used to flush all entries in the scoreboard
    virtual function void flush_scoreboard();
-      expected_results_af.flush();
-      actual_results_af.flush();
+      expected_results_q.delete();
+      actual_results_q.delete();
    endfunction
 
    // FUNCTION: 
@@ -77,11 +75,11 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
       T flushed_transaction;
       if ( key == 0 ) 
          begin : remove_from_expected
-         void'(expected_results_af.try_get(flushed_transaction));
+         flushed_transaction = expected_results_q.pop_front();
          end : remove_from_expected
       else if ( key == 1 )
          begin : remove_from_actual
-         void'(actual_results_af.try_get(flushed_transaction));
+         flushed_transaction = actual_results_q.pop_front();
          end : remove_from_actual
       else 
          begin : invalid_key
@@ -102,12 +100,13 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
          super.write_expected(t);
 
          // Check if there is a next entry from actual analysis fifo.  If none exists, queue expected item
-         if ( !actual_results_af.try_get(actual_transaction)) 
+         if ( actual_results_q.size() == 0 ) 
             begin : no_actual_entry_to_compare_against
-            void'(expected_results_af.try_put(t));
+            expected_results_q.push_back(t);
             end : no_actual_entry_to_compare_against
          else 
             begin : compare_against_actual
+            actual_transaction = actual_results_q.pop_front();
             compare_entries(t, actual_transaction);
             end : compare_against_actual
          end : in_write_expected
@@ -125,12 +124,13 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
          super.write_actual(t);
    
          // Check if there is a next entry from expected analysis fifo.  If none exists, queue actual item
-         if ( !expected_results_af.try_get(expected_transaction)) 
+         if ( expected_results_q.size() == 0 ) 
             begin : no_expected_entry_to_compare_against
-            void'(actual_results_af.try_put(t));
+            actual_results_q.push_back(t);
             end : no_expected_entry_to_compare_against
          else 
             begin : compare_against_expected
+            expected_transaction = expected_results_q.pop_front();
             compare_entries(expected_transaction, t);
             end : compare_against_expected
          end : in_write_actual
@@ -156,7 +156,7 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
   // TASK: wait_for_scoreboard_drain
   // This task is used to implement a mechanism to delay run_phase termination to allow the scoreboard time to drain.  
   virtual task wait_for_scoreboard_drain();
-      while ((expected_results_af.is_empty() == 0) || (actual_results_af.is_empty() == 0))
+      while ((expected_results_q.size() != 0) || (actual_results_q.size() != 0))
          begin : while_entries_remain
          @entry_received;
          end : while_entries_remain
@@ -169,22 +169,22 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
       int fifo_entry;
       super.check_phase(phase);
       // Check expected fifo
-      if ( end_of_test_empty_check  && (expected_results_af.is_empty() == 0)) 
+      if ( end_of_test_empty_check  && (expected_results_q.size() != 0)) 
          begin : expected_entries_remain
-         while ( (expected_results_af.is_empty() == 0) && ( fifo_entry <  max_remaining_transaction_print )) 
+         while ( (expected_results_q.size() != 0) && ( fifo_entry <  max_remaining_transaction_print )) 
             begin : print_expected_entries
-            void'(expected_results_af.try_get(expected_transaction));
+            expected_transaction = expected_results_q.pop_front();
             `uvm_info("SCBD",$sformatf("Expected Entry %d:%s",fifo_entry++,expected_transaction.convert2string()),UVM_MEDIUM)
             end : print_expected_entries
          `uvm_error("SCBD","EXPECTED SCOREBOARD NOT EMPTY");
          end : expected_entries_remain
       // Check actual fifo
-      if ( end_of_test_empty_check  && (actual_results_af.is_empty() == 0)) 
+      if ( end_of_test_empty_check  && (actual_results_q.size() != 0)) 
          begin : actual_entries_remain
          fifo_entry=0;
-         while ( (actual_results_af.is_empty() == 0) && ( fifo_entry <  max_remaining_transaction_print )) 
+         while ( (actual_results_q.size() != 0) && ( fifo_entry <  max_remaining_transaction_print )) 
             begin : print_actual_entries
-            void'(actual_results_af.try_get(expected_transaction));
+            expected_transaction = actual_results_q.pop_front();
             `uvm_info("SCBD",$sformatf("Actual Entry %d:%s",fifo_entry++,expected_transaction.convert2string()),UVM_MEDIUM)
             end : print_actual_entries
          `uvm_error("SCBD","ACTUAL SCOREBOARD NOT EMPTY");

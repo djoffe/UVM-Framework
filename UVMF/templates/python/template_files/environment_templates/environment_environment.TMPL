@@ -17,22 +17,21 @@
 
 
 
-class {{name}}_environment 
-{%if paramDefs|length > 0%}      #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
-{% endfor %}      )
-{% endif %}
-extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
-{%if paramDefs|length > 0%}                              #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             )
-{% endif %}                             ));
+class {{name}}_environment {%if paramDefs|length > 0%}#(
+{% for param in paramDefs %}  {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},
+{% else %}){% endif %}{% endfor %}{% endif %}
 
+  extends uvmf_environment_base #(
+    .CONFIG_T( {{name}}_env_configuration
+{%if paramDefs|length > 0%}    #(
+{% for param in paramDefs %}     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
+{% endfor %}    )
+{% endif %}  ));
 {%if paramDefs|length > 0%}
   `uvm_component_param_utils( {{name}}_environment #(
-  {% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
+{% for param in paramDefs %}                              {{param.name}}{% if not loop.last %},{% endif %}
 
-  {% endfor %}                          ))
+{% endfor %}                            ))
 {% else %}
   `uvm_component_utils( {{name}}_environment );
 {% endif %}
@@ -66,6 +65,16 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 
 {% endfor %}
 
+{% for nonUvmfComp in nonUvmfComponents %}
+ typedef {{nonUvmfComp.type}} {% if nonUvmfComp.parameters|length > 0 %}#({% endif %}{% for param in nonUvmfComp.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if nonUvmfComp.parameters|length > 0 %}) {% endif %}{{nonUvmfComp.name}}_t;
+   {{nonUvmfComp.name}}_t {{nonUvmfComp.name}};
+{% endfor %}
+
+{% for qvipMemAgent in qvipMemoryAgents %}
+ typedef {{qvipMemAgent.type}} {% if qvipMemAgent.parameters|length > 0 %}#({% endif %}{% for param in qvipMemAgent.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if qvipMemAgent.parameters|length > 0 %}) {% endif %}{{qvipMemAgent.name}}_t;
+   {{qvipMemAgent.name}}_t {{qvipMemAgent.name}};
+{% endfor %}
+
 {% for analysisComp in analysisComponents %}
   typedef {{analysisComp.type}} {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
@@ -74,14 +83,13 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 {% endfor %}
 
 {% for scoreboard in scoreboards %}
-  typedef {{scoreboard.sType}} #({{scoreboard.tType}})  {{scoreboard.name}}_t;
+  typedef {{scoreboard.sType}} #(.T({{scoreboard.tType}}){% if scoreboard.parameters|length > 0 %},{% endif %}{% for param in scoreboard.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if scoreboard.parameters|length > 0 %}{% endif %})  {{scoreboard.name}}_t;
   {{scoreboard.name}}_t {{scoreboard.name}};
 {% endfor %}
 
 {% for c2eConn in c2eConnections %}
   uvm_analysis_port #({{c2eConn.tType}}) {{c2eConn.name}};
 {% endfor %}
-
 {% for regModel in regModels %}
 {% if regModel.adapterType != None %}
    // Instantiate register model adapter and predictor
@@ -124,6 +132,14 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 {% endfor %}
 {% for agent in agents %}
     {{agent.name}} = {{agent.name}}_agent_t::type_id::create("{{agent.name}}",this);
+    {{agent.name}}.set_config(configuration.{{agent.name}}_config);
+{% endfor %}
+{% for nonUvmfComp in nonUvmfComponents %}
+    {{nonUvmfComp.name}} = {{nonUvmfComp.name}}_t::type_id::create("{{nonUvmfComp.name}}",this);
+{% endfor %}
+{% for qvipMemAgent in qvipMemoryAgents %}
+    {{qvipMemAgent.name}} = {{qvipMemAgent.name}}_t::type_id::create("{{qvipMemAgent.name}}",this);
+    {{qvipMemAgent.name}}.set_if_name({get_full_name(),".{{qvipMemAgent.qvipEnv}}",".{{qvipMemAgent.name}}"});
 {% endfor %}
 {% for analysisComp in analysisComponents %}
     {{analysisComp.name}} = {{analysisComp.name}}_t::type_id::create("{{analysisComp.name}}",this);
@@ -135,7 +151,6 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 {% for c2eConn in c2eConnections %}
    {{c2eConn.name}} = new("{{c2eConn.name}}",this);
 {% endfor %}
-
 {% for regModel in regModels %}
 {% if regModel.transactionType != None %}
   // Build register model predictor if prediction is enabled
@@ -144,7 +159,6 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
   end
 {% endif %}
 {% endfor %}
-
   endfunction
 
 // ****************************************************************************
@@ -164,22 +178,18 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 {% for connection in qvipConnections %}
     {{connection.output_component}}_ap["{{connection.output_port_name}}"].connect({{connection.input_component}}.{{connection.input_component_export_name}});
 {% endfor %}
-
 {% for sub_env in qvipSubEnvironments %}
 {% for agent in sub_env.qvip_if_name %}
     if ( configuration.{{sub_env.name}}_interface_activity[{{loop.index0}}] == ACTIVE )
        uvm_config_db #(mvc_sequencer)::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent}}.m_sequencer  );
 {% endfor %}
 {% endfor %}
-
-
 {% for ap in analysis_ports %}
     {{ap.connection}}.connect({{ap.name}});
 {% endfor %}
 {% for ep in analysis_exports %}
     {{ep.name}}.connect({{ep.connection}});
 {% endfor %}
-
 {% for regModel in regModels %}
 {% if regModel.adapterType != None %}
     // Create register model adapter if required
@@ -188,16 +198,27 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
       reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
     // Set sequencer and adapter in register model map
     if (configuration.enable_reg_adaptation)
-      configuration.reg_model.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.sequencer, reg_adapter);
+      configuration.{{name}}_rm.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.sequencer, reg_adapter);
     // Set map and adapter handles within uvm predictor
     if (configuration.enable_reg_prediction) begin
-      reg_predictor.map     = configuration.reg_model.{{regModel.busMap}};
+      reg_predictor.map     = configuration.{{name}}_rm.{{regModel.busMap}};
       reg_predictor.adapter = reg_adapter;
-      // temp {{regModel.sequencer}}.monitored_ap.connect(reg_predictor.bus_in);
+      // The connection between the agent analysis_port and uvm_reg_predictor 
+      // analysis_export could cause problems due to a uvm register package bug,
+      // if this environment is used as a sub-environment at a higher level.
+      // The uvm register package does not construct sub-maps within register
+      // sub blocks.  While the connection below succeeds, the execution of the
+      // write method associated with the analysis_export fails.  It fails because
+      // the write method executes the get_reg_by_offset method of the register
+      // map, which is null because of the uvm register package bug.
+      // The call works when operating at block level because the uvm register 
+      // package constructs the top level register map.  The call fails when the 
+      // register map associated with this environment is a sub-map.  Construction
+      // of the sub-maps must be done manually.
+      //{{regModel.sequencer}}.monitored_ap.connect(reg_predictor.bus_in);
     end
 {% endif %}
 {% endfor %}
-
   endfunction
 
 endclass

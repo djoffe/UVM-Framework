@@ -35,19 +35,12 @@ class uvmf_standard_port_debug_policy;
   // FUNCTION: debug
   static function void debug( uvm_component c );
     uvm_port_component_base pc;
-
     assert( c != null );
-
     if( !$cast( pc , c ) ) return;
-
     assert( pc != null );
-
     if( !info_filter( pc ) ) return;
-
     generate_info( pc );
-
     if( !warning_filter( pc ) ) return;
-
     generate_warning( pc );
   endfunction
 
@@ -66,9 +59,7 @@ class uvmf_standard_port_debug_policy;
   // FUNCTION: warning_filter
   static function bit warning_filter( uvm_port_component_base pc );
     uvm_port_list l;
-
     pc.get_connected_to( l );
-
     return l.size() == 0;
   endfunction
 

@@ -48,6 +48,7 @@ class ahb2spi_environment #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16) exten
 
     // Construct the shared monitor
     wb_mon = wb_monitor#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("wb_mon",this);
+    wb_mon.set_config(configuration.ahb2wb_env_config.wb_config);
     // Place the shared monitor in the uvm_config_db for access by block environments
     uvm_config_db #( wb_monitor#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) )::set( this , "*" , UVMF_MONITORS ,  wb_mon );
 

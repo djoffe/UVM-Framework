@@ -32,7 +32,7 @@
 
 class {{name}} 
 {%if paramDefs|length > 0%}      #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},
+{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},
 {% endif %}
 {% endfor %}      )
 {% endif %}

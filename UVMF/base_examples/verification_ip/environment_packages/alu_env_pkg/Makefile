@@ -4,5 +4,5 @@ ALU_ENV_PKG =\
 $(UVMF_VIP_LIBRARY_HOME)/environment_packages/alu_env_pkg/alu_env_pkg.sv
 
 comp_alu_env_pkg:
-	$(HVL_COMP_CMD) $(ALU_ENV_PKG)
+	$(HVL_COMP_CMD) $(UVM_INCDIR) $(ALU_ENV_PKG)
 

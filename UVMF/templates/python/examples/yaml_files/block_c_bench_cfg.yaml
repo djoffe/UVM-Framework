@@ -1,3 +1,7 @@
+# The block_c bench instantiates the block_c environment as it's top-level.
+# That environment incorporates a QVIP sub-environment produced by the QVIP
+# Configurator tool. Due to the use of QVIP, some QVIP packages must be imported
+# as part of the YAML.
 uvmf:
   benches:
     "block_c":

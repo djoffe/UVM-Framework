@@ -47,7 +47,8 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
   `uvm_component_param_utils( uvmf_in_order_scoreboard_array #(T, ARRAY_DEPTH))
 
    // Analysis fifo to queue up expected transactions.  This is required because of DUT latency.
-   uvm_tlm_analysis_fifo #(T) expected_results_af[] = new[ARRAY_DEPTH];
+   typedef T expected_results_q_t[$];
+   expected_results_q_t expected_results_q[ARRAY_DEPTH];
 
    // FUNCTION: new
    function new(string name, uvm_component parent );
@@ -58,17 +59,13 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
    // Construct the analysis fifo
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
-
-      foreach (expected_results_af[i])
-        expected_results_af[i]=new($sformatf("expected_results_af[%3d]",i),this);
-
    endfunction
 
    // FUNCTION: 
    // Used to flush all entries in the scoreboard
    virtual function void flush_scoreboard();
-      foreach (expected_results_af[i])
-        expected_results_af[i].flush();
+      foreach (expected_results_q[i])
+        expected_results_q[i].delete();
    endfunction
 
    // FUNCTION: 
@@ -83,7 +80,7 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
          end : invalid_key
       else 
          begin : remove_entry
-         expected_results_af[key].try_get(flushed_transaction);
+         flushed_transaction = expected_results_q[key].pop_front();
          end : remove_entry
    endfunction
 
@@ -94,7 +91,7 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
       if (scoreboard_enabled) 
          begin : in_write_expected
          super.write_expected(t);
-         expected_results_af[t.get_key()].try_put(t);
+         expected_results_q[t.get_key()].push_back(t);
          end : in_write_expected
    endfunction
 
@@ -109,13 +106,14 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
          super.write_actual(t);
    
          // Get next entry from analysis fifo.  Error if none exists
-         if ( !expected_results_af[t.get_key()].try_get(expected_transaction)) 
-            begin : no_item_exists_in_selected_array
+         if ( expected_results_q[t.get_key()].size() == 0 ) 
+            begin : no_item_exists_in_selected_q
             nothing_to_compare_against_count++;
             `uvm_error("SCBD",$sformatf("NO PREDICTED ENTRY TO COMPARE AGAINST:%s",t.convert2string()))
-            end : no_item_exists_in_selected_array
+            end : no_item_exists_in_selected_q
          else 
-            begin : item_exists_in_selected_array
+            begin : item_exists_in_selected_q
+            expected_transaction = expected_results_q[t.get_key()].pop_front();
             // Compare actual transaction to expected transaction
             if (t.compare(expected_transaction)) 
                begin : compare_passed
@@ -127,7 +125,7 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
                mismatch_count++;
                `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_transaction,t))
                end : compare_failed
-            end : item_exists_in_selected_array
+            end : item_exists_in_selected_q
             end : in_write_actual
    endfunction : write_actual
 
@@ -135,14 +133,14 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
   // This task is used to implement a mechanism to delay run_phase termination to allow the scoreboard time to drain.  
   virtual task wait_for_scoreboard_drain();
       bit entries_remaining;
-      foreach ( expected_results_af[i]) 
-            if (expected_results_af[i].is_empty() == 0) entries_remaining |= 1;
+      foreach ( expected_results_q[i]) 
+            if (expected_results_q[i].size() != 0) entries_remaining |= 1;
       while (entries_remaining) 
          begin : while_entries_remaining
          @entry_received;
          entries_remaining=0;
-         foreach ( expected_results_af[i]) 
-            if (expected_results_af[i].is_empty() == 0) entries_remaining |= 1;
+         foreach ( expected_results_q[i]) 
+            if (expected_results_q[i].size() != 0) entries_remaining |= 1;
          end : while_entries_remaining
   endtask
 
@@ -154,19 +152,19 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
       super.check_phase(phase);
       if ( end_of_test_empty_check  ) 
          begin : end_of_test_empty_check
-         foreach ( expected_results_af[i]) 
-            begin : foreach_expected_results_af
-            if (expected_results_af[i].is_empty() == 0) 
+         foreach ( expected_results_q[i]) 
+            begin : foreach_expected_results_q
+            if (expected_results_q[i].size() != 0) 
                begin : entries_remain
-               while ( (expected_results_af[i].is_empty() == 0) && ( fifo_entry <  max_remaining_transaction_print )) 
+               while ( (expected_results_q[i].size() != 0) && ( fifo_entry <  max_remaining_transaction_print )) 
                   begin : print_entries
-                  void'(expected_results_af[i].try_get(expected_transaction));
+                  expected_transaction = expected_results_q[i].pop_front();
                   `uvm_info("SCBD",$sformatf("Channel %d Entry %d:%s",i,fifo_entry++,expected_transaction.convert2string()),UVM_MEDIUM)
                   end : print_entries
                `uvm_error("SCBD",$sformatf("CHANNEL [%d] SCOREBOARD NOT EMPTY",i));
                fifo_entry = 0;
                end : entries_remain
-            end : foreach_expected_results_af
+            end : foreach_expected_results_q
          end : end_of_test_empty_check
    endfunction
 

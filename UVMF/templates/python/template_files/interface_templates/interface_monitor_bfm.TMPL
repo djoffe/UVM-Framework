@@ -39,14 +39,14 @@ import {{name}}_pkg_hdl::*;
 import {{name}}_pkg::*;
 {% endif %}
 
-{% if useDpiLink %}module{% else %}interface{% endif %} {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
-{% endfor %}      )
-{% endif %}
-( {{name}}_if  bus );
+{% if useDpiLink %}module{% else %}interface{% endif %} {{name}}_monitor_bfm {%if paramDefs|length > 0%} #(
+{% for param in paramDefs %}  {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% else %}){% endif %}
+{% endfor %}
+{% endif %} 
+  ( {{name}}_if  bus );
 {% if veloceReady %}
-// pragma attribute {{name}}_monitor_bfm partition_interface_xif                                  
-// The above pragma and additional ones in-lined below are for running this BFM on Veloce
+  // The pragma below and additional ones in-lined further down are for running this BFM on Veloce
+  // pragma attribute {{name}}_monitor_bfm partition_interface_xif                                  
 {% endif %}
 {% if useDpiLink %}
   import "DPI-C" context function void C_{{name}}_notify_transaction( input c_bit_array_t bit_vec_in);
@@ -55,141 +55,152 @@ import {{name}}_pkg::*;
   export "DPI-C" task     wait_for_reset;
   export "DPI-C" task     wait_for_num_clocks;
 {% endif %}
-
-   tri        {{clock}}_i;
-   tri        {{reset}}_i;
+  tri {{clock}}_i;
+  tri {{reset}}_i;
 {% for sig in sigs %}
-   tri        {{sig.vector}} {{sig.name}}_i;
+  tri {{sig.vector}} {{sig.name}}_i;
+{% endfor %}
+  assign {{clock}}_i = bus.{{clock}};
+  assign {{reset}}_i = bus.{{reset}};
+{% for sig in sigs %}
+  assign {{sig.name}}_i = bus.{{sig.name}};
 {% endfor %}
 
-   assign     {{clock}}_i    =   bus.{{clock}};
-   assign     {{reset}}_i    =   bus.{{reset}};
-{% for sig in sigs %}
-   assign     {{sig.name}}_i = bus.{{sig.name}};
-{% endfor %}
-
-   // Proxy handle to UVM monitor
-   {{name}}_pkg::{{name}}_monitor {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}              .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                    ) {% endif %} proxy;
+  // Proxy handle to UVM monitor
+  {{name}}_pkg::{{name}}_monitor {%if paramDefs|length > 0%} #(
+{% for param in paramDefs %}    .{{param.name}}({{param.name}}){% if not loop.last %},
+{% else %}){% endif %}{% endfor %}{% endif %} proxy;
 {% if veloceReady %}
   // pragma tbx oneway proxy.notify_transaction                 
 {% endif %}
 
-//******************************************************************                         
+  //******************************************************************                         
 {% if veloceReady %}
-   task wait_for_reset(); {% if useDpiLink %}{% else %}// pragma tbx xtf  {% endif %}                                                
+  task wait_for_reset(); {% if useDpiLink %}{% else %}// pragma tbx xtf  {% endif %}                                                
 {% else %}
-   task wait_for_reset();
+  task wait_for_reset();
 {% endif %}
-      @(posedge {{clock}}_i) ;                                                                    
-      do_wait_for_reset();                                                                   
-   endtask                                                                                   
+    @(posedge {{clock}}_i) ;                                                                    
+    do_wait_for_reset();                                                                   
+  endtask                                                                                   
 
-// ****************************************************************************              
-   task do_wait_for_reset();                                                                 
-      wait ( {{reset}}_i == {% if resetAssertionLevel %}0{% else %}1{% endif %} ) ;                                                              
-      @(posedge {{clock}}_i) ;                                                                    
-   endtask    
-   
-   
-//******************************************************************                         
+  // ****************************************************************************              
+  task do_wait_for_reset();                                                                 
+    wait ( {{reset}}_i == {% if resetAssertionLevel %}0{% else %}1{% endif %} ) ;                                                              
+    @(posedge {{clock}}_i) ;                                                                    
+  endtask    
+
+  //******************************************************************                         
 {%if useDpiLink %}
-   task wait_for_num_clocks( c_bit_array_t bit_vec);   
-     int unsigned count;  
+  task wait_for_num_clocks(c_bit_array_t bit_vec);   
+    int unsigned count;  
 {% else %} 
-   task wait_for_num_clocks( input int unsigned count); {% if veloceReady %}// pragma tbx xtf {% endif %}
+  task wait_for_num_clocks(input int unsigned count); {% if veloceReady %}// pragma tbx xtf {% endif %}
 {% endif %}
 
-      @(posedge {{clock}}_i);  
-      {% if useDpiLink %}{count}=bit_vec;  {% endif %}                                                               
-      repeat (count-1) @(posedge {{clock}}_i);                                                    
-   endtask      
+    @(posedge {{clock}}_i);  
+    {% if useDpiLink %}{count}=bit_vec;  {% endif %}                                                               
+    repeat (count-1) @(posedge {{clock}}_i);                                                    
+  endtask      
 
-//******************************************************************                         
+  //******************************************************************                         
   event go;                                                                                 
 {% if veloceReady %}
   function void start_monitoring(); {% if useDpiLink %}{% else %}// pragma tbx xtf  {% endif %}      
 {% else %}
   function void start_monitoring();
 {% endif %}
-     -> go;                                                                                 
+    -> go;                                                                                 
   endfunction                                                                               
   
   // ****************************************************************************              
   initial begin                                                                             
-     @go;                                                                                   
-     forever begin                                                                          
+    @go;                                                                                   
+    forever begin                                                                          
 {% for txn in transVars %}
-        {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+      {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
-        @(posedge {{clock}}_i);                                                                   
-
-        do_monitor(
+      @(posedge {{clock}}_i);                                                                   
+      do_monitor(
 {% for txn in transVars %}
-                   {{txn.name}}{% if not loop.last %},
-{% endif %}
-{% endfor %}
-                  );
+        {{txn.name}}{% if not loop.last %},
+{% endif %}{% endfor %}
+      );
 {% if useDpiLink %}
-        C_{{name}}_notify_transaction({
+      C_{{name}}_notify_transaction({
 {% else %} 
-        proxy.notify_transaction(
+      proxy.notify_transaction(
 {% endif %}
 {% for txn in transVars %}
-                   {{txn.name}}{% if not loop.last %},
+        {{txn.name}}{% if not loop.last %},
 {% endif %}
 {% endfor %}
 {% if useDpiLink %}
-        } {% endif %}
-                                );     
-     end                                                                                    
+      } {% endif %} );     
+    end                                                                                    
   end                                                                                       
 
-//******************************************************************
-   function void configure({%if useDpiLink %}  c_bit_array_t bit_vec);
-           uvmf_active_passive_t act_pass;
-           uvmf_initiator_responder_t   init_resp;
+  //******************************************************************
+  // The configure() function is used to pass agent configuration
+  // variables to the monitor BFM.  It is called by the monitor within
+  // the agent at the beginning of the simulation.  It may be called 
+  // during the simulation if agent configuration variables are updated
+  // and the monitor BFM needs to be aware of the new configuration 
+  // variables.
+  //
+  function void configure({% if useDpiLink %}c_bit_array_t bit_vec);
+    uvmf_active_passive_t act_pass;
+    uvmf_initiator_responder_t init_resp;
 {% for config in configVars %}
-            {{config.type}} {{config.name}};
+    {{config.type}} {{config.name}};
 {% endfor %}
-          {act_pass,init_resp{% for config in configVars %},{{config.name}}{% endfor %}} = bit_vec;
+    {act_pass,init_resp{% for config in configVars %},{{config.name}}{% endfor %}} = bit_vec;
 {% else %}
 {% if veloceReady %}
-          uvmf_active_passive_t active_passive,
-          uvmf_initiator_responder_t   initiator_responder
+
+    uvmf_active_passive_t active_passive,
+    uvmf_initiator_responder_t initiator_responder{% if configVars|length > 0 %},
+{% endif %}
 {% for config in configVars %}
-          ,{{config.type}} {{config.name}}
+    {{config.type}} {{config.name}}{% if not loop.last %},{% endif %}
 {% endfor %}
 ); // pragma tbx xtf
 {% else %}
-          {{name}}_configuration cfg
-); 
+    {{name}}_configuration{%if paramDefs|length > 0%}#(
+{% for param in paramDefs %}       .{{param.name}}({{param.name}}){% if not loop.last %},
+{%else %})
+{% endif %}
+{% endfor %}{% endif %}
+       cfg); 
 {% endif %}
 {% endif %}
-   endfunction
+  endfunction
 
 
-// ****************************************************************************              
-     task do_monitor(
+  // ****************************************************************************              
+  task do_monitor(
 {% for txn in transVars %}
-                   output {{txn.type}} {{txn.name}} {{txn.unpackedDim}}{% if not loop.last %},
+    output {{txn.type}} {{txn.name}} {{txn.unpackedDim}}{% if not loop.last %},
 {% endif %}
-{% endfor %}
-                    );
-// UVMF_CHANGE_ME : Implement protocol monitoring.
-// Reference code;
-//    while (control_signal == 1'b1) @(posedge {{clock}}_i);
+{% endfor %}  );
+    // UVMF_CHANGE_ME : Implement protocol monitoring.  The commented reference code 
+    // below are examples of how to capture signal values and assign them to 
+    // do_monitor arguments.  All available input signals are included.  The 'while' 
+    // code example shows how to wait for a synchronous flow control signal.  This
+    // task returns when a complete transfer has been observed.  Once this task is
+    // exited with captured values, it is called again to wait for and observe the 
+    // next transfer. One clock cycle is consumed between calls to do_monitor.
+    //
+    // Reference code;
+    //    while (control_signal == 1'b1) @(posedge {{clock}}_i);
 {% for sig in sigs %}
-//    xyz = {{sig.name}}_i;  //    {{sig.vector}} 
+    //    xyz = {{sig.name}}_i;  //    {{sig.vector}} 
 {% endfor %}
-
-      @(posedge {{clock}}_i);
-      @(posedge {{clock}}_i);
-      @(posedge {{clock}}_i);
-      @(posedge {{clock}}_i);
-
-     endtask         
+    @(posedge {{clock}}_i);
+    @(posedge {{clock}}_i);
+    @(posedge {{clock}}_i);
+    @(posedge {{clock}}_i);
+  endtask         
   
 {% if useDpiLink %}
 endmodule

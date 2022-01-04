@@ -99,6 +99,9 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
       // This is only added for QA testing of UVMF code generators.
       // This is NOT recommended for use when verifying a design.
       void'(uvm_config_db #(uvm_bitstream_t)::get(this,"","end_of_test_empty_check",end_of_test_empty_check));
+      if (end_of_test_empty_check==0) begin
+        `uvm_warning("SCBD","end_of_test_empty_check has been turned off")
+      end
    endfunction
 
   // FUNCTION: enable_scoarboard

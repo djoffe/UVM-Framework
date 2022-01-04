@@ -19,11 +19,11 @@ intf.resetAssertionLevel = True
 ## Specify the ports associated with this interface.
 ## The direction is from the perspective of the test bench as an INITIATOR on the bus.
 ##   addPort(<name>,<width>,[input|output|inout])
-intf.addPort('sop',1,'output')
-intf.addPort('eop',1,'output')
-intf.addPort('rdy',1,'input')
-intf.addPort('data','DATA_WIDTH','output')
-intf.addPort('status','STATUS_WIDTH','input')
+intf.addPort('sop',1,'output','1\'b0')
+intf.addPort('eop',1,'output','1\'b0')
+intf.addPort('rdy',1,'input','1\'b1')
+intf.addPort('data','DATA_WIDTH','output','\'bz')
+intf.addPort('status','STATUS_WIDTH','input','\'bz')
 
 ## Specify transaction variables for the interface.
 ##   addTransVar(<name>,<type>)

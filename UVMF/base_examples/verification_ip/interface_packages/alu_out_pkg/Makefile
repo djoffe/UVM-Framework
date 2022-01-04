@@ -15,7 +15,7 @@ comp_alu_out_pkg: $(COMP_ALU_OUT_PKG_TGT)
 	$(HDL_COMP_CMD) $(ALU_OUT_PKG_HDL)
 
 q_comp_alu_out_pkg:
-	$(HVL_COMP_CMD) $(ALU_OUT_PKG)
+	$(HVL_COMP_CMD) $(UVM_INCDIR) $(ALU_OUT_PKG)
 
 v_comp_alu_out_pkg: q_comp_alu_out_pkg
 	$(VELANALYZE_HVL_CMD) $(ALU_OUT_PKG)

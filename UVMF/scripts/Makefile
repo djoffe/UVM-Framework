@@ -21,6 +21,9 @@ RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
 EXTRA_VRUN_ARGS ?= 
 VRUN_RUNNABLE ?= 
 
+# Control whether or not to run at all in debug simulation
+NO_RUN ?= 0
+
 # Usage of Veloce, VTL etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
 USE_VTL             ?= 0
@@ -102,7 +105,7 @@ HDL_COMP_CMD_VHDL_1 = $(EMU_COMP_CMD_VHDL)
 HDL_COMP_CMD_VHDL   = $(HDL_COMP_CMD_VHDL_$(USE_VELOCE))
 
 # Veloce compile command as determined by OS3
-VELCOMP_CMD   = velcomp -top $(TOP_HDL)
+VELCOMP_CMD   = velcomp -top $(TOP_HDL) $(VELCOMP_ARGS)
 
 # Link command as determined by puresim vs Veloce and OS3
 LINK_CMD_0 = velhvl -sim puresim
@@ -174,9 +177,13 @@ EN_TRLOG_CFG = $(EN_TRLOG_CFG_$(ENABLE_TRLOG))
 # Batch simulation arguments minimizes debug capabilities
 VIS_VSIM_ARGS = -qwavedb=$(VIS_DUMP_OPTIONS)
 
-BATCH_VSIM_ARGS_0 = $(COMMON_VSIM_ARGS) -uvmcontrol=none
-BATCH_VSIM_ARGS_1 = $(COMMON_VSIM_ARGS) -uvmcontrol=none $(VIS_VSIM_ARGS)
-BATCH_VSIM_ARGS = $(BATCH_VSIM_ARGS_$(USE_VIS)) $(EN_TRLOG_CFG)
+BATCH_UVMCTRL_0 = -uvmcontrol=none
+BATCH_UVMCTRL_1 = -uvmcontrol=disable
+BATCH_UVMCTRL = $(BATCH_UVMCTRL_$(NO_QUESTA_DEBUG_PKG))
+
+BATCH_VSIM_ARGS_0 = $(COMMON_VSIM_ARGS) $(BATCH_UVMCTRL)
+BATCH_VSIM_ARGS_1 = $(COMMON_VSIM_ARGS) $(BATCH_UVMCTRL) $(VIS_VSIM_ARGS) $(EN_TRLOG_CFG)
+BATCH_VSIM_ARGS = $(BATCH_VSIM_ARGS_$(USE_VIS)) 
 BATCH_VSIM_ARGS += -printsimstats
 
 ## No transaction viewing, classic debugger
@@ -210,13 +217,35 @@ else
   WAVE_FILE_EXISTS = 0
 endif
 WAVE_FILE_CMD_0 = 
-WAVE_FILE_CMD_1 = ; do $(WAVE_FILE)
+WAVE_FILE_CMD_1 = do $(WAVE_FILE)
 WAVE_FILE_CMD = $(WAVE_FILE_CMD_$(WAVE_FILE_EXISTS))
 
 # VWAVES_CMD, XWAVE_CMD, VSIM_VIS, VSIM_VIS_DO for use with Visualizer only when USE_VELOCE=1
 # Controlled by USE_AUTOUP and USE_XWAVE
 USE_AUTOUP      ?= 0
 USE_XWAVE       ?= 0
+# Add Veloce lint switches when USE_VELOCE=1 & USE_VELOCE_LINT=1
+USE_VELOCE_LINT ?= 0
+
+VELLINT_VLOG_ARG_0  =
+VELLINT_VLOG_ARG_1  = -tbxhvllint+ignorepkgs=uvm_pkg
+VELLINT_VLOG_ARG    = $(VELLINT_VLOG_ARG_$(USE_VELOCE_LINT))
+VLOG_ARGS          += $(VELLINT_VLOG_ARG)
+
+VELLINT_VOPT_ARG_0  =
+VELLINT_VOPT_ARG_1  = -reporthrefs+hdl_top.dut_verilog 
+#VELLINT_VOPT_ARG_1  = -reporthrefs+hdl_top.dut_vhdl
+VELLINT_VOPT_ARG    = $(VELLINT_VOPT_ARG_$(USE_VELOCE_LINT))
+
+VELLINT_VSIM_ARG_0  =
+VELLINT_VSIM_ARG_1  = -tbxhvllint
+VELLINT_VSIM_ARG    = $(VELLINT_VSIM_ARG_$(USE_VELOCE_LINT))
+BATCH_VSIM_ARGS    += $(VELLINT_VSIM_ARG)
+
+VELLINT_VELCOMP_ARG_0  =
+VELLINT_VELCOMP_ARG_1  = -lint
+VELLINT_VELCOMP_ARG    = $(VELLINT_VELCOMP_ARG_$(USE_VELOCE_LINT))
+VELCOMP_ARGS          += $(VELLINT_VELCOMP_ARG)
 
 VWAVES_CMD_1_1 = velocecmd \"hwtrace autoupload on -tracedir waves -gen crd -crd_options \\\"-o waves.crd -siglist xwaves.sigs\\\" \";
 VWAVES_CMD   = $(VWAVES_CMD_$(USE_VELOCE)_$(USE_AUTOUP))
@@ -252,11 +281,18 @@ info:
 
 # Dofile commands - debug only does a run 0, adds everything to waves. 
 # Will run 1ns into sim for Visualizer in order to add waves.
+DBG_RUN_0 = run 0;
+DBG_RUN_1 = run 1ns;
+DBG_RUN = $(DBG_RUN_$(USE_VIS))
+RUN_CMD_0 = $(DBG_RUN)
+RUN_CMD_1 =
+RUN_CMD = $(RUN_CMD_$(NO_RUN))
+
 DEBUG_DO_COMMANDS_0 = -do " \
                     set NoQuitOnFinish 1; \
-                    run 0 $(WAVE_FILE_CMD)" 
+                    $(RUN_CMD) $(WAVE_FILE_CMD)" 
 DEBUG_DO_COMMANDS_1 = -do " \
-                    run 1ns $(WAVE_FILE_CMD)" 
+                    $(RUN_CMD) $(WAVE_FILE_CMD)" 
 DEBUG_DO_COMMANDS = $(DEBUG_DO_COMMANDS_$(USE_VIS))
 
 # Batch dofile commands - run each test to completion
@@ -287,14 +323,33 @@ TEST_BENCH_HDL = \
 -F $(UVMF_PROJECT_DIR)/tb/testbench/top_filelist_hdl.f
 
 # UVM package source (not built-in so still needed for Veloce flow)
-UVM_PKG = \
+VELOCE_UVM_PKG = \
 +define+QUESTA \
 +incdir+$(QUESTA_HOME)/verilog_src/uvm-1.1d/src \
 $(QUESTA_HOME)/verilog_src/uvm-1.1d/src/uvm_pkg.sv
 
-QUESTA_UVM_PKG  = \
-+incdir+$(QUESTA_HOME)/verilog_src/questa_uvm_pkg-1.2/src \
-$(QUESTA_HOME)/verilog_src/questa_uvm_pkg-1.2/src/questa_uvm_pkg.sv
+# UVM package source - Compile external UVM package - use this if defined, otherwise
+# the default built-in UVM package with Questa will be used
+UVMF_EXT_UVM_PKG ?=
+NO_QUESTA_DEBUG_PKG ?= 0
+ifeq ($(UVMF_EXT_UVM_PKG),)
+	## No external source provided. Use the built-in pre-compiled UVM library by leaving this command empty
+	QUESTA_COMP_UVM_CMD =
+	UVM_INCDIR = 
+else
+	UVM_INCDIR = +incdir+$(UVMF_EXT_UVM_PKG)/src
+	VLOG_ARGS += $(UVM_INCDIR)
+	QUESTA_COMP_UVM_CMD = \
+	  vlog -ccflags "-DQUESTA -w" $(UVMF_EXT_UVM_PKG)/src/dpi/uvm_dpi.cc; \
+	  vlog $(UVM_INCDIR) $(UVMF_EXT_UVM_PKG)/src/uvm_pkg.sv;
+ifeq ($(NO_QUESTA_DEBUG_PKG),0)
+	  QUESTA_COMP_UVM_CMD += \
+	    vlog $(UVM_INCDIR) +incdir+$(QUESTA_UVM_PKG_DIR) $(QUESTA_UVM_PKG_DIR)/questa_uvm_pkg.sv;
+endif    	    
+endif
+
+QUESTA_UVM_PKG_DIR ?= $(QUESTA_HOME)/verilog_src/questa_uvm_pkg-1.2/src
+QUESTA_UVM_PKG  = +incdir+$(QUESTA_UVM_PKG_DIR) $(QUESTA_UVM_PKG_DIR)/questa_uvm_pkg.sv
 
 # VIP common source
 VIP_BASE_PKG =\
@@ -332,7 +387,7 @@ clean::
 libs:
 	test -e work || vlib work 
 
-# Visualizer target arguments
+# Visualizer target arfguments
 VIS_ARGS_0 =
 VIS_ARGS_1 = -do $(WAVE_FILE)
 VIS_ARGS = $(VIS_ARGS_$(WAVE_FILE_EXISTS))
@@ -358,10 +413,14 @@ vis_veloce:
 	visualizer -designfile design.bin -wavefile qwave.db &
 
 # Top Test Bench Modules
-comp_test_bench:
+hvl_comp_testbench:
 	$(HVL_COMP_CMD) $(TEST_BENCH)
+
+hdl_comp_testbench:
 	$(HDL_COMP_CMD) $(TEST_BENCH_HDL)
 	$(VEL_COMP)
+
+comp_test_bench: hvl_comp_testbench hdl_comp_testbench
 
 VEL_COMP_0 =
 VEL_COMP_1 = $(VELCOMP_CMD)
@@ -389,10 +448,10 @@ COMP_UVM_PKG_TGT = $(COMP_UVM_PKG_TGT_$(USE_VELOCE))
 comp_uvm_pkg: $(COMP_UVM_PKG_TGT)
 
 q_comp_uvm_pkg:
+	$(QUESTA_COMP_UVM_CMD)
 
 v_comp_uvm_pkg: q_comp_uvm_pkg
-	$(VELANALYZE_HVL_CMD) $(UVM_PKG)
-	$(VELANALYZE_HVL_CMD) $(QUESTA_UVM_PKG)
+	$(VELANALYZE_HVL_CMD) $(VELOCE_UVM_PKG)
 
 # UVMF Base class targets
 include $(UVMF_HOME)/uvmf_base_pkg/Makefile
@@ -430,7 +489,9 @@ BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
 
 # Link target (Veloce)
 link:
+ifeq ($(USE_VELOCE_LINT), 0)
 	$(LINK)
+endif
 
 LINK_0 =
 LINK_1 = $(LINK_CMD)
@@ -442,12 +503,17 @@ LINK = $(LINK_$(USE_VELOCE_OR_VTL))
 #   by VRM's rerun capabilities
 #   For Visualizer, only run vopt once (always with -debug)
 optimize:
+ifeq ($(USE_VELOCE_LINT), 1)
+	$(PRE_VOPT_CLI_CMD)
+	$(PRE_VOPT_CLI_SETENV) vopt $(VOPT_CODE_COV_ARGS) $(BATCH_VOPT_ARGS) $(VELLINT_VOPT_ARG) $(EXTRA_VOPT_ARGS) $(TOP_TB) -o optimized_batch_top_tb
+endif
 	$(PRE_VOPT_CLI_CMD)
 	$(PRE_VOPT_CLI_SETENV) vopt $(VOPT_CODE_COV_ARGS) $(BATCH_VOPT_ARGS) $(EXTRA_VOPT_ARGS) $(TOP_TB) -o optimized_batch_top_tb
 ifeq ($(USE_VIS),0)
 	$(PRE_VOPT_GUI_CMD) 
 	$(PRE_VOPT_GUI_SETENV) vopt $(VOPT_CODE_COV_ARGS) $(DEBUG_VOPT_ARGS) $(EXTRA_VOPT_ARGS) $(TOP_TB) -o optimized_debug_top_tb
 endif
+
 
 # Invoke a GUI mode simulation
 gui_run: 
@@ -464,7 +530,7 @@ run_cli: cli_run
 run_gui: gui_run
 
 cli: libs build link optimize cli_run
-debug: clean libs build link optimize gui_run
+debug: libs build link optimize gui_run
 
 vrun:
 	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(EXTRA_VRUN_ARGS)

@@ -14,7 +14,7 @@ comp_uvmf_base_pkg: $(COMP_UVMF_BASE_PKG_TGT)
 	$(HDL_COMP_CMD) $(UVMF_BASE_PKG_HDL)
 
 q_comp_uvmf_base_pkg:
-	$(HVL_COMP_CMD) $(UVMF_BASE_PKG)
+	$(HVL_COMP_CMD) $(UVM_INCDIR) $(UVMF_BASE_PKG)
 
 v_comp_uvmf_base_pkg: q_comp_uvmf_base_pkg
 	$(VELANALYZE_HVL_CMD) $(UVMF_BASE_PKG)

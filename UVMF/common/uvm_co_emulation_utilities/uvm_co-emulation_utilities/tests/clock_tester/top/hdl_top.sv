@@ -11,8 +11,8 @@ module hdl_top();
   // Declare the pin interfaces
   genvar                   ii;
   for (ii = 0; ii < NUM_CLK_RSTS; ii++) begin : clk_rst_block
-    clock_bfm #(shared_params_pkg::CLK_PHASE_OFFSET_IN_PS,
-                shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS) clk_if_h(clks[ii]);
+    clock_bfm #(shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS,
+                shared_params_pkg::CLK_PHASE_OFFSET_IN_PS) clk_if_h(clks[ii]);
     sync_reset_bfm #(shared_params_pkg::RST_POLARITY) rst_if_h(clks[ii],
                                                                rst_n[ii]);
     async_reset_bfm #(shared_params_pkg::ASYNC_RST_POLARITY,
@@ -22,7 +22,7 @@ module hdl_top();
 
     initial begin //tbx vif_binding_block
       import uvm_pkg::uvm_config_db;
-      uvm_config_db #(virtual clock_bfm #(shared_params_pkg::CLK_PHASE_OFFSET_IN_PS, shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS))::set(null, "", $psprintf("clk%0d_if_h", ii), clk_if_h);
+      uvm_config_db #(virtual clock_bfm #(shared_params_pkg::CLK_INIT_HALF_PERIOD_IN_PS, shared_params_pkg::CLK_PHASE_OFFSET_IN_PS))::set(null, "", $psprintf("clk%0d_if_h", ii), clk_if_h);
       uvm_config_db #(virtual sync_reset_bfm #(shared_params_pkg::RST_POLARITY))::set(null, "", $psprintf("rst%0d_if_h", ii), rst_if_h);
       uvm_config_db #(virtual async_reset_bfm #(
                          shared_params_pkg::ASYNC_RST_POLARITY,

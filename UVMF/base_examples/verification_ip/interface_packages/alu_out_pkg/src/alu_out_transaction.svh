@@ -51,25 +51,22 @@ class alu_out_transaction extends uvmf_transaction_base;
   endfunction
 
 //*******************************************************************
-   virtual function void do_print(uvm_printer printer);
-      if (printer.knobs.sprint==0)
-        $display(convert2string());
-      else
-        printer.m_string = convert2string();
-   endfunction
+  virtual function void do_print(uvm_printer printer);
+    $display(convert2string());
+  endfunction
 
 //*******************************************************************
   virtual function bit do_compare (uvm_object rhs, uvm_comparer comparer);
-      alu_out_transaction RHS;
-      if (!$cast(RHS,rhs)) return 0;
-      else return (super.do_compare(rhs, comparer) &&
-                  (this.result == RHS.result));
-   endfunction : do_compare
+    alu_out_transaction RHS;
+    if (!$cast(RHS,rhs)) return 0;
+    else return (super.do_compare(rhs, comparer) &&
+                (this.result == RHS.result));
+  endfunction : do_compare
 
 // ****************************************************************************
   virtual function void add_to_wave( int transaction_viewing_stream_h );
     if ( transaction_view_h == 0) 
-       transaction_view_h = $begin_transaction(transaction_viewing_stream_h,$sformatf("0x%4h",result),start_time);
+      transaction_view_h = $begin_transaction(transaction_viewing_stream_h,$sformatf("0x%4h",result),start_time);
     $add_color(transaction_view_h,"green");
     super.add_to_wave(transaction_view_h);
     $end_transaction(transaction_view_h,end_time);

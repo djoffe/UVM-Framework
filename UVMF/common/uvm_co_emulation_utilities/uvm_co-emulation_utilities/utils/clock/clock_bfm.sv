@@ -1,5 +1,5 @@
-interface clock_bfm #(int unsigned PHASE_OFFSET_IN_PS = 2000,
-                      int unsigned INIT_CLOCK_HALF_PERIOD = 2000)
+interface clock_bfm #(int unsigned INIT_CLOCK_HALF_PERIOD = 2000,
+                      int unsigned PHASE_OFFSET_IN_PS = INIT_CLOCK_HALF_PERIOD)
   (output logic clock);
   // pragma attribute clock_bfm partition_interface_xif
   
@@ -82,7 +82,7 @@ interface clock_bfm #(int unsigned PHASE_OFFSET_IN_PS = 2000,
 
   reg [63:0] cycleCount = 0, numClocks = 0;
   event      initiateAdvance;
-  clock_pkg::clock_ctrl#(PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD) proxy;
+  clock_pkg::clock_ctrl#(INIT_CLOCK_HALF_PERIOD, PHASE_OFFSET_IN_PS) proxy;
   
   function void advance_clocks( int unsigned numClocksArg = 1 ); // pragma tbx xtf
     numClocks = numClocksArg;

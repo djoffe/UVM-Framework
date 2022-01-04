@@ -11,6 +11,15 @@ VIS_INTERACTIVE ?= 0
 USE_AUTOUP      ?= 0
 USE_XWAVE       ?= 0
 
+EN_BETA         ?= 0
+
+BETA_VOPT_0 = 
+BETA_VOPT_1 = +keeplrmcompliantvhdlbracket
+BETA_VOPT   = $(BETA_VOPT_$(EN_BETA))
+
+BETA_VELHVL_0 = 
+BETA_VELHVL_1 = -vlog_opts “+define+VISUALIZER_DBG”
+BETA_VELHVL   = $(BETA_VELHVL_$(EN_BETA))
 
 # # Add to default compile/load/run arguments
 GCC_ARG_0 =
@@ -45,7 +54,7 @@ VEL_COMP_1 = velcomp -top $(HDL_TOP_NAME)
 VEL_COMP   = $(VEL_COMP_$(USE_VELOCE))
 
 VEL_HVL_0   = 
-VEL_HVL_1   = velhvl -sim veloce -g -enable_profile_report $(GCC_ARG)
+VEL_HVL_1   = velhvl -sim veloce -g -enable_profile_report $(GCC_ARG) $(BETA_VELHVL)
 VEL_HVL     = $(VEL_HVL_$(USE_VELOCE))
 
 VWAVES_CMD_0 = 
@@ -65,6 +74,7 @@ VSIM_VIS   = $(VSIM_VIS_$(VIS_INTERACTIVE))
 VSIM_VIS_DO_0 = -do " $(VWAVES_CMD); do vsim.do;"
 VSIM_VIS_DO_1 = 
 VSIM_VIS_DO   = $(VSIM_VIS_DO_$(VIS_INTERACTIVE))
+
 
 info:
 	@echo "The following make targets are available:"
@@ -101,10 +111,11 @@ build:
 	$(VEL_COMP)
 	$(VEL_HVL)
 	vopt +acc +designfile -suppress 3053 -l opt.log $(GCC_ARG) \
-    $(VOPT_TOPS) -o tops_opt
+    $(VOPT_TOPS) -o tops_opt $(BETA_VOPT)
 
 run:
 	vsim $(VSIM_VIS) \
+    -stats=perf,verbose \
     $(XWAVE_CMD) \
     -l $(TESTNAME).log -suppress 3764 -fatal 8520 -solvefaildebug $(GCC_ARG) \
     -qwavedb=signal+memory=5000+transaction+class+report+assertion \

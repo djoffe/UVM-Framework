@@ -39,7 +39,7 @@
 package vip_axi4_env_pkg;
 
   import uvm_pkg::*;
-  import questa_uvm_pkg::*;
+  
   `include "uvm_macros.svh"
 
   import mvc_pkg::*;

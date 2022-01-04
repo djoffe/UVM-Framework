@@ -36,7 +36,6 @@
 package ahb_pkg;
   
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import uvmf_base_pkg_hdl::*;
    import uvmf_base_pkg::*;
    import ahb_pkg_hdl::*;

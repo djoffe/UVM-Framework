@@ -20,7 +20,7 @@
 {% block contents %}
 class {{name}}_env_configuration 
 {%if paramDefs|length > 0%}            #(
-{% for param in paramDefs %}             {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
+{% for param in paramDefs %}             {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
 {% endfor %}             )
 {% endif %}
 extends uvmf_environment_configuration_base;
@@ -35,7 +35,7 @@ extends uvmf_environment_configuration_base;
 {% endif %}
 
 {% for config in configVars %}
-  {% if config.isrand %}rand {% endif %}{{config.type}} {{config.name}};
+  {% if config.isrand %}rand {% endif %}{{config.type}} {{config.name}}{% if config.value != '' %} = {{config.value}}{% endif %};
 {% endfor %}
 
 //Constraints for the configuration variables:
@@ -45,7 +45,7 @@ extends uvmf_environment_configuration_base;
 
 {% for regModel in regModels %}
 // Instantiate the register model
-  {{name}}_reg_model  reg_model;
+  {{name}}_reg_model  {{name}}_rm;
 {% endfor %}
 
   covergroup {{name}}_configuration_cg;
@@ -200,8 +200,8 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 {% for regModel in regModels %}
     // Register model creation and configuation
     if (register_model == null) begin
-      reg_model = {{name}}_reg_model::type_id::create("reg_model");
-      reg_model.build();
+      {{name}}_rm = {{name}}_reg_model::type_id::create("{{name}}_rm");
+      {{name}}_rm.build();
 {% if regModel.adapterType != 'None' %}
       enable_reg_adaptation = {% if regModel.useAdapter %}1{% else %}0{% endif %};
 {% endif %}
@@ -209,7 +209,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
       enable_reg_prediction = {% if regModel.useExplicitPrediction %}1{% else %}0{% endif %};
 {% endif %}
     end else begin
-      $cast(reg_model,register_model);
+      $cast({{name}}_rm,register_model);
 {% if regModel.transactionType != 'None' %}
       enable_reg_prediction = {% if regModel.useExplicitPrediction %}1{% else %}0{% endif %};
 {% endif %}
@@ -217,7 +217,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 {% endfor %}
 
 {% for sub_env in subEnvironments %}
-     {{sub_env.name}}_config.initialize( NA, {environment_path,".{{sub_env.name}}"}, {{sub_env.name}}_interface_names, {% if sub_env.regSubBlock != None %}reg_model.{{sub_env.regSubBlock}}{% else %}null{% endif %},   {{sub_env.name}}_interface_activity);
+     {{sub_env.name}}_config.initialize( NA, {environment_path,".{{sub_env.name}}"}, {{sub_env.name}}_interface_names, {% if sub_env.regSubBlock != None %}{{name}}_rm.{{sub_env.name}}_rm{% else %}null{% endif %},   {{sub_env.name}}_interface_activity);
 {% endfor %}
 
 {% for sub_env in qvipSubEnvironments %}

@@ -52,10 +52,7 @@ class ahb_transaction extends uvmf_transaction_base;
 // is called on this class.
 //
   virtual function void do_print(uvm_printer printer);
-    if (printer.knobs.sprint==0)
-      $display(convert2string());
-    else
-      printer.m_string = convert2string();
+    $display(convert2string());
   endfunction
 
 //*******************************************************************

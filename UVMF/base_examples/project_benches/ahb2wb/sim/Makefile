@@ -144,6 +144,8 @@ comp_ahb2wb_dut:
 
 make_build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg    comp_ahb_pkg  comp_wb_pkg  comp_ahb2wb_env_pkg comp_ahb2wb_parameters_pkg comp_ahb2wb_sequence_pkg comp_ahb2wb_test_pkg comp_ahb2wb_dut comp_test_bench
 
+hvl_build: q_comp_ahb_pkg q_comp_wb_pkg comp_ahb2wb_env_pkg comp_ahb2wb_sequence_pkg comp_ahb2wb_test_pkg hvl_comp_testbench optimize
+
 BUILD_TGT_0 = make_build
 BUILD_TGT_1 = vinfo_build
 BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))

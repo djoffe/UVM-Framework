@@ -10,10 +10,12 @@ uvmf:
           initiator_responder: "INITIATOR"
         - name: "control_plane_out"
           type: "mem"
+          initiator_responder: "RESPONDER"
         - name: "secure_data_plane_in"
           type: "pkt"
         - name: "secure_data_plane_out"
           type: "pkt"
+          initiator_responder: "RESPONDER"
       ## Analysis components are defined externally in a 'util_components' structure.
       ## They are instantiated here.
       analysis_components :
@@ -70,6 +72,7 @@ uvmf:
         - name: "block_a_cfgVar3"
           type : "bit [3:0]"
           isrand : "True" 
+          value: "29"
         - name: "block_a_cfgVar4"
           type : "int"      
           isrand : "True" 

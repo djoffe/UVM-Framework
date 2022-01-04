@@ -47,7 +47,6 @@
       <parameter name="TOP_DU_NAME" type="tcl">[getIniVar top_du_name]</parameter>
       <parameter name="COVERCHECK_BUILD" type="tcl">[getIniVar covercheck_build]</parameter>
       <parameter name="EXTRA_COVERCHECK_OPTIONS" type="tcl">[getIniVar extra_covercheck_options]</parameter>
-
     </parameters>
     <members>
       <member>each_top</member>
@@ -61,7 +60,7 @@
   <!-- This is actually a group of runnables forked off in parallel, depending on how many
        different testbenches were specified in the test list files.  Each testbench is assumed to require its
        own build operation, and only after that build has completed will subsequent tests be started.   -->
-  <runnable name="each_top" type="group" sequential="no" foreach="(%BUILDS%)" index="build">
+  <runnable name="each_top" type="group" sequential="no">
     <members>
       <member>build_group</member>
     </members>
@@ -69,7 +68,7 @@
 
   <!-- This group sequentially invokes the build operation for a particular testbench followed by starting
        all of the simulations for that testbench -->
-  <runnable name="build_group" type="group" sequential="yes">
+  <runnable name="build_group" type="group" sequential="yes" foreach="(%BUILDS%)" index="build">
     <members>
       <member>build_task</member>
       <member>run_fork</member>
@@ -83,6 +82,7 @@
     </method>
     <parameters>
       <parameter name="EXTRABUILDCMD" type="tcl">[GetBuildCmd (%build%)]</parameter>
+      <parameter name="VRUN_EXTRA_BUILD_CMD"></parameter>
       <parameter name="BUILDDIR" type="tcl">[GetBuildDir (%build%)]</parameter>
       <parameter name="CODE_COVERAGE" type="tcl">[ if { (%CODE_COVERAGE_ENABLE%) } { return "CODE_COVERAGE_ENABLE=1" } else { return "" }]</parameter>
       <parameter name="CC_TYPES" type="tcl">[ if { {(%CODE_COVERAGE_TYPES%)}!=0 } { return "CODE_COVERAGE_TYPES=(%CODE_COVERAGE_TYPES%)" } else {return "" }]</parameter>
@@ -91,7 +91,7 @@
     <execScript launch="vsim">
       <command>switch (%PLATFORM%) {</command>
       <command>  unix {</command>
-      <command>    (%BUILD_EXEC%) make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) (%CODE_COVERAGE%) (%CC_TYPES%) (%CC_TARGET%) (%EXTRABUILDCMD%)</command>
+      <command>    (%BUILD_EXEC%) make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) (%CODE_COVERAGE%) (%CC_TYPES%) (%CC_TARGET%) (%EXTRABUILDCMD%) (%VRUN_EXTRA_BUILD_CMD%)</command>
       <command>  }</command>
       <command>  windows {</command>
       <command>    do (%VRUNDIR%)/compile.do;</command>
@@ -137,6 +137,7 @@
  } { return "-qwavedb=(%VIS_DUMP_OPTIONS%)" } else { return "" }]</parameter>
       <parameter name="MVCSWITCH" type="tcl">[ if { "(%RUN_EXEC%)" eq "exec" } { return "(%MVCHOME%)" } else { return "" }]</parameter>
       <parameter name="iter" type="tcl">[lindex [split (%testname%) "-"] 2]</parameter>
+      <parameter name="UVM_DEBUG_CONTROL">none</parameter>
     </parameters>
     <localfile name="test.do" expand="yes">
       <command>set BreakOnAssertion 2</command>
@@ -156,12 +157,24 @@
          -do "test.do" -suppress 8887 -permit_unmatched_virtual_intf                                                        
          +UVM_TESTNAME=(%UVM_TESTNAME%) +vrm_in_use (%MVCSWITCH%) (%CODE_COVERAGE%)  
          +UVM_VERBOSITY=(%UVM_VERBOSITY%) -solvefaildebug +UVM_NO_RELNOTES (%VIS_ARGS%)
-         -sv_seed (%seed%) -uvmcontrol=none +notimingchecks (%EXTRARUNCMD%) (%EXTRA_VSIM_OPTIONS%) (%EXTRA_VSIM_ARGS_FOR_TESTCASE%)
+         -sv_seed (%seed%) -uvmcontrol=(%UVM_DEBUG_CONTROL%) +notimingchecks (%EXTRARUNCMD%) (%EXTRA_VSIM_OPTIONS%) (%EXTRA_VSIM_ARGS_FOR_TESTCASE%)
       </command>                                                     
     </execScript>
   </runnable>
 
-  <runnable name="exclusions" type="task" unless="&quot;(%exclusionfile%)&quot;==&quot;&quot;">
+  <!-- 
+       One-from-top-level runnables with an 'if' clause that involves a parameter that can be controlled as an ini-var must
+       be wrapped in a group, such as the one below. This is because those parameters would otherwise be evaluated by VRM before 
+       the initialization routine that sets everything up with defaults gets called.
+  -->
+
+  <runnable name="exclusions" type="group">
+    <members>
+      <member>exclusions_if</member>
+    </members>
+  </runnable>
+
+  <runnable name="exclusions_if" type="task" unless="&quot;(%exclusionfile%)&quot;==&quot;&quot;">
     <parameters>
       <parameter name="exclusionfile_with_path" type="tcl">[PathRelativeToVrun (%exclusionfile%)]</parameter>
     </parameters>
@@ -178,12 +191,18 @@
     </execScript>
   </runnable>
 
-  <runnable name="covercheck" type="task" if="(%USE_COVERCHECK%)">
+  <runnable name="covercheck" type="group">
+    <members>
+      <member>covercheck_if</member>
+    </members>
+  </runnable>
+
+  <runnable name="covercheck_if" type="task" if="(%USE_COVERCHECK%)">
     <method if="(%USE_JOB_MGMT_COVERCHECK%)" gridtype="(%GRIDTYPE%)">
       <command>(%GRIDCOMMAND_COVERCHECK%)</command>
     </method>
     <parameters>
-      <parameter name="CC_BUILD_DIR">(%DATADIR%)/top/each_top~(%COVERCHECK_BUILD%)/build_group/build_task</parameter>
+      <parameter name="CC_BUILD_DIR">(%DATADIR%)/top/each_top/build_group~(%COVERCHECK_BUILD%)/build_task</parameter>
     </parameters>
     <localfile name="apply_covercheck_exclusions.do" expand="yes">
       <command>onerror { quit -code 88 }</command>
@@ -197,7 +216,13 @@
     </execScript>
   </runnable>
 
-  <runnable name="testplan" type="task" unless="&quot;(%TESTPLAN_FILE%)&quot;==&quot;&quot;">
+  <runnable name="testplan" type="group">
+    <members>
+      <member>testplan_if</member>
+    </members>
+  </runnable>
+
+  <runnable name="testplan_if" type="task" unless="&quot;(%TESTPLAN_FILE%)&quot;==&quot;&quot;">
     <execScript launch="vsim">
       <command>if {[file extension (%TESTPLAN_FILE%)]==".ucdb"} {</command>
       <command>  vcover merge (%mergefile%) (%TESTPLAN_FILE%) (%mergefile%)</command>
@@ -209,18 +234,8 @@
   </runnable>
 
   <runnable name="report" type="task">
-    <parameters>
-      <parameter name="REPORT_GEN" type="tcl">[ReportGen (%VRUNDIR%)]</parameter>
-    </parameters>
     <execScript>
       <command>vcover report -html (%mergefile%) (%HTML_REPORT_ARGS%)</command>
-<!--      <command>if {"(%REPORT_GEN%)"==""} {</command>
-      <command>  set v "ALL TESTS PASSED"</command>
-      <command>} else {</command>
-      <command>  set v "FAILING SIMULATIONS:"</command>
-      <command>  set v [format "%s\n%s" $v "(%REPORT_GEN%)"]</command>
-      <command>}</command>
-      <command>runmgr::rm_status 0 "$v"</command> -->
     </execScript>
   </runnable>
 

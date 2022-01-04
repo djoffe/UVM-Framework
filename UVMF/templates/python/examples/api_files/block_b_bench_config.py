@@ -15,6 +15,9 @@ ben = uvmf_gen.BenchClass('block_b','block_b', {'CP_IN_DATA_WIDTH': 'TEST_CP_IN_
 ben.addDPILibName('pktPkgCFunctions')
 ben.addDPILibName('blockBEnvPkgCFunctions')
 
+# Let bench know that top-env underneath has a register model
+ben.topEnvHasRegisterModel = True
+
 ## Add external imports to hdl_top, test package and top level sequence package.
 # ben.addImport('myImport')
 

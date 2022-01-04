@@ -24,11 +24,14 @@
 package {{name}}_tests_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import uvmf_base_pkg::*;
    import {{name}}_parameters_pkg::*;
    import {{env_name}}_env_pkg::*;
    import {{name}}_sequences_pkg::*;
+{% for bfm in bfm_pkgs %}
+  import {{bfm}}_pkg::*;
+  import {{bfm}}_pkg_hdl::*;
+{% endfor %}
 {% for agent in qvip_bfm_pkgs %}
    import {{agent}}_pkg::*;
 {% endfor %}
@@ -48,6 +51,11 @@ package {{name}}_tests_pkg;
 {% if inFactReady %}
    `include "src/infact_test_base.svh"
 {% endif %}
+
+// UVMF_CHANGE_ME : When adding new tests to the src directory
+//    be sure to add the test file here so that it will be
+//    compiled as part of the test package.  Be sure to place
+//    the new test after any base tests of the new test.
 
 endpackage
 

@@ -16,9 +16,9 @@
 // ****************************************************************************
 // ****************************************************************************
 class {{name}}_sequence_base {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
+{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
 {% endfor %}      ) {% endif %}
-extends uvmf_sequence_base #(
+  extends uvmf_sequence_base #(
                              .REQ({{name}}_transaction {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                                 .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             ) {% endif %}),
@@ -28,67 +28,66 @@ extends uvmf_sequence_base #(
 
 {%if paramDefs|length > 0%}
   `uvm_object_param_utils( {{name}}_sequence_base #(
-  {% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
+{% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
 
-  {% endfor %}                          ))
+{% endfor %}                          ))
 {% else %}
   `uvm_object_utils( {{name}}_sequence_base )
 {% endif %}
-
   // variables
   typedef {{name}}_transaction {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                     ) {% endif %} {{name}}_transaction_req_t;
-{{name}}_transaction_req_t req;
+  {{name}}_transaction_req_t req;
   typedef {{name}}_transaction {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                     ) {% endif %} {{name}}_transaction_rsp_t;
-{{name}}_transaction_rsp_t rsp;
+  {{name}}_transaction_rsp_t rsp;
 
-// Event for identifying when a response was received from the sequencer
-event new_rsp;
-// ****************************************************************************
-// TASK : get_responses()
-// This task recursively gets sequence item responses from the sequencer.
-//
-virtual task get_responses();
-   fork
+  // Event for identifying when a response was received from the sequencer
+  event new_rsp;
+  // ****************************************************************************
+  // TASK : get_responses()
+  // This task recursively gets sequence item responses from the sequencer.
+  //
+  virtual task get_responses();
+    fork
       begin
-         // Block until new rsp available
-         get_response(rsp);
-         // New rsp received.  Indicate to sequence using event.
-         ->new_rsp;
-         // Display the received response transaction
-         `uvm_info("SEQ", {"New response transaction:",rsp.convert2string()}, UVM_MEDIUM)
+        // Block until new rsp available
+        get_response(rsp);
+        // New rsp received.  Indicate to sequence using event.
+        ->new_rsp;
+        // Display the received response transaction
+        `uvm_info("SEQ", {"New response transaction:",rsp.convert2string()}, UVM_MEDIUM)
       end
-   join_none
-endtask
+    join_none
+  endtask
 
-// ****************************************************************************
-// TASK : pre_body()
-// This task is called automatically when start is called with call_pre_post set to 1 (default).
-// By calling get_responses() within pre_body() any derived sequences are automatically 
-// processing response transactions.
-//
-virtual task pre_body();
-   get_responses();
-endtask
+  // ****************************************************************************
+  // TASK : pre_body()
+  // This task is called automatically when start is called with call_pre_post set to 1 (default).
+  // By calling get_responses() within pre_body() any derived sequences are automatically 
+  // processing response transactions.
+  //
+  virtual task pre_body();
+    get_responses();
+  endtask
 
-// ****************************************************************************
-// TASK : body()
-// This task is called automatically when start is called.  This sequence sends
-// a req sequence item to the sequencer identified as an argument in the call
-// to start.
-//
-virtual task body();
-	start_item(req);
-	finish_item(req);
-endtask
+  // ****************************************************************************
+  // TASK : body()
+  // This task is called automatically when start is called.  This sequence sends
+  // a req sequence item to the sequencer identified as an argument in the call
+  // to start.
+  //
+  virtual task body();
+  	start_item(req);
+  	finish_item(req);
+  endtask
 
-// ****************************************************************************
-// FUNCTION : new()
-// This function is the standard SystemVerilog constructor.
-//
+  // ****************************************************************************
+  // FUNCTION : new()
+  // This function is the standard SystemVerilog constructor.
+  //
   function new( string name ="");
     super.new( name );
     req = {{name}}_transaction_req_t::type_id::create("req");

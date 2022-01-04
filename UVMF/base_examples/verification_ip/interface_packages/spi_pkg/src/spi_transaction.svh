@@ -47,34 +47,31 @@ class spi_transaction extends uvmf_transaction_base;
 
 // ****************************************************************************
   virtual function string convert2string();
-      string msg;
-      $sformat(msg,"dir:%s spi_data:0x%h",dir, spi_data);
-      return msg;
+    string msg;
+    $sformat(msg,"dir:%s spi_data:0x%h",dir, spi_data);
+    return msg;
   endfunction
 
 //*******************************************************************
-   virtual function void do_print(uvm_printer printer);
-      if (printer.knobs.sprint==0)
-        $display(convert2string());
-      else
-        printer.m_string = convert2string();
-   endfunction
+  virtual function void do_print(uvm_printer printer);
+    $display(convert2string());
+  endfunction
 
 //*******************************************************************
   virtual function bit do_compare (uvm_object rhs, uvm_comparer comparer);
-      spi_transaction RHS;
-      if (!$cast(RHS,rhs)) return 0;
-      else return (super.do_compare(rhs, comparer) && (this.dir == RHS.dir) && (this.spi_data == RHS.spi_data));
-   endfunction : do_compare
+    spi_transaction RHS;
+    if (!$cast(RHS,rhs)) return 0;
+    else return (super.do_compare(rhs, comparer) && (this.dir == RHS.dir) && (this.spi_data == RHS.spi_data));
+  endfunction : do_compare
 
 //*******************************************************************
-      function void do_copy (uvm_object rhs);
-          spi_transaction RHS;
-          assert($cast(RHS,rhs));
-          super.do_copy(rhs);
-          this.dir = RHS.dir;
-          this.spi_data = RHS.spi_data;
-   endfunction : do_copy
+  function void do_copy (uvm_object rhs);
+    spi_transaction RHS;
+    assert($cast(RHS,rhs));
+    super.do_copy(rhs);
+    this.dir = RHS.dir;
+    this.spi_data = RHS.spi_data;
+  endfunction : do_copy
 
 // ****************************************************************************
   virtual function void add_to_wave( int transaction_viewing_stream_h );

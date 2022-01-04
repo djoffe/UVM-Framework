@@ -40,24 +40,26 @@ task axi4_2x2_fabric_qvip_test_base::run_phase
     uvm_phase phase
 );
     string sequence_name;
+    uvm_factory f;
     axi4_2x2_fabric_qvip_vseq_base vseq;
     uvm_object obj;
     uvm_cmdline_processor clp;
     clp = uvm_cmdline_processor::get_inst();
+    f = uvm_factory::get();
     if ( clp.get_arg_value("+SEQ=", sequence_name) == 0 )
     begin
         `uvm_fatal(get_type_name(), "You must specify a virtual sequence to run using the +SEQ plusarg")
     end
-    obj = factory.create_object_by_name(sequence_name);
+    obj = f.create_object_by_name(sequence_name);
     if ( obj == null )
     begin
-        factory.print();
+        f.print();
         `uvm_fatal(get_type_name(), {"Virtual sequence '",sequence_name,"' not found in factory"})
     end
     
     if ( !$cast(vseq, obj) )
     begin
-        factory.print();
+        f.print();
         `uvm_fatal(get_type_name(), {"Virtual sequence '",sequence_name,"' is not derived from axi4_2x2_fabric_qvip_vseq_base"})
     end
     

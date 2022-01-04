@@ -1,0 +1,23 @@
+
+
+// ------- rtl.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/rtl
+/work/framework/base_examples/project_benches/alu/rtl/verilog/alu.v
+
+
+// ------- alu_parameters_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/tb/parameters
+/work/framework/base_examples/project_benches/alu/tb/parameters/alu_parameters_pkg.sv
+
+
+// ------- uvmf_base_pkg_hdl.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg_hdl.sv
+
+
+// ------- hdl_top.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/tb/testbench
+/work/framework/base_examples/project_benches/alu/tb/testbench/hdl_top.sv
+
+
+// ------- hdl.vinfo --------

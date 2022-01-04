@@ -1,0 +1,69 @@
+{% set fname = "project_benches/{{name}}/tb/sequences/{{name}}_infact_sequences_pkg.sv" %}
+{% set conditional = "infact_ready" %}
+{% extends "base_template.TMPL" %}
+
+{% block description %}
+//
+//----------------------------------------------------------------------
+// Project         : {{name}} Simulation Bench 
+// Unit            : inFact Sequences Package
+// File            : {{name}}_infact_sequences_pkg.sv
+//----------------------------------------------------------------------
+//
+// DESCRIPTION: This package brings in inFact-specific 
+//     in the environment.  These include utility sequences and top
+//     level sequences.
+//
+// CONTAINS:
+//     -<{{name}}_sequence_base>
+//     -<example_derived_test_sequence>
+//
+//----------------------------------------------------------------------
+//
+{% endblock %}
+
+{% block contents %}
+
+package {{name}}_infact_sequences_pkg;
+  import uvm_pkg::*;
+  import uvmf_base_pkg::*;
+  import {{name}}_sequences_pkg::*;
+{% for bfm in bfm_pkgs %}
+  import {{bfm}}_pkg::*;
+  import {{bfm}}_pkg_hdl::*;
+{% endfor %}
+  import {{name}}_parameters_pkg::*;
+  import {{env_name}}_env_pkg::*;
+{% if qvip_bfm_pkgs|length > 0 %}
+  import mvc_pkg::*;
+{% endif %}
+{% for ext_import in external_imports %}
+  import {{ext_import}}::*;
+{% endfor %}
+{% if useCoEmuClkRstGen %}
+  import clock_pkg::*;
+  import reset_pkg::*;
+{% endif %}
+  `include "uvm_macros.svh"
+{% if inFactQSO %}
+{% for bfm in bfms %}
+{% if bfm.activity == 'ACTIVE' %}
+  `include "infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
+{% endif %}   
+{% endfor %}
+{% else %}
+{% for bfm in bfms %}
+{% if bfm.activity == 'ACTIVE' %}
+  `include "infact_proj_dir/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
+{% endif %}
+{% endfor %}
+{% endif %}
+  `include "src/infact_{{name}}_bench_sequence_base.svh"
+
+// UVMF_CHANGE_ME : When adding new sequences to the src directory
+//    be sure to add the sequence file here so that it will be
+//    compiled as part of the sequence package.  Be sure to place
+//    the new sequence after any base sequences of the new sequence.
+
+endpackage
+{% endblock %}

@@ -26,7 +26,6 @@
 package gpio_example_sequences_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import uvmf_base_pkg::*;
    import gpio_pkg::*;
    import gpio_example_parameters_pkg::*;

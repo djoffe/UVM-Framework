@@ -113,32 +113,46 @@ class uvmf_parameterized_agent #(
      string agent_name;
      agent_name = get_name();
 
-     // Get the configuration for this agent from the uvm_config_db
-     if ( configuration == null ) 
-        if( !uvm_config_db #( CONFIG_T )::get( this , "" , UVMF_AGENT_CONFIG ,  configuration ) ) begin
+     // Agent configuration
+     // Get the configuration for this agent from the uvm_config_db if not already set
+     if ( configuration == null ) begin : config_null_check
+        if( !uvm_config_db #( CONFIG_T )::get( this , "" , UVMF_AGENT_CONFIG ,  configuration ) ) begin : config_config_db_check
             $stacktrace;
             `uvm_fatal("CFG" , "uvm_config_db #( CONFIG_T )::get cannot find resource UVMF_AGENT_CONFIG" )
-        end
+        end : config_config_db_check
+     end : config_null_check
 
-     // Always construct a monitor and analysis_port regarless of active/passive configuration
-     if( !uvm_config_db #( MONITOR_T )::get( this , "" , UVMF_MONITORS ,  monitor ) ) begin
-        monitor = MONITOR_T::type_id::create({agent_name,"_monitor"},this);
-     end
-     monitored_ap=new("monitored_ap",this);
+     // Monitor and analysis_port
+     // Always construct a monitor and analysis_port regarless of active/passive configuration unless monitor handle already set
+     if ( monitor == null ) begin : monitor_null_check
+       if( !uvm_config_db #( MONITOR_T )::get( this , "" , UVMF_MONITORS ,  monitor ) ) begin : monitor_config_db_check
+         monitor = MONITOR_T::type_id::create({agent_name,"_monitor"},this);
+         monitor.set_config(configuration);
+       end : monitor_config_db_check
+     end : monitor_null_check
+     if ( monitored_ap == null ) begin : monitored_ap_null_check
+       monitored_ap=new("monitored_ap",this);
+     end : monitored_ap_null_check
 
+     // Coverage component
      // Construct a coverage collector if configured to do so
-     if (configuration.has_coverage) coverage = COVERAGE_T::type_id::create({agent_name,"_coverage"},this);
-     monitor.set_config(configuration);
+     if (configuration.has_coverage) begin : build_coverage
+       coverage = COVERAGE_T::type_id::create({agent_name,"_coverage"},this);
+     end : build_coverage
 
+     // Sequencer
      // Construct a sequencer and driver only if agent is in active mode
-     if (configuration.active_passive == ACTIVE) begin
+     if (configuration.active_passive == ACTIVE) begin : is_active
        sequencer = new("sequencer",this);
        // Automatically place the agents sequencer in the uvm_config_db with the UVMF_SEQUENCERS scope using the
        // same field name as the driver bfm interface used by this agent.
        uvm_config_db #( sequencer_t )::set( null , UVMF_SEQUENCERS , configuration.interface_name, sequencer );
-       driver = DRIVER_T::type_id::create({agent_name,"_driver"},this);
-       driver.set_config(configuration);
-     end
+       // Driver
+       if ( driver == null ) begin : driver_null_check
+         driver = DRIVER_T::type_id::create({agent_name,"_driver"},this);
+         driver.set_config(configuration);
+       end : driver_null_check
+     end : is_active
   endfunction
 
   // FUNCTION: connect_phase
@@ -147,12 +161,14 @@ class uvmf_parameterized_agent #(
      // Always connect the monitor to the analysis_port
      monitor.monitored_ap.connect(monitored_ap);
      // Connect the coverage block to the monitor if there is a coverage block
-     if (configuration.has_coverage) monitor.monitored_ap.connect(coverage.analysis_export);
+     if (configuration.has_coverage) begin : coverage_connection
+       monitor.monitored_ap.connect(coverage.analysis_export);
+     end : coverage_connection
      // Connect the driver to the sequencer if the agent is in passive mode
-     if (configuration.active_passive == ACTIVE) begin
+     if (configuration.active_passive == ACTIVE) begin : seq_drv_connection
         driver.seq_item_port.connect(sequencer.seq_item_export);
         driver.rsp_port.connect(sequencer.rsp_export);
-     end
+     end : seq_drv_connection
 
   endfunction
 

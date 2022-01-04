@@ -1,3 +1,7 @@
+# YAML file describing the block_a bench. Close to the
+# bare minimum of what is required, which is the top_env
+# to instantiate within the bench. Other entries control
+# the behavior of the clock and reset.
 uvmf:
   benches:
     "block_a" :

@@ -95,9 +95,13 @@ class uvmf_transaction_base extends uvm_sequence_item;
           assert($cast(RHS,rhs));
           super.do_copy(rhs);
           this.report_id = RHS.report_id;
-          this.transaction_view_h = RHS.transaction_view_h;
+          this.unique_transaction_id = RHS.global_transaction_count++;
+          this.key = RHS.key;
           this.start_time = RHS.start_time;
           this.end_time = RHS.end_time;
+          this.duration = RHS.duration;
+          this.transaction_status = RHS.transaction_status;
+          this.transaction_view_h = RHS.transaction_view_h;
    endfunction : do_copy
 
   // FUNCTION: get_unique_transaction_id

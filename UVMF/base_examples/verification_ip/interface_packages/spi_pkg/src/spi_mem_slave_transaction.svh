@@ -64,12 +64,9 @@ class spi_mem_slave_transaction extends spi_transaction;
   endfunction : do_copy
 
 //*******************************************************************
-   virtual function void do_print(uvm_printer printer);
-      if (printer.knobs.sprint==0)
-        $display(convert2string());
-      else
-        printer.m_string = convert2string();
-   endfunction
+  virtual function void do_print(uvm_printer printer);
+    $display(convert2string());
+  endfunction
 
 //*******************************************************************
   virtual function bit do_compare (uvm_object rhs, uvm_comparer comparer);

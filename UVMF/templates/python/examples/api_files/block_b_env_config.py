@@ -29,6 +29,10 @@ env.addParamDef('CP_IN_ADDR_WIDTH','int','110')
 env.addParamDef('CP_OUT_ADDR_WIDTH','int','111')
 env.addParamDef('UDP_DATA_WIDTH','int','140')
 
+## Specify parameters that will be included in the environment package declaration
+env.addHvlPkgParamDef('ENV_HVL_PKG_PARAMETER1','integer','92')
+env.addHvlPkgParamDef('ENV_HVL_PKG_PARAMETER2','integer','29')
+
 # addRegisterModel(   sequencer,                    transactionType,                                                                   adapterType,                                                                     busMap,  useAdapter=True, useExplicitPrediction=True)
 env.addRegisterModel('control_plane_in', 'mem_transaction#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))' , 'mem2reg_adapter#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))', 'bus_map',useAdapter=True,useExplicitPrediction=True)
 

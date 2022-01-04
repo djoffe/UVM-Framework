@@ -1,0 +1,36 @@
+uvmf:
+  interfaces:
+    "gpio":
+      clock: "clk"
+      reset: "rst"
+      reset_assertion_level: "True"
+      parameters:
+        - name: "READ_PORT_WIDTH"
+          type: "int"
+          value: "4"
+        - name: "WRITE_PORT_WIDTH"
+          type: "int"
+          value: "4"
+      hdl_typedefs:
+        - name: "gpio_op_t"
+          type: "enum { GPIO_WR, GPIO_RD }"       
+      ports: 
+        - name: "read_port"   
+          width: "READ_PORT_WIDTH"        
+          dir: "input" 
+        - name: "write_port"   
+          width: "WRITE_PORT_WIDTH"        
+          dir: "output" 
+      transaction_vars:
+        - name: "op"  
+          type: "gpio_op_t"
+          isrand: "False"
+          iscompare: "False"
+        - name: "read_port"  
+          type: "logic [READ_PORT_WIDTH-1:0]"
+          isrand: "False"
+          iscompare: "False" 
+        - name: "write_port"  
+          type: "logic [WRITE_PORT_WIDTH-1:0]"
+          isrand: "False"
+          iscompare: "False" 

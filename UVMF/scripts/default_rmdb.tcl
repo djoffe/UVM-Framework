@@ -401,22 +401,3 @@ proc OkToMerge {userdata} {
   }
   return 1
 }
-
-proc ReportGen {rundir} {
-  global debug
-  set retval ""
-  foreach ucdb [FetchEventUcdbs -script execScript -status fail] {
-    ## Bug in VRM leaves VRMDATA path out of the list returned by FetchEventUcdbs, need to get that in
-    ## before proceeding. Do this by taking (%VRUNDIR%) off of the front of each path and adding it
-    ## back in with "VRMDATA" appended to it
-    if {![regexp -- "VRMDATA" $ucdb]} {
-      regsub -- "^$rundir" $ucdb [format "%s/VRMDATA" $rundir] ucdb
-    }
-    if {![regexp -- {(\w+)_\d+_\d+} [GetUcdbTestAttribute $ucdb "TESTNAME"] matched sub1]} {
-      puts [format "ERROR: Test name in UCDB \"%s\" unparseable for ReportGen" [GetUcdbTestAttribute $ucdb "TESTNAME"]]
-      exit
-    }
-    set retval [format "testname : %s seed : %s\n%s" $sub1 [GetUcdbSeed $ucdb] $retval]
-  }
-  return $retval
-}

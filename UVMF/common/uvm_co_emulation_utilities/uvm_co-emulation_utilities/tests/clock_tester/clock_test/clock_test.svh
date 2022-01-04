@@ -13,7 +13,7 @@ class clock_test extends base_test;
     clock_period[2] = 5000;
 
     //Turn on stats collection for the clocks for this test
-    clock_ctrl::set_stat_collection(1);
+    clock_ctrl_base::set_stat_collection(1);
 
     super.build_phase(phase);
     
@@ -29,7 +29,7 @@ class clock_test extends base_test;
 
   function void report_phase(uvm_phase phase);
     super.report_phase(phase);
-    clock_ctrl::print_stats();
+    clock_ctrl_base::print_stats();
   endfunction : report_phase
 
   task test_clk_rst(int num = 0);

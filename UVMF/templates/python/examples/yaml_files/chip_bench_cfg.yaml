@@ -1,3 +1,7 @@
+# The chip bench incorporates two sub-environments, block_a and block_b. 
+# Two of the underlying interfaces are intended to be bound to signals
+# inside of a DUT and therefore need to be placed in PASSIVE (monitoring)
+# mode.  This is achieved via the "active_passive" entry in the YAML.
 uvmf:
   benches:
     "chip" :
