@@ -25,9 +25,6 @@
 // Creation Date   : 05.12.2011
 //----------------------------------------------------------------------
 
-import uvm_pkg::*;
-`include "uvm_macros.svh"
-
 // CLASS: uvmf_out_of_order_scoreboard
 // This class defines an out of order scoreboard that is based on the uvmf_scoreboard_base class.
 // This scoreboard is a generic scoreboard that will compare two objects of type T. Class T

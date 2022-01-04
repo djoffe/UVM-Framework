@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/src/{{name}}_driver_proxy.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_driver_proxy.svh" %}
 {% extends "base_template.TMPL" %}
 {% set conditional = "dpi_link" %}
 {% block description %}

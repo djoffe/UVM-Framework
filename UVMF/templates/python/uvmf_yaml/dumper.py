@@ -134,10 +134,10 @@ class EnvironmentDumper:
       data['analysis_exports'].append({'name':i.name,'trans_type':i.tType,'connected_to':i.connection})
     data['config_vars'] = []
     for i in self.obj.configVars:
-      data['config_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'value':str(i.value)})
+      data['config_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'value':str(i.value),'comment':i.comment})
     data['config_constraints'] = []
     for i in self.obj.configVarsConstraints:
-      data['config_constraints'].append({'name':i.name,'value':i.type})
+      data['config_constraints'].append({'name':i.name,'value':i.type,'comment':i.comment})
     data['parameters'] = []
     for i in self.obj.paramDefs:
       data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
@@ -150,7 +150,7 @@ class EnvironmentDumper:
       driverPort = i.pName;
       receiverHier = i.subscriberName;
       receiverPort = i.aeName;
-      data['tlm_connections'].append({'driver':driverHier+"."+driverPort,'receiver':receiverHier+"."+receiverPort})
+      data['tlm_connections'].append({'driver':driverHier+"."+driverPort,'receiver':receiverHier+"."+receiverPort,'validate':str(i.validate)})
     if len(self.obj.regModels)>0:
       rm = self.obj.regModels[0]
       if rm.sequencer == None:
@@ -162,28 +162,28 @@ class EnvironmentDumper:
         ifname = match.group(1)
         data['register_model'] = { 'use_adapter': str(rm.useAdapter),
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
-                                   'maps': [ { 'name': rm.busMap, 'interface': ifname } ]
+                                   'maps': [ { 'name': rm.busMap, 'interface': ifname, 'qvip_agent': str(rm.qvipAgent)} ]
                                   }
-      if self.obj.soName!="":
-        data['dpi_define'] = {}
-        data['dpi_define']['name'] = self.obj.soName
-        data['dpi_define']['comp_args'] = self.obj.DPICompArgs
-        data['dpi_define']['link_args'] = self.obj.DPILinkArgs
-        data['dpi_define']['files'] = []
-        for i in self.obj.DPIFiles:
-          data['dpi_define']['files'].append(i)
-        if len(self.obj.DPIExports):
-          data['dpi_define']['exports'] = self.obj.DPIExports
-        if len(self.obj.DPIImports):
-          data['dpi_define']['imports'] = []
-          for i in self.obj.DPIImports:
-            v = {}
-            v['name'] = i.name
-            v['c_return_type'] = i.cType
-            v['sv_return_type'] = i.svType
-            v['c_args'] = i.cArgs
-            v['sv_args'] = i.arguments
-            data['dpi_define']['imports'].append(v)
+    if self.obj.soName!="":
+      data['dpi_define'] = {}
+      data['dpi_define']['name'] = self.obj.soName
+      data['dpi_define']['comp_args'] = self.obj.DPICompArgs
+      data['dpi_define']['link_args'] = self.obj.DPILinkArgs
+      data['dpi_define']['files'] = []
+      for i in self.obj.DPIFiles:
+        data['dpi_define']['files'].append(i)
+      if len(self.obj.DPIExports):
+        data['dpi_define']['exports'] = self.obj.DPIExports
+      if len(self.obj.DPIImports):
+        data['dpi_define']['imports'] = []
+        for i in self.obj.DPIImports:
+          v = {}
+          v['name'] = i.name
+          v['c_return_type'] = i.cType
+          v['sv_return_type'] = i.svType
+          v['c_args'] = i.cArgs
+          v['sv_args'] = i.arguments
+          data['dpi_define']['imports'].append(v)
     if len(self.obj.qvipSubEnvironments):
       data['qvip_subenvs'] = []
       for i in self.obj.qvipSubEnvironments:
@@ -191,7 +191,7 @@ class EnvironmentDumper:
     if len(self.obj.qvipConnections):
       data['qvip_connections'] = []
       for i in self.obj.qvipConnections:
-        data['qvip_connections'].append({'driver':i.output_component,'ap_key':i.output_port_name,'receiver':i.input_component+"."+i.input_component_export_name})
+        data['qvip_connections'].append({'driver':i.output_component,'ap_key':i.output_port_name,'receiver':i.input_component+"."+i.input_component_export_name,'validate':str(i.validate)})
     if (len(self.obj.external_imports)):
       data['imports'] = []
       for i in self.obj.external_imports:
@@ -277,16 +277,16 @@ class InterfaceDumper:
       data['ports'].append({'name':str(i.name),'width':str(i.width),'dir':str(i.dir),'reset_value':str(i.rstValue)})
     data['transaction_vars'] = []
     for i in self.obj.transVars:
-      data['transaction_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'iscompare':str(i.iscompare),'unpacked_dimension':i.unpackedDim})
+      data['transaction_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'iscompare':str(i.iscompare),'unpacked_dimension':i.unpackedDim,'comment':i.comment})
     data['transaction_constraints'] = []
     for i in self.obj.transVarsConstraints:
-      data['transaction_constraints'].append({'name':i.name,'value':i.type})
+      data['transaction_constraints'].append({'name':i.name,'value':i.type,'comment':i.comment})
     data['config_vars'] = []
     for i in self.obj.configVars:
-      data['config_vars'].append({'name':str(i.name),'type':str(i.type),'isrand':str(i.isrand),'value':str(i.value)})
+      data['config_vars'].append({'name':str(i.name),'type':str(i.type),'isrand':str(i.isrand),'value':str(i.value),'comment':i.comment})
     data['config_constraints'] = []
     for i in self.obj.configVarsConstraints:
-      data['config_constraints'].append({'name':i.name,'value':i.type})
+      data['config_constraints'].append({'name':i.name,'value':i.type,'comment':i.comment})
     data['response_info'] = {}
     data['response_info']['operation'] = self.obj.responseOperation
     data['response_info']['data'] = []

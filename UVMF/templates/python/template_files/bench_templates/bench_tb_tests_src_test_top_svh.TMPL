@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/tests/src/test_top.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{src_dir}}test_top.svh" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -24,6 +24,13 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
                                         .TOP_LEVEL_SEQ_T({{name}}_bench_sequence_base));
 
   `uvm_component_utils( test_top );
+
+{% if qvip_bfm_pkgs|length > 0 %}
+// This message handler can be used to redirect QVIP Memeory Model messages through
+// the UVM messaging mecahanism.  How to enable and use it is described in 
+//      $UVMF_HOME/common/utility_packages/qvip_utils_pkg/src/qvip_report_catcher.svh
+qvip_memory_message_handler message_handler;
+{% endif %}
 
 {% if useCoEmuClkRstGen %}
   //variable: clk_ctrl
@@ -63,7 +70,7 @@ uvmf_active_passive_t interface_activities[] = {
 
   // ****************************************************************************
   // FUNCTION: new()
-  // This is the standard system verilog constructor.  All components are 
+  // This is the standard systemVerilog constructor.  All components are 
   // constructed in the build_phase to allow factory overriding.
   //
   function new( string name = "", uvm_component parent = null );

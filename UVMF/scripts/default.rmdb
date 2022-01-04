@@ -154,7 +154,7 @@
       <command>    exec -ignorestderr make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) USE_INFACT=(%USE_INFACT%) (%CODE_COVERAGE%) (%CC_TYPES%) (%CC_TARGET%) (%EXTRABUILDCMD%) (%VRUN_EXTRA_BUILD_CMD%)</command>
       <command>  }</command>
       <command>  windows {</command>
-      <command>    do (%VRUNDIR%)/compile.do;</command>
+      <command>    do (%BUILDDIR%)/compile.do;</command>
       <command>  }</command>
       <command>  default {</command>
       <command>    echo "Unknown OS platform detected in build_task runnable"</command>

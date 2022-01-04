@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/src/{{name}}_environment.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{src_dir}}{{name}}_environment.svh" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -70,11 +70,24 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endfor %}
 {% for regModel in regModels %}
 {% if regModel.adapterType != None %}
+{% if regModel.qvipAgent == "True" %}
+// UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP: 
+// Identify the UVM reg adapter in the QVIP installation for the protocol agent.
+// Change the typedef below to reflect the reg adapter class type and any parameters.
+// Be sure to modify the envioronment package to import the QVIP protocol package 
+// that contains the selected adapter.
+{% endif %}
    // Instantiate register model adapter and predictor
    typedef {{regModel.adapterType}}    reg_adapter_t;
    reg_adapter_t    reg_adapter;
 {% endif %}
 {% if regModel.transactionType != None %}
+{% if regModel.qvipAgent == "True" %}
+// UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
+// Identify the sequence_item type, including any parameters, used by the reg adapter
+// type specified above.  Parameterize the uvm_reg_predictor to use this sequence item
+// type, including any parameters of the sequence item.
+{% endif %}
    typedef uvm_reg_predictor #({{regModel.transactionType}}) reg_predictor_t;
    reg_predictor_t    reg_predictor;
 {% endif %}
@@ -183,10 +196,17 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     // Create register model adapter if required
     if (configuration.enable_reg_prediction ||
         configuration.enable_reg_adaptation)
-      reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
+{% if regModel.qvipAgent == "True" %}
+// UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
+// Uncomment the construction of the reg adapter below.  This was commented so that the 
+// generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
+// class so it can not be constructed.  Once the type is changed to a QVIP reg adapter
+// type, it must be constructed.
+{% endif %}
+      {% if regModel.qvipAgent == "True" %}//{% endif %}reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
     // Set sequencer and adapter in register model map
     if (configuration.enable_reg_adaptation)
-      configuration.{{name}}_rm.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.sequencer, reg_adapter);
+      configuration.{{name}}_rm.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.{% if regModel.qvipAgent == "True" %}m_{% endif %}sequencer, reg_adapter);
     // Set map and adapter handles within uvm predictor
     if (configuration.enable_reg_prediction) begin
       reg_predictor.map     = configuration.{{name}}_rm.{{regModel.busMap}};

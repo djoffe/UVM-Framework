@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/environment_packages/{{env_name}}_env_pkg/src/{{name}}.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/{{src_dir}}{{name}}.svh" %}
 {% set conditional = "tlm2_sysc_predictor" %}
 {% extends "base_template.TMPL" %}
 

@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/testbench/hdl_top_mtlb.sv" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/testbench/hdl_top_mtlb.sv" %}
 {% set conditional = "mtlbReady" %}
 {% extends "base_template.TMPL" %}
 
@@ -24,13 +24,14 @@
 
 {% block contents %}
 
+module hdl_top;
+
 import {{name}}_parameters_pkg::*;
 {% for agent in qvip_bfm_pkgs %}
 import {{agent}}_params_pkg::*;
 {% endfor %}
 import uvmf_base_pkg_hdl::*;
 
-module hdl_top;
 {% if veloceReady %}
   // pragma attribute hdl_top partition_module_xrtl                                            
 {% endif %}
@@ -97,9 +98,10 @@ module hdl_top;
      // pragma uvmf custom {{bfm.name}}_bus_connections begin
      .{{bfm.clk}}({{bfm.clk}}), 
      .{{bfm.rst}}({{bfm.rst}}),
-     {% for port in bfm.portList %}
-.{{port.name}}({{port.name}}){% if not loop.last %},{% endif %}
-     {% endfor %}
+{% for port in bfm.portList %}     .{{port.name}}({{port.name}}){% if not loop.last %},
+{% endif %}
+{% endfor %}
+
      // pragma uvmf custom {{bfm.name}}_bus_connections end
      );
 {% endfor %}

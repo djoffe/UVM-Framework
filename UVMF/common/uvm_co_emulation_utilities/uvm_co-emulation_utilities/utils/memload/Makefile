@@ -1,7 +1,7 @@
 USE_VELOCE=0
 
 CCFLAGS_0 = -DQUESTA
-CCFLAGS_1 = -I${VMW_HOME}/runtime/include
+CCFLAGS_1 = -I${VELOCE_HOME}/runtime/include
 CCFLAGS   = $(CCFLAGS_$(USE_VELOCE))
 
 #velcomp creates the tbxbindings.h that is needed in Veloce mode

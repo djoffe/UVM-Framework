@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/src/{{name}}_env_configuration.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{src_dir}}{{name}}_env_configuration.svh" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -18,11 +18,15 @@ extends uvmf_environment_configuration_base;
 {{macro.objUtils([ name,'_env_configuration']|join(""),paramDefs)}}
 
 {% for config in configVars %}
+{% if config.comment|length > 0 %}  // {{config.comment}}
+{% endif %}
   {% if config.isrand %}rand {% endif %}{{config.type}} {{config.name}}{% if config.value != '' %} = {{config.value}}{% endif %};
 {% endfor %}
 
 //Constraints for the configuration variables:
 {% for cnstr in configVarsConstraints %}
+{% if cnstr.comment|length > 0 %}  // {{cnstr.comment}}
+{% endif %}
   constraint {{cnstr.name}} {{cnstr.type}}
 {% endfor %}
 
@@ -42,13 +46,13 @@ extends uvmf_environment_configuration_base;
 
 {% for sub_env in subEnvironments %}
 typedef {{sub_env.envPkg}}_env_configuration{{macro.paramUseNested(sub_env.parameters)|indent(16)}} {{sub_env.name}}_config_t;
-{{sub_env.name}}_config_t {{sub_env.name}}_config;
+rand {{sub_env.name}}_config_t {{sub_env.name}}_config;
 
 {% endfor %}
 
 {% for agent in agents %}
     typedef {{agent.ifPkg}}_configuration{{macro.paramUseNested(agent.parameters)|indent(16)}} {{agent.name}}_config_t;
-    {{agent.name}}_config_t {{agent.name}}_config;
+    rand {{agent.name}}_config_t {{agent.name}}_config;
 
 {% endfor %}
 
@@ -97,15 +101,7 @@ typedef {{sub_env.envPkg}}_env_configuration{{macro.paramUseNested(sub_env.param
   function void post_randomize();
     super.post_randomize();
     // pragma uvmf custom post_randomize begin
-{% for sub_env in subEnvironments %}
-   if(!{{sub_env.name}}_config.randomize()) `uvm_fatal("RAND","{{sub_env.name}} randomization failed");
-{% endfor %}
-
-{% for agent in agents %}
-    if(!{{agent.name}}_config.randomize()) `uvm_fatal("RAND","{{agent.name}} randomization failed");
-{% endfor %}
     // pragma uvmf custom post_randomize end
-
   endfunction
   
 // ****************************************************************************

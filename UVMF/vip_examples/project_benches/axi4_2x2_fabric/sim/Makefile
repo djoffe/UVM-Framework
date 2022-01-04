@@ -93,7 +93,7 @@ include $(UVMF_VIP_LIBRARY_HOME)/environment_packages/axi4_2x2_fabric_env_pkg/Ma
 VCOM_ARGS             += 
 
 # Note: vsim-3009 error can be eliminated by adding -timescale 1ps/1ps to VLOG_ARGS
-VLOG_ARGS             +=  -timescale 1ps/1ps +define+UVM_REPORT_DISABLE_FILE_LINE
+VLOG_ARGS             +=  -timescale 1ps/1ps 
 VELANALYZE_ARGS       +=
 VELANALYZE_HVL_ARGS   +=
 
@@ -184,7 +184,7 @@ comp_hvl_core :  comp_qvip comp_qvip_utils_pkg   \
 	comp_axi4_2x2_fabric_env_pkg \
 	comp_axi4_2x2_fabric_parameters_pkg comp_axi4_2x2_fabric_sequence_pkg comp_axi4_2x2_fabric_tests_pkg 
 
-comp_uvmf_core : comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg 
+comp_uvmf_core : comp_uvm_pkg comp_uvmf_base_pkg 
 
 make_build: comp_axi4_2x2_fabric_dut comp_uvmf_core comp_hvl comp_test_bench  
 

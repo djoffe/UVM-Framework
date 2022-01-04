@@ -36,10 +36,12 @@ class BaseValidator(object):
       Required('type'): str,
       Optional('value'): str,
       Optional('isrand'): Any("True","False"),
+      Optional('comment'): str
     }
     self.constraintSchema = {
       Required('name'): str,
-      Required('value'): str
+      Required('value'): str,
+      Optional('comment'): str
     }
     self.parameterDefSchema = { 
       Required('name'): str, 
@@ -94,7 +96,12 @@ class GlobalValidator(BaseValidator):
 
   def initializeSchema(self):
     mainSchema = {
-      Optional('header'): str
+      Optional('header'): str,
+      Optional('flat_output'): Any('True','False'),
+      Optional('vip_location'): str,
+      Optional('interface_location'): str,
+      Optional('environment_location'): str,
+      Optional('bench_location'): str,
     }
     self.schema = Schema(mainSchema)
 
@@ -169,15 +176,23 @@ class QVIPEnvValidator(BaseValidator):
       Required('key'): str,
       Required('type'): str
     }
+    directoryVariableSchema = {
+      Required('name'): str,
+      Required('value'): str
+    }
     agentsSchema = {
       Required('name'): str,
       Optional('active_passive'): Any("ACTIVE","PASSIVE"),
       Optional('initial_sequence'): str,
       Optional('imports'): [ str ],
-      Optional('ap_info'): [ apInfoSchema ]
+      Optional('ap_info'): [ apInfoSchema ],
+      Optional('emulation_vip_libs'): [ str ],
+      Optional('directory_variables'): [ directoryVariableSchema ]
+
     }
     mainSchema = {
-      Required('agents'): [ agentsSchema ] 
+      Required('agents'): [ agentsSchema ],
+      Optional('type'): Any("qvip","cvip")
     }
     self.schema = Schema(mainSchema)
 
@@ -203,7 +218,8 @@ class EnvironmentValidator(BaseValidator):
   def initializeSchema(self):
     regModelMapSchema = {
       Required('name'): str,
-      Required('interface'): str
+      Required('interface'): str,
+      Optional('qvip_agent'): Any("True","False")
     }
     regModelSchema = {
       Optional('use_adapter'): Any("True","False"),
@@ -218,12 +234,14 @@ class EnvironmentValidator(BaseValidator):
     }
     tlmSchema = {
       Required('driver'): str,
-      Required('receiver'): str
+      Required('receiver'): str,
+      Optional('validate'): str
     }
     qvipTlmSchema = {
       Required('driver'): str,
       Required('ap_key'): str,
-      Required('receiver'): str
+      Required('receiver'): str,
+      Optional('validate'): str
     }
     subenvSchema = {
       Required('name'): str,
@@ -306,7 +324,8 @@ class InterfaceValidator(BaseValidator):
       Required('type'): str, 
       Optional('isrand'): Any("True","False"),
       Optional('iscompare'): Any("True","False"),
-      Optional('unpacked_dimension'): str
+      Optional('unpacked_dimension'): str,
+      Optional('comment'): str
     }
     responseSchema = {
       Required('operation'): str,

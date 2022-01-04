@@ -19,16 +19,12 @@ v_comp_dpi_link_pkg: q_comp_dpi_link_pkg
 
 # include $(UVMF_HOME)/common/dpi_link_pkg/dpi_link_o.mk
 
-
-
 #comp_dpi_link_pkg: dpi_link.o libs
 #	make_filelist.py $(DPI_LINK_PKG_HOME)/dpi_link_pkg.vinfo 
 #	$(HVL_COMP_CMD) -f $(DPI_LINK_PKG_HOME)/dpi_link_pkg.vf
 
-
 #comp_dpi_link_pkg: dpi_link.o libs
 	$(HVL_COMP_CMD) +incdir+$(DPI_LINK_PKG_HOME)/dpi_link_pkg $(DPI_LINK_PKG_HOME)/dpi_link_pkg.sv
-
 
 dpi_link.o: 
 	${GPP} -I $(DPI_LINK_PKG_HOME) -I . -I${QUESTA_HOME}/include -fPIC \

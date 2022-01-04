@@ -31,7 +31,7 @@
 //
 // Define the major and minor UVMF release number
 `define UVMF_MAJOR_VERSION 2020
-`define UVMF_MINOR_VERSION 1
+`define UVMF_MINOR_VERSION 3
 `define UVMF_PATCH_VERSION ""
 
 class uvmf_version;

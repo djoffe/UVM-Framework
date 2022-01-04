@@ -95,30 +95,36 @@ module mgc_ahb_slave_hdl #(
   //
 
   // Master driven slave inputs
-  assign vip_if.master_HBUSREQ    = pin_if.master_HBUSREQ;
-  assign vip_if.master_HLOCK      = pin_if.master_HLOCK;
+for (genvar i = 0; i < NUM_MASTERS; i++) begin
+  assign vip_if.master_HBUSREQ[i]    = pin_if.master_HBUSREQ[i];
+  assign vip_if.master_HLOCK[i]      = pin_if.master_HLOCK[i];
   //assign vip_if.HGRANT            = pin_if.HGRANT; //// Driven internally by QVIP
-  assign vip_if.master_HADDR      = pin_if.master_HADDR;
-  assign vip_if.master_HTRANS     = pin_if.master_HTRANS;
-  assign vip_if.master_HWRITE     = pin_if.master_HWRITE;
-  assign vip_if.master_HSIZE      = pin_if.master_HSIZE;
-  assign vip_if.master_HBURST     = pin_if.master_HBURST;
-  assign vip_if.master_HPROT      = pin_if.master_HPROT;
-  assign vip_if.master_HWDATA     = pin_if.master_HWDATA;
-  assign vip_if.user_HDATA        = pin_if.user_HDATA;
-  assign vip_if.user_HADDR        = pin_if.user_HADDR;
+  assign vip_if.master_HADDR[i]      = pin_if.master_HADDR[i];
+  assign vip_if.master_HTRANS[i]     = pin_if.master_HTRANS[i];
+  assign vip_if.master_HWRITE[i]     = pin_if.master_HWRITE[i];
+  assign vip_if.master_HSIZE[i]      = pin_if.master_HSIZE[i];
+  assign vip_if.master_HBURST[i]     = pin_if.master_HBURST[i];
+  assign vip_if.master_HPROT[i]      = pin_if.master_HPROT[i];
+  assign vip_if.master_HWDATA[i]     = pin_if.master_HWDATA[i];
+  assign vip_if.user_HDATA[i]        = pin_if.user_HDATA[i];
+  assign vip_if.user_HADDR[i]        = pin_if.user_HADDR[i];
+end
 
   // Slave driven master inputs
-  assign pin_if.slave_HRDATA      = vip_if.slave_HRDATA;
-  assign pin_if.slave_HREADY      = vip_if.slave_HREADY;
-  assign pin_if.slave_HRESP       = vip_if.slave_HRESP;
-  assign pin_if.slave_HSPLIT      = vip_if.slave_HSPLIT;
+for (genvar i = 0; i < NUM_SLAVES; i++) begin
+  assign pin_if.slave_HRDATA[i]      = vip_if.slave_HRDATA[i];
+  assign pin_if.slave_HREADY[i]      = vip_if.slave_HREADY[i];
+  assign pin_if.slave_HRESP[i]       = vip_if.slave_HRESP[i];
+  assign pin_if.slave_HSPLIT[i]      = vip_if.slave_HSPLIT[i];
+  assign vip_if.slave_HMASTER[i]     = pin_if.slave_HMASTER[i];
+  assign vip_if.decoder_HSEL[i]      = pin_if.decoder_HSEL[i];
+end
 
 
   // Arbiter driven slave inputs
   assign vip_if.arbiter_HGRANT    = pin_if.arbiter_HGRANT;
   assign vip_if.HMASTER           = pin_if.HMASTER;
-  assign vip_if.slave_HMASTER     = pin_if.slave_HMASTER;
+//  assign vip_if.slave_HMASTER     = pin_if.slave_HMASTER;
   assign vip_if.arbiter_HMASTLOCK = pin_if.arbiter_HMASTLOCK;
 
   // Master driven arbiter inputs
@@ -134,7 +140,7 @@ module mgc_ahb_slave_hdl #(
   //assign pin_if.HMASTLOCK         = vip_if.HMASTLOCK; // Driven internally by QVIP
 
   // Master driven decoder inputs
-  assign vip_if.decoder_HSEL      = pin_if.decoder_HSEL;
+//  assign vip_if.decoder_HSEL      = pin_if.decoder_HSEL;
   //assign vip_if.decoder_HADDR     = pin_if.decoder_HADDR; // Driven internally by QVIP
 
 

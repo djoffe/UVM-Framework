@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/src/{{name}}_driver_bfm.sv" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_driver_bfm.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -55,10 +55,10 @@
 import uvmf_base_pkg_hdl::*;
 import {{name}}_pkg_hdl::*;
 {% if veloceReady %}
+`include "{{src_dir}}{{name}}_macros.svh"
 {% else %}
 import {{name}}_pkg::*;
 {% endif %}
-`include "src/{{name}}_macros.svh"
 
 {%if useDpiLink %}module{% else %}interface{% endif %} {{name}}_driver_bfm {{macro.paramDeclare(paramDefs)|indent(2)}}
   ({{name}}_if bus);
@@ -149,14 +149,15 @@ import {{name}}_pkg::*;
   // Initiator macro used by {{name}}_driver and {{name}}_driver_bfm
   // to communicate initiator driven data to {{name}}_driver_bfm.           
   `{{name}}_INITIATOR_STRUCT
-    {{name}}_initiator_s {{name}}_initiator_struct;
+    {{name}}_initiator_s initiator_struct;
   // Responder macro used by {{name}}_driver and {{name}}_driver_bfm
   // to communicate Responder driven data to {{name}}_driver_bfm.
   `{{name}}_RESPONDER_STRUCT
-    {{name}}_responder_s {{name}}_responder_struct;
+    {{name}}_responder_s responder_struct;
 {% endif %}
 
-  // ****************************************************************************              
+  // ****************************************************************************
+// pragma uvmf custom reset_condition_and_response begin
   // Always block used to return signals to reset value upon assertion of reset
   always @( {% if resetAssertionLevel %}posedge{% else %}negedge{% endif %} {{reset}}_i )
      begin
@@ -173,6 +174,7 @@ import {{name}}_pkg::*;
        {{sig.name}}_o <= {{sig.rstValue}};
 {% endfor %} 
      end    
+// pragma uvmf custom reset_condition_and_response end
 
   // pragma uvmf custom interface_item_additional begin
   // pragma uvmf custom interface_item_additional end
@@ -241,6 +243,7 @@ import {{name}}_pkg::*;
 {% for txn in transVars %}
        //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
+       initiator_struct = {{name}}_initiator_struct;
        //
        // Reference code;
        //    How to wait for signal value
@@ -297,6 +300,9 @@ import {{name}}_pkg::*;
 {% endif %}
     @(posedge {{clock}}_i);
     @(posedge {{clock}}_i);
+{% if veloceReady %}
+    responder_struct = {{name}}_responder_struct;
+{% endif %}
   endtask        
 // pragma uvmf custom initiate_and_get_response end
 

@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/environment_packages/{{env_name}}_env_pkg/src/{{name}}.svh" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/{{src_dir}}{{name}}.svh" %}
 {% set conditional = "predictor" %}
 {% extends "base_template.TMPL" %}
 
@@ -70,6 +70,19 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // {{port.name}}.write({{port.name}}_output_transaction);
 {% endfor %}
 
+{% if exports|length > 0 %}
+  // Define transaction handles for debug visibility 
+{% for export in exports %}
+  {{export.tType}} {{export.name}}_debug;
+{% endfor %}{% endif %}
+
+{% if qvip_exports|length > 0 %}
+  // Create QVIP transaction handles for debug visibility 
+{% for export in qvip_exports %}
+  mvc_sequence_item_base {{export.name}}_debug_t;
+  // Create transaction handles for visibility in visualizer
+{% endfor %}{% endif %}
+
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
 
@@ -97,6 +110,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // Transactions received through {{export.name}} initiate the execution of this function.
   // This function performs prediction of DUT output values based on DUT input, configuration and state
   virtual function void write_{{export.name}}({{export.tType}} t);
+    {{export.name}}_debug = t;
     // pragma uvmf custom {{export.name}}_predictor begin
     `uvm_info("PRED", "Transaction Received through {{export.name}}", UVM_MEDIUM)
     `uvm_info("PRED", {"            Data: ",t.convert2string()}, UVM_FULL)
@@ -131,6 +145,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   virtual function void write_{{export.name}}(mvc_sequence_item_base _t);
     // pragma uvmf custom {{export.name}}_predictor begin
     {{export.tType}} t;
+    {{export.name}}_debug_t = _t;
     if (!$cast(t,_t)) begin
       `uvm_fatal("PRED","Cast from mvc_sequence_item_base to {{export.tType}} in write_{{export.name}} failed!")
     end

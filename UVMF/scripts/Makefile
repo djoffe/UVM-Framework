@@ -1,7 +1,7 @@
 # 
 ## Common Makefile - this is included in each of the project bench Makefiles in order to
 ## get access to common parameters and targets
-.PHONY: all help clean libs vis link optimize cli_run debug_run cli debug build common wrappers 
+.PHONY: all help clean libs vis link optimize cli_run debug_run cli debug build common wrappers comp_fli_pkg
 
 # Generic debug switch for underlying commands
 DEBUG ?= 0
@@ -125,14 +125,18 @@ HDL_COMP_CMD_VHDL   = $(HDL_COMP_CMD_VHDL_$(USE_VELOCE))
 VELCOMP_CMD   = velcomp -top $(TOP_HDL) $(VELCOMP_ARGS)
 
 # Link command as determined by puresim vs Veloce and OS3
+EXTRA_VELHVL_ARGS ?= 
 LINK_CMD_0 = velhvl -sim puresim
 LINK_CMD_1 = velhvl -sim veloce
-LINK_CMD     = $(LINK_CMD_$(USE_VELOCE)) $(LINK_ARGS)
+LINK_CMD     = $(LINK_CMD_$(USE_VELOCE)) $(EXTRA_VELHVL_ARGS) $(LINK_ARGS)
 
 # Library platform as implied by 32 vs 64 bit MTI_VCO_MODE
 # Default assumption is 32-bit (if MTI_VCO_MODE isn't set)
 LIB_PLATFORM_32BIT = linux_el30_gnu450
 LIB_PLATFORM_64BIT = linux_el30_gnu450_x86_64
+# VTL release 4.9.0.0 requires the following LIB_PLATOFORM values for puresim mode.
+# LIB_PLATFORM_32BIT = linux_el30_gnu53
+# LIB_PLATFORM_64BIT = linux64_el30_gnu53
 LIB_PLATFORM = $(LIB_PLATFORM_32BIT)
 ifeq ($(MTI_VCO_MODE), 64)
   LIB_PLATFORM = $(LIB_PLATFORM_64BIT)
@@ -143,11 +147,11 @@ VCOM_ARGS =
 
 VLOG_ARGS_0 = -sv -suppress 2223 -suppress 2286 
 VLOG_ARGS_1 = $(VLOG_ARGS_0) \
-              +define+XRTL +define+XMVC
+              +define+XRTL +define+XMVC +define+USE_VTL
 VLOG_ARGS   = $(VLOG_ARGS_$(USE_VELOCE_OR_VTL)) 
 
 VELANALYZE_ARGS     = -sv -suppress 2223 -suppress 2286 \
-                      +define+XRTL +define+XMVC
+                      +define+XRTL +define+XMVC +define+USE_VTL
 VELANALYZE_HVL_ARGS = $(VELANALYZE_ARGS) +incdir+$(QUESTA_HOME)/verilog_src/uvm-1.1d/src
 
 LINK_ARGS_32BIT = 
@@ -307,9 +311,9 @@ RUN_CMD = $(RUN_CMD_$(NO_RUN))
 
 DEBUG_DO_COMMANDS_0 = -do " \
                     set NoQuitOnFinish 1; \
-                    $(RUN_CMD) $(WAVE_FILE_CMD)" 
+                    $(RUN_CMD) $(WAVE_FILE_CMD) $(EXTRA_DO_CMD)" 
 DEBUG_DO_COMMANDS_1 = -do " \
-                    $(RUN_CMD) $(WAVE_FILE_CMD)" 
+                    $(RUN_CMD) $(WAVE_FILE_CMD) $(EXTRA_DO_CMD)" 
 DEBUG_DO_COMMANDS = $(DEBUG_DO_COMMANDS_$(USE_VIS))
 
 # Batch dofile commands - run each test to completion
@@ -323,8 +327,8 @@ BATCH_DO_COMMANDS = -do " \
                     quit -f;" 
 
 # Standard test bench modules; these are split into two top-levels for the purposes of emulation
-TOP_HVL = hvl_top
-TOP_HDL = hdl_top 
+TOP_HVL ?= hvl_top
+TOP_HDL ?= hdl_top 
 
 TOP_TB_0 = $(TOP_HVL) $(TOP_HDL) 
 TOP_TB_1 = $(TOP_HVL) $(TOP_HDL) TbxSvManager
@@ -345,6 +349,14 @@ VELOCE_UVM_PKG = \
 +incdir+$(QUESTA_HOME)/verilog_src/uvm-1.1d/src \
 $(QUESTA_HOME)/verilog_src/uvm-1.1d/src/uvm_pkg.sv
 
+# Control over UVM file name & line number output. By default this is suppressed but can put it back
+# in by setting UVM_DISABLE_FILE_LINE=0 on command-line or in top-level make file
+UVM_DISABLE_FILE_LINE ?= 1
+UVM_DISABLE_FILE_LINE_0 = 
+UVM_DISABLE_FILE_LINE_1 = +define+UVM_REPORT_DISABLE_FILE_LINE
+UVM_DISABLE_FILE_LINE_CMD = $(UVM_DISABLE_FILE_LINE_$(UVM_DISABLE_FILE_LINE))
+VLOG_ARGS += $(UVM_DISABLE_FILE_LINE_CMD)
+
 # UVM package source - Compile external UVM package - use this if defined, otherwise
 # the default built-in UVM package with Questa will be used
 UVMF_EXT_UVM_PKG ?=
@@ -358,10 +370,10 @@ else
 	VLOG_ARGS += $(UVM_INCDIR)
 	QUESTA_COMP_UVM_CMD = \
 	  vlog -ccflags "-DQUESTA -w" $(UVMF_EXT_UVM_PKG)/src/dpi/uvm_dpi.cc; \
-	  vlog $(UVM_INCDIR) $(UVMF_EXT_UVM_PKG)/src/uvm_pkg.sv;
+	  vlog $(UVM_INCDIR) $(UVM_DISABLE_FILE_LINE_CMD) $(UVMF_EXT_UVM_PKG)/src/uvm_pkg.sv;
 ifeq ($(NO_QUESTA_DEBUG_PKG),0)
 	  QUESTA_COMP_UVM_CMD += \
-	    vlog $(UVM_INCDIR) +incdir+$(QUESTA_UVM_PKG_DIR) $(QUESTA_UVM_PKG_DIR)/questa_uvm_pkg.sv;
+	    vlog $(UVM_INCDIR) $(UVM_DISABLE_FILE_LINE_CMD) +incdir+$(QUESTA_UVM_PKG_DIR) $(QUESTA_UVM_PKG_DIR)/questa_uvm_pkg.sv;
 endif    	    
 endif
 
@@ -382,21 +394,29 @@ $(VELOCE_XACTOR_HOME)/common/sysvlog/TBXSemaphores.sv \
 VTL_BASE_PKG_HDL =\
 +incdir+$(VELOCE_XACTOR_HOME)/common/hdl \
 $(VELOCE_XACTOR_HOME)/common/hdl/*.sv \
-+incdir+$(VMW_HOME)/tbx/res_arbitrator_sim/hdl \
-$(VMW_HOME)/tbx/res_arbitrator_sim/hdl/ResArbitratorIntf.sv
++incdir+$(VELOCE_HOME)/tbx/res_arbitrator_sim/hdl \
+$(VELOCE_HOME)/tbx/res_arbitrator_sim/hdl/ResArbitratorIntf.sv
 
 # Common targets
 help:
-	@echo "make debug : Invoke a build and run default test in the GUI"
-	@echo "make cli: Invoke build and run default test in command-line mode"
-	@echo "  can specify TEST_NAME=<testname> to run a different test"
-	@echo "make clean: Delete work library, generated files, log files, etc."
-	@echo "make vrun: Invoke a regression using VRM and test list as guide"
+	@echo "The following make targets are available:"
+	@echo "   clean:              Delete work library, generated files, log files, etc."
+	@echo "   debug or gui:       Build and run the default test in the GUI"
+	@echo "   cli:                Build and run the default test in command-line mode"
+	@echo "   gui_run or run_gui: Run the default test in the GUI without recompilation"
+	@echo "   cli_run or run_cli: Run the default test in batch mode without recompilation"
+	@echo "   vrun:               Invoke a regression using VRM and test list as guide"
+	@echo "   The following switches can be added to the above commands:"
+	@echo "      TEST_NAME=<testname> to run a different test than the default, which is test_top"
+	@echo "      TEST_SEED=<seed> to run a test using a different seed than the default, which is 'random'"
+	@echo "      USE_VIS=1 to use Visualizer debug environment in either command line or GUI mode"
+	@echo "      USE_VIS_UVM=1 to use Visualizer debug environment, including advanced UVM and class debug capabilities, in either command line or GUI mode"
+	@echo "More details regarding available targets and variables can be found in the Makefiles section of UVM_Framework_Users_Guide.pdf"
 
 clean::
 	@-rm -rfv *~ *.ucdb vsim.dbg *.vstf *.log work *.mem *.transcript.txt certe_dump.xml *.wlf transcript covhtmlreport VRMDATA
 	@-rm -rfv design.bin qwave.db dpiheader.h visualizer*.ses vrmhtmlreport
-	@-rm -rfv veloce.med veloce.wave veloce.map tbxbindings.h modelsim.ini edsenv
+	@-rm -rfv veloce.med veloce.wave tbxbindings.h modelsim.ini edsenv
 	@-rm -rfv sv_connect.*
 	@-rm -rfv *.o *.so
 	@-rm -rfv covercheck_results
@@ -453,9 +473,6 @@ VOPT_CODE_COV_ARGS ?= $(VOPT_CODE_COV_ARGS_$(CODE_COVERAGE_ENABLE))
 VSIM_CODE_COV_ARGS_0 =
 VSIM_CODE_COV_ARGS_1 = -coverage
 VSIM_CODE_COV_ARGS ?= $(VSIM_CODE_COV_ARGS_$(CODE_COVERAGE_ENABLE))
-
-# FLI package
-include $(UVMF_HOME)/common/fli_pkg/Makefile
 
 # UVM Base class targets
 COMP_UVM_PKG_TGT_0 = q_comp_uvm_pkg

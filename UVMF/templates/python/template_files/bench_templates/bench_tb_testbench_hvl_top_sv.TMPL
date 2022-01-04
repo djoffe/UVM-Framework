@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/testbench/hvl_top.sv" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/testbench/hvl_top.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -12,10 +12,10 @@
 
 {% block contents %}
 
+module hvl_top;
+
 import uvm_pkg::*;
 import {{name}}_tests_pkg::*;
-
-module hvl_top;
 
   // pragma uvmf custom module_item_additional begin
   // pragma uvmf custom module_item_additional end

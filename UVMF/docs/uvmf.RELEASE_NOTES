@@ -2,6 +2,60 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
+2020.3    08/20/2020  General Updates:
+                        - Replaced VMW_HOME with VELOCE_HOME for referencing Veloce SW.
+                        - Removed import of fli_pkg for uvmf_base_pkg.  Fli_pkg remains in UVMF
+                          installation for backward compatibility with source generated using 
+                          earlier UVMF releases.  
+                        - Updated output of 'make help' to describe make targets and variables.
+                        - Added new common make file variable UVM_DISABLE_FILE_LINE which can be 
+                          used to turn file name and line number info back on for UVM logging. 
+                          Defaults to '1'.
+                        - Updates and corrections to UVM_Framework_Users_Guide and 
+                          UVMF_Code_Generator_YAML_Reference documents.
+                        - +define+MAP_PROT_ATTR added to compilation of QVIP Configurator 
+                          generated code.
+                        - Register Model Development section added to UVM_Framework_Users_Guide.pdf
+
+                      Generator Updates:
+                        - QVIP agent can now be specified as the interface to be used with the bus map
+                          when specifying a register model in the environment yaml.  See the generated 
+                          environment class for required post-generation modifications to use register
+                          adapter from QVIP installation.  See UVMF_Code_Generator_YAML_Reference.pdf
+                          regarding the YAML label.
+                        - QVIP agent and BFM active passive setting controllable from bench YAML. 
+                          Active/passive setting for QVIP agent/bfm same as for UVMF agent/bfm.
+                        - Added validate label to tlm_connections and qvip_connections label in  
+                          environment yaml.  If unspecified, default is True.  Specifying False 
+                          disables checking of specified driver and receiver.
+                        - VHDL source compiled before verilog source when using sim/Makefile flow
+                          to compile DUT.
+                        - Generated source no longer imports fli_pkg.  
+                        - Added comment label in YAML for the following:
+                            Interface generator: transaction variables, transaction constraints, configuration 
+                            variables, configuration constraints.
+                            Environment generator: configuration variables, configuration constraints.
+                        - Removed Python API based generator reference guide and examples.  The Python
+                          API based generator is still supported.  Users of the Python API based 
+                          code generator are encouraged to move to YAML.  Python API based files can
+                          be converted to YAML by executing the Python API file with the -yaml switch.
+                        - Location of interface/environment/bench packages are now variable and the underlying 
+                          "src" directory can be eliminated (more flat output).  The variables allow 
+                          control of:
+                             flat_output (True/False)
+                             vip_location (string)
+                             interface_location (string)
+                             environment_location (string)
+                             bench_location (string)
+                          See UVMF_Code_Generator_YAML_Reference for details, these variables provide 
+                          flexibility over where generated source is placed when running the code generator.
+
+                      Resolved enhancement and service request Jira items:
+                        UVM-1192, UVM-1245, UVM-1251, UVM-1253, UVM-1257, UVM-1313, UVM-1322, UVM-1337,
+                        UVM-1342, UVM-1348, UVM-1359, UVM-1364, UVM-1376, UVM-1378, UVM-1387, UVM-1397, 
+                        UVM-1403, UVM-1404, UVM-1406, UVM-1407, UVM-1411, UVM-1417, UVM-1419, UVM-1420, 
+                        UVM-1425, UVM-1422, UVM-1423, UVM-1429, UVM-1430, UVM-1431, UVM-1432, UVM-1444
+
 2020.1    03/31/2020  General Updates:
                         - Updated RMDB flow for 2020.1 coverage switches
                         - Updated UVM Connect version to default to 2.3.2

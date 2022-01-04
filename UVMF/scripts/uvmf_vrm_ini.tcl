@@ -3,9 +3,9 @@
 ## Point to this file with the $UVMF_VRM_INI environment variable
 ## in order to enable its use.
 proc vrmSetup {} {
-  setIniVar code_coverage_enable 1
-  setIniVar use_vis 1
-  setIniVar dump_waves_on_rerun 1
+#  setIniVar code_coverage_enable 1
+#  setIniVar use_vis 1
+#  setIniVar dump_waves_on_rerun 1
 #  setIniVar tplanfile "(%VRUNDIR%)/testplan.xml"
 #  setIniVar tplanoptions "-format Excel"
 #  setIniVar use_job_mgmt_run 1

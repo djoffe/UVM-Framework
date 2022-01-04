@@ -1,13 +1,13 @@
-{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/{{name}}_env_pkg.vinfo" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{name}}_env_pkg.vinfo" %}
 {% block description %}
 {% endblock %}
 {% block contents %}
 @use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
 {% for agent in agent_pkgs %}
-@use $UVMF_VIP_LIBRARY_HOME/interface_packages/{{agent}}_pkg/{{agent}}_pkg.vinfo
+@use $UVMF_VIP_LIBRARY_HOME/{{interface_location}}/{{agent}}_pkg/{{agent}}_pkg.vinfo
 {% endfor %}
 {% for sub_env in subEnvironments %}
-@use $UVMF_VIP_LIBRARY_HOME/environment_packages/{{sub_env.name}}_pkg/{{sub_env.name}}_pkg.vinfo
+@use $UVMF_VIP_LIBRARY_HOME/{{environment_location}}/{{sub_env.name}}_pkg/{{sub_env.name}}_pkg.vinfo
 {% endfor %}
 {% for regModel in regModels %}
 registers/{{name}}_reg_pkg.sv

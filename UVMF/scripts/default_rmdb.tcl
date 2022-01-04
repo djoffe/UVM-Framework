@@ -84,7 +84,10 @@ proc vrmSetupDefaults {} {
   setIniVar use_job_mgmt_exclusion 0 1
   setIniVar use_job_mgmt_report 0 1
   setIniVar gridtype "lsf" 1
-  setIniVar html_report_args "-details -source -testdetails -showexcluded -htmldir (%VRUNDIR%)/covhtmlreport" 1
+# Use of older switches "-source" and "-htmldir" have been replaced with "-annotate" and "-output" respectively.
+# May need to use this alternative set of switches if using an older release of Questa
+#  setIniVar html_report_args "-details -source -testdetails -showexcluded -htmldir (%VRUNDIR%)/covhtmlreport" 1
+  setIniVar html_report_args "-details -annotate -testdetails -showexcluded -output (%VRUNDIR%)/covhtmlreport" 1
   setIniVar gridcommand_run "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar gridcommand_build "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar gridcommand_covercheck "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1

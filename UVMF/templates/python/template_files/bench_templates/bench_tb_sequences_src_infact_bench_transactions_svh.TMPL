@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/sequences/src/infact_{{name}}_bench_transactions.svh" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{src_dir}}infact_{{name}}_bench_transactions.svh" %}
 {% extends "base_template.TMPL" %}
 {% set conditional = "infact_enabled" %}
 

@@ -155,9 +155,9 @@ comp_vip_axi4: $(COMP_vip_axi4_TGT)
 comp_vip_axi4_qvip: comp_vip_base_pkg
 	$(HVL_COMP_CMD) $(VIP_AXI4_QVIP)
 
-comp_vip_axi4_vvip: comp_vip_base_pkg comp_vtl_base_pkg
+comp_vip_axi4_vvip: comp_vip_base_pkg comp_vtl_base_pkgF
 	$(HVL_COMP_CMD) $(VIP_AXI4_VVIP_HVL)
 	$(HDL_COMP_CMD) $(VIP_AXI4_VVIP_HDL)
 
-build: comp_vip_axi4 comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg comp_vip_axi4_env_pkg comp_vip_axi4_bench_parameters_pkg comp_vip_axi4_bench_sequence_pkg comp_vip_axi4_bench_test_pkg comp_test_bench
+build: comp_vip_axi4 comp_uvm_pkg comp_uvmf_base_pkg comp_vip_axi4_env_pkg comp_vip_axi4_bench_parameters_pkg comp_vip_axi4_bench_sequence_pkg comp_vip_axi4_bench_test_pkg comp_test_bench
 

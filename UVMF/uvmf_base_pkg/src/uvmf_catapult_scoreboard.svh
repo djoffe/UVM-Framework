@@ -25,9 +25,6 @@
 // Creation Date   : 01.19.2017
 //----------------------------------------------------------------------
 
-import uvm_pkg::*;
-`include "uvm_macros.svh"
-
 // CLASS: uvmf_catapult_scoreboard
 // This class extends the uvmf_in_order_race_scoreboard to provide extra
 // reporting/checking for use with the uvmf_tlm2_sysc_predictor.

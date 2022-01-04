@@ -98,7 +98,7 @@ def merge_summary(merge,verbose=False):
 
 class ConfigFileReader:
   """Reads in a .f file and builds up array of files to parse"""
-  def __init__(self,fname):
+  def __init__(self,fname,relative_to_file=False):
     self.fname = fname
     self.files = []
     try: 
@@ -107,8 +107,10 @@ class ConfigFileReader:
       raise UserError("Unable to open -f file "+fname)
     self.lines = self.fh.readlines()
     for line in self.lines:
-      line = re.sub(r"(.*)#.*",r"\1",line.rstrip())
+      line = re.sub(r"(.*?)#.*",r"\1",line.rstrip()).strip()
       if (line != ""):
+        if relative_to_file:
+          line = os.path.normpath(os.path.dirname(os.path.abspath(fname))+os.path.sep+line)
         self.files.append(line)
     self.fh.close()
 
@@ -164,8 +166,47 @@ class DataClass:
           resp = humanize_error(v,e).split('\n')
           raise UserError("While validating "+t+" YAML '"+c+"':\n"+pprint.pformat(resp,indent=2))
 
+  def calculateRelativeVipLocation(self,compClass):
+    ## Determine relative path to "loc" if CWD is bench's "sim" directory
+    simpath = compClass.bench_location+"/bench_name/sim"
+    ret = os.path.relpath(compClass.vip_location,simpath)
+    ## Even on Windows, these need to be forward slashes because they'll be normalized within Tcl. Replace any backslashes with forward ones
+    ## Can't use pathlib here due to Python2 back-compat, just do a global search/replace
+    return ret.replace('\\','/')
+
+  def setupGlobalVars(self,compClass):
+    try:
+      compClass.header = self.data['global']['header']
+    except KeyError:
+      compClass.header = None
+      pass
+    try:
+      compClass.flat_output = (self.data['global']['flat_output'] == "True")
+    except KeyError:
+      compClass.flat_output = False
+      pass
+    try:
+      compClass.vip_location = self.data['global']['vip_location']
+    except KeyError:
+      pass
+    try:
+      compClass.interface_location = self.data['global']['interface_location']
+    except KeyError:
+      pass
+    try:
+      compClass.environment_location = self.data['global']['environment_location']
+    except KeyError:
+      pass
+    try:
+      compClass.bench_location = self.data['global']['bench_location']
+    except KeyError:
+      pass
+    compClass.relative_vip_from_sim = self.calculateRelativeVipLocation(compClass)
+    return compClass
+
   ## Generate everything from the data structures
   def buildElements(self,genarray):
+    count = 0
     self.interfaceDict = {}
     try:
       arrlen = len(genarray)
@@ -175,18 +216,25 @@ class DataClass:
     for interface_name in self.data['interfaces']:
       if ((arrlen>0) and (interface_name in genarray)) or (arrlen==0):
         self.interfaceDict[interface_name] = self.generateInterface(interface_name)
+        count = count + 1 
     self.environmentDict = {}
     for environment_name in self.data['environments']:
       if ((arrlen>0) and (environment_name in genarray)) or (arrlen==0):
         self.environmentDict[environment_name] = self.generateEnvironment(environment_name)
+        count = count + 1 
     self.benchDict = {}
     for bench_name in self.data['benches']:
       if ((arrlen>0) and (bench_name in genarray)) or (arrlen==0):
         self.benchDict[bench_name] = self.generateBench(bench_name)
+        count = count + 1
     ## Check to see if any utility components were defined but never instantiated, flag that as a warning
     for util_comp in self.data['util_components']:
       if util_comp not in self.used_ac_items:
         print("  WARNING : Utility component \""+util_comp+"\" was defined but never used. It will not be generated.")
+    ## Verify that something was produced (possible that YAML input was empty or genarray had no matches)
+    if count==0:
+      raise UserError("No output was produced!")
+
 
   def recursion_print(self,recurse_list):
     r = ""
@@ -437,11 +485,7 @@ class DataClass:
     valid_ae_list = []
     valid_qsubenv_list = []
     env_has_extdef_items = False
-    try:
-      env.header = self.data['global']['header']
-    except KeyError:
-      env.header = None
-      pass
+    env = self.setupGlobalVars(env)
     ## Extract any environment-level parameters and add them
     try:
       for param in struct['parameters']:
@@ -729,62 +773,70 @@ class DataClass:
     except KeyError: pass
     try:
       for item in struct['qvip_connections']:
-        d,r,k = self.dataExtract(['driver','receiver','ap_key'],item)
+        d,r,k,v = self.dataExtract(['driver','receiver','ap_key','validate'],item)
         rlist = r.split(".")
         ## Allow the driver (QVIP) to contain regular "." hierarchy for clarity. Convert any found
         ## to underscores in order to adhere to the API
         dm = re.sub(r'\.','_',d)
-        if dm not in qvip_agents_und:
-          mess = "QVIP TLM Driver name entry \""+d+"\" listed in qvip_connections for environment \""+name+"\" not a valid QVIP agent name. \nValid names:"
-          for b in qvip_agents_dot:
-            mess = mess+"\n  "+b
-          mess = mess+"\nNote: Underscores are valid substitutions within YAML for dot delimeters in this list of valid names.\n"
-          if env_has_extdef_items:
-            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
-            print(mess)
-          else:
-            raise UserError(mess)
-        if r not in valid_ae_list:
-          mess = "QVIP TLM Receiver name entry \""+r+"\" listed in qvip_connections for environment \""+name+"\" not a valid QVIP TLM receiver name. \nValid names:"
-          for ae in valid_ae_list:
-            mess = mess+"\n "+ae
-          if env_has_extdef_items:
-            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
-            print(mess)
-          else:
-            raise UserError(mess)
-        env.addQvipConnection(dm,k,'.'.join(rlist[:-1]),rlist[-1])
-    except KeyError: pass
-    try:
-      for conn in struct['tlm_connections']:
-        d,r = self.dataExtract(['driver','receiver'],conn)
-        ## The driver and receiver entries provided need to be split to work with the API in uvmf_gen
-        dlist = d.split(".")
-        rlist = r.split(".")
-        if d not in valid_ap_list:
-          mess = "TLM Driver name entry \""+d+"\" listed in tlm_connections for environment \""+name+"\" not a valid TLM driver name. \nValid names:"
-          for ap in valid_ap_list:
-            mess = mess+"\n "+ap
-          if dlist[0] not in valid_qsubenv_list:
+        if not v:
+          v = 'True'
+        if v == 'True':
+          if dm not in qvip_agents_und:
+            mess = "QVIP TLM Driver name entry \""+d+"\" listed in qvip_connections for environment \""+name+"\" not a valid QVIP agent name. \nValid names:"
+            for b in qvip_agents_dot:
+              mess = mess+"\n  "+b
+            mess = mess+"\nNote: Underscores are valid substitutions within YAML for dot delimeters in this list of valid names.\n"
             if env_has_extdef_items:
               mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
               print(mess)
             else:
               raise UserError(mess)
-        if r not in valid_ae_list:
-          mess = "TLM Receiver name entry \""+r+"\" listed in tlm_connections for environment \""+name+"\" not a valid TLM receiver name. \nValid names:"
-          for ae in valid_ae_list:
-            mess = mess+"\n "+ae
-          if env_has_extdef_items:
-            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
-            print(mess)
-          else:
-            raise UserError(mess)
-        env.addConnection('.'.join(dlist[:-1]),dlist[-1],'.'.join(rlist[:-1]),rlist[-1])
+          if r not in valid_ae_list:
+            mess = "QVIP TLM Receiver name entry \""+r+"\" listed in qvip_connections for environment \""+name+"\" not a valid QVIP TLM receiver name. \nValid names:"
+            for ae in valid_ae_list:
+              mess = mess+"\n "+ae
+            if env_has_extdef_items:
+              mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+              print(mess)
+            else:
+              raise UserError(mess)
+        env.addQvipConnection(dm,k,'.'.join(rlist[:-1]),rlist[-1],v)
+    except KeyError: pass
+    try:
+      for conn in struct['tlm_connections']:
+        d,r,v = self.dataExtract(['driver','receiver', 'validate'],conn)
+        dlist = d.split(".")
+        rlist = r.split(".")
+        ## The driver and receiver entries provided need to be split to work with the API in uvmf_gen
+        if not v:
+          v = 'True'
+        if v == 'True':
+          if d not in valid_ap_list:
+            mess = "TLM Driver name entry \""+d+"\" listed in tlm_connections for environment \""+name+"\" not a valid TLM driver name. \nValid names:"
+            for ap in valid_ap_list:
+              mess = mess+"\n "+ap
+            if dlist[0] not in valid_qsubenv_list:
+              if env_has_extdef_items:
+                mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+                print(mess)
+              else:
+                raise UserError(mess)
+          if r not in valid_ae_list:
+            mess = "TLM Receiver name entry \""+r+"\" listed in tlm_connections for environment \""+name+"\" not a valid TLM receiver name. \nValid names:"
+            for ae in valid_ae_list:
+              mess = mess+"\n "+ae
+            if env_has_extdef_items:
+              mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+              print(mess)
+            else:
+              raise UserError(mess)
+        env.addConnection('.'.join(dlist[:-1]),dlist[-1],'.'.join(rlist[:-1]),rlist[-1],v)
     except KeyError: pass
     try:
       for cfg_item in struct['config_vars']:
-        n,t = self.dataExtract(['name','type'],cfg_item)
+        n,t,c = self.dataExtract(['name','type','comment'],cfg_item)
+        if not c:
+          c = ""
         try:
           crand = (cfg_item['isrand']=="True")
         except KeyError: 
@@ -794,12 +846,14 @@ class DataClass:
         try:
           cval = cfg_item['value']
         except KeyError: pass
-        env.addConfigVar(n,t,crand,cval)
+        env.addConfigVar(n,t,crand,cval,c)
     except KeyError: pass
     try:
       for item in struct['config_constraints']:
-        n,v = self.dataExtract(['name','value'],item)
-        env.addConfigVarConstraint(n,v)
+        n,v,c = self.dataExtract(['name','value','comment'],item)
+        if not c:
+          c = ""
+        env.addConfigVarConstraint(n,v,c)
     except KeyError: pass
     try:
       regInfo = struct['register_model']
@@ -819,6 +873,7 @@ class DataClass:
         trans = None
         adapter = None
         mapName = None
+        qvip_agent = False
       else:
         try:
           use_adapter = regInfo['use_adapter'] == "True"
@@ -836,32 +891,44 @@ class DataClass:
         ## First, confirm that the name of the agent is a valid instance.  This will return a list
         ## of structures, each with an 'name' key and 'type' key. The interface we're attaching to
         ## must match up with the 'name' key in this list somewhere
-        agent_list = self.getAgents(name,recursive=True)
-        agent_type = ""
-        for a in agent_list:
-          if a['name'] == maps[0]['interface']:
-            ## Testing for a defined type might be thought to be needed here but if it wasn't a
-            ## valid agent type the above check would never pass
-            agent_type = a['type']
-            try:
-              agent_params = self.parameterSyntax(a['parameters'])
-            except KeyError:
-              agent_params = ""
-              pass
-            break
-        if agent_type == "":
-          raise UserError("For register map \""+maps[0]['name']+"\" in environment \""+name+"\" no interface \""+maps[0]['interface']+"\" was found")
-        sequencer = maps[0]['interface']
-        trans = agent_type+"_transaction"+agent_params
-        adapter = agent_type+"2reg_adapter"+agent_params
-        mapName = maps[0]['name']
+        try:
+          qvip_agent = maps[0]['qvip_agent']
+        except KeyError:
+          qvip_agent  = "False"
+          pass
+        if qvip_agent == "False":
+          agent_list = self.getAgents(name,recursive=True)
+          agent_type = ""
+          for a in agent_list:
+            if a['name'] == maps[0]['interface']:
+              ## Testing for a defined type might be thought to be needed here but if it wasn't a
+              ## valid agent type the above check would never pass
+              agent_type = a['type']
+              try:
+                agent_params = self.parameterSyntax(a['parameters'])
+              except KeyError:
+                agent_params = ""
+                pass
+              break
+          if agent_type == "":
+            raise UserError("For register map \""+maps[0]['name']+"\" in environment \""+name+"\" no interface \""+maps[0]['interface']+"\" was found")
+          sequencer = maps[0]['interface']
+          trans = agent_type+"_transaction"+agent_params
+          adapter = agent_type+"2reg_adapter"+agent_params
+          mapName = maps[0]['name']
+        else:
+          sequencer = maps[0]['interface']
+          trans = "uvm_sequence_item"
+          adapter = "uvm_reg_adapter"
+          mapName = maps[0]['name']
       env.addRegisterModel(
         sequencer=sequencer,
         transactionType=trans,
         adapterType=adapter, 
         busMap=mapName,
         useAdapter=use_adapter,
-        useExplicitPrediction=use_explicit_prediction)
+        useExplicitPrediction=use_explicit_prediction,
+        qvipAgent=qvip_agent)
     try:
       dpi_def = struct['dpi_define']
       ca = ""
@@ -950,11 +1017,7 @@ class DataClass:
     self.check_parameters('bench',name,'environment',top_env,'top_env',env_params_list,self.data['environments'][top_env])
     ## With this information we can create the bench class object
     ben = BenchClass(name,top_env,env_params)
-    try:
-      ben.header = self.data['global']['header']
-    except KeyError:
-      ben.header = None
-      pass
+    ben = self.setupGlobalVars(ben)
     ## Look for clock and reset control settings (all optional)
     try:
       ben.clockHalfPeriod = struct['clock_half_period']
@@ -1064,18 +1127,18 @@ class DataClass:
         bfm_name = re.sub(r'^environment\.','',a['env_path'])
         bfm_name = re.sub(r'\.',r'_',bfm_name)
       valid_bfm_names = valid_bfm_names + [bfm_name]
+      try:
+        active_passive = ap_dict[bfm_name]
+      except KeyError:
+        active_passive = 'ACTIVE'
       if a['is_qvip']==1:
         ## Add each QVIP BFM instantiation. Function API is slightly different for QVIP vs. non-QVIP
-        ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity='ACTIVE',unique_id=self.getUniqueID(a['env_path']))
+        ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity=active_passive,unique_id=self.getUniqueID(a['env_path']))
       else:
         ## Name of each BFM is simplified if they live under the top-level env
         ## Determine this by inspecting the env_path entry for each item and counting
         ## the number of dots (.). If only one, means this BFM lives at the top-most
         ## level.
-        try:
-          active_passive = ap_dict[bfm_name]
-        except KeyError:
-          active_passive = 'ACTIVE'
         try:
           agentDef = self.data['interfaces'][a['bfm_type']]
         except:
@@ -1164,11 +1227,7 @@ class DataClass:
     struct = self.data['interfaces'][name]
     intf.clock = struct['clock']
     intf.reset = struct['reset']
-    try:
-      intf.header = self.data['global']['header']
-    except KeyError:
-      intf.header = None
-      pass
+    intf = self.setupGlobalVars(intf)
     try:
       intf.resetAssertionLevel = (struct['reset_assertion_level'] == 'True')
     except KeyError: pass
@@ -1223,7 +1282,9 @@ class DataClass:
     except KeyError: pass
     try:
       for trans in struct['transaction_vars']:
-        n,t = self.dataExtract(['name','type'],trans)
+        n,t,c = self.dataExtract(['name','type','comment'],trans)
+        if not c:
+          c = ""
         try:
           trand = (trans['isrand']=="True")
         except KeyError: 
@@ -1239,11 +1300,13 @@ class DataClass:
         except KeyError:
           ud = ""
           pass
-        intf.addTransVar(n,t,isrand=trand,iscompare=tcomp,unpackedDim=ud)
+        intf.addTransVar(n,t,isrand=trand,iscompare=tcomp,unpackedDim=ud,comment=c)
     except KeyError: pass
     try:
       for cfg in struct['config_vars']:
-        n,t = self.dataExtract(['name','type'],cfg)
+        n,t,c = self.dataExtract(['name','type','comment'],cfg)
+        if not c:
+          c = ""
         try:
           crand = (cfg['isrand']=="True")
         except KeyError: 
@@ -1253,17 +1316,21 @@ class DataClass:
         try:
           cval = cfg['value']
         except KeyError: pass
-        intf.addConfigVar(n,t,crand,cval)
+        intf.addConfigVar(n,t,crand,cval,c)
     except KeyError: pass
     try:
       for item in struct['transaction_constraints']:
-        n,v = self.dataExtract(['name','value'],item)
-        intf.addTransVarConstraint(n,v)
+        n,v,c = self.dataExtract(['name','value','comment'],item)
+        if not c:
+          c = ""
+        intf.addTransVarConstraint(n,v,c)
     except KeyError: pass
     try:
       for item in struct['config_constraints']:
-        n,v = self.dataExtract(['name','value'],item)
-        intf.addConfigVarConstraint(n,v)
+        n,v,c = self.dataExtract(['name','value','comment'],item)
+        if not c:
+          c = ""
+        intf.addConfigVarConstraint(n,v,c)
     except KeyError: pass
     try:
       response_info = struct['response_info']
@@ -1369,7 +1436,8 @@ class DataClass:
 if __name__ == '__main__':
   search_paths = ['.']
   uvmf_parser = UVMFCommandLineParser(version=__version__,usage="yaml2uvmf.py [options] [yaml_file1 [yaml_fileN]]")
-  uvmf_parser.parser.add_option("-f","--file",dest="configfile",action="append",help="Specify a file list of YAML configs")
+  uvmf_parser.parser.add_option("-f","--file",dest="configfile",action="append",help="Specify a file list of YAML configs. Relative paths relative to the invocation directory")
+  uvmf_parser.parser.add_option("-F","--relfile",dest="rel_configfile",action="append",help="Specify a file list of YAML configs. Relative paths relative to the file list itself")
   uvmf_parser.parser.add_option("-g","--generate",dest="gen_name",action="append",help="Specify which elements to generate (default is everything")
   uvmf_parser.parser.add_option("--pdb",dest="enable_pdb",action="store_true",help=SUPPRESS_HELP,default=False)
   uvmf_parser.parser.add_option("-m","--merge_source",dest="merge_source",action="store",help="Enable auto-merge flow, pulling from the specified source directory")
@@ -1386,7 +1454,7 @@ if __name__ == '__main__':
     pdb.set_trace()
   elif options.debug == False:
     sys.tracebacklimit = 0
-  if (len(args) == 0) and (options.configfile == None) and (options.merge_source == None):
+  if (len(args) == 0) and (options.configfile == None) and (options.rel_configfile == None) and (options.merge_source == None):
     raise UserError("No configurations or config file specified as input. Must provide one or both")
   if (options.merge_source != None) and (options.merge_import_yaml != None):
     raise UserError("--merge_source and --merge_import_yaml options are mutually exclusive")
@@ -1396,12 +1464,20 @@ if __name__ == '__main__':
     for cf in options.configfile:
       cfr = ConfigFileReader(cf)
       configfiles = configfiles + cfr.files
+  if options.rel_configfile != None:
+    for cf in options.rel_configfile:
+      cfr = ConfigFileReader(cf,relative_to_file=True)
+      configfiles = configfiles + cfr.files
   try:
     configfiles = configfiles + args
   except TypeError:
     pass
-  if (len(configfiles) == 0) and (options.merge_source == None):
-    raise UserError("No configuration YAML specified to parse, must provide at least one")
+  if len(configfiles) == 0:
+    if not ((options.merge_source != None) and (options.merge_export_yaml)):
+      raise UserError("No configuration YAML specified to parse, must provide at least one")
+  if options.merge_source != None:
+    if os.path.abspath(os.path.normpath(options.dest_dir)) == os.path.abspath(os.path.normpath(options.merge_source)):
+      raise UserError("Cannot merge changes into source directory \"{0}\" without specifying an alternate output directory with --dest_dir switch".format(os.path.abspath(os.path.normpath(options.dest_dir))))
   for cfg in configfiles:
     dataObj.parseFile(cfg)
   dataObj.validate()

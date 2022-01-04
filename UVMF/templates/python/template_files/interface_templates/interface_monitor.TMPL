@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/src/{{name}}_monitor.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_monitor.svh" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -83,17 +83,16 @@ class {{name}}_monitor {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvmf_
                                          monitored_trans
                                          );
 {% endif %}
-    trans = new("trans");                                                                   
-    trans.start_time = time_stamp;                                                          
-    trans.end_time = $time;                                                                 
-    time_stamp = trans.end_time;  
-{% if veloceReady %}                                                            
+ 
+{% if veloceReady %} 
+    trans = new("trans");
     trans.from_monitor_struct({{name}}_monitor_struct);
 {% else %}
-{% for txn in transVars %}
-    trans.{{txn.name}} = monitored_trans.{{txn.name}};
-{% endfor %}
+    trans = monitored_trans;
 {% endif %}
+    trans.start_time = time_stamp;                                                          
+    trans.end_time = $time;                                                                 
+    time_stamp = trans.end_time; 
     analyze(trans);                                                                         
   endfunction  
 

@@ -57,6 +57,9 @@ class uvmf_driver_base #(
   // Agent configuration class
   CONFIG_T configuration;
 
+  // Driver transaction object (class member for debug)
+  REQ txn;
+
   // Driver HDL BFM reference 
   // Typically a virtual interface for the VIF-based use model, but can
   // also be a chandle for the DPI-C based use model, or even an object 
@@ -138,6 +141,7 @@ class uvmf_driver_base #(
   virtual task pipeline_driver();
   endtask
 
+
   //**********************************************************************
   // TASK: run_phase();
   // return_transaction_response within configuration class determines 
@@ -146,7 +150,6 @@ class uvmf_driver_base #(
   // sequencer.  This behavior replaces the get_driver() and get_put_driver()
   // functionality.
   virtual task run_phase(uvm_phase phase);
-    REQ txn;
     forever
       begin : forever_loop
        seq_item_port.get_next_item(txn);

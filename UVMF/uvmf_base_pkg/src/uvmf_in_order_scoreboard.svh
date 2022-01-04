@@ -25,9 +25,6 @@
 // Creation Date   : 05.12.2011
 //----------------------------------------------------------------------
 
-import uvm_pkg::*;
-`include "uvm_macros.svh"
-
 // CLASS: uvmf_in_order_scoreboard
 // This class defines an in order scoreboard that is based on the uvmf_scoreboard_base class.
 // It uses a uvm_tlm_analysis_fifo to queue expected transactions.

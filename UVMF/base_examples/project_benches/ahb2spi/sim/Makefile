@@ -89,7 +89,7 @@ include $(UVMF_VIP_LIBRARY_HOME)/environment_packages/ahb2spi_env_pkg/Makefile
 VCOM_ARGS             += 
 
 # Note: vsim-3009 error can be eliminated by adding -timescale 1ps/1ps to VLOG_ARGS
-VLOG_ARGS             += +define+UVM_REPORT_DISABLE_FILE_LINE
+VLOG_ARGS             += 
 VELANALYZE_ARGS       +=
 VELANALYZE_HVL_ARGS   +=
 
@@ -185,7 +185,7 @@ comp_hvl_core :   \
 	comp_ahb2spi_env_pkg \
 	comp_ahb2spi_parameters_pkg comp_ahb2spi_sequence_pkg comp_ahb2spi_tests_pkg 
 
-comp_uvmf_core : comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg 
+comp_uvmf_core : comp_uvm_pkg comp_uvmf_base_pkg 
 
 make_build: comp_ahb2spi_dut comp_uvmf_core comp_hvl comp_test_bench  
 

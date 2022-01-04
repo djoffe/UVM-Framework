@@ -28,7 +28,7 @@ namespace dpi_link {
     static std::map<std::string, svScope > package_map;
     
     svLogic read_bit(const svLogicVecVal * bus, unsigned int bit_n);
-    svBit read_bit(const svBitVecVal * bus, unsigned int bit_n);
+    svBit   read_bit(const svBitVecVal   * bus, unsigned int bit_n);
 
     char bit_to_char(const svLogic bit);
     char bit_to_char(const svBit bit);

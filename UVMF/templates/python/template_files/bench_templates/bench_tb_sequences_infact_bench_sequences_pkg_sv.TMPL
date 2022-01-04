@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/sequences/{{name}}_infact_sequences_pkg.sv" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{name}}_infact_sequences_pkg.sv" %}
 {% set conditional = "infact_enabled" %}
 {% extends "base_template.TMPL" %}
 
@@ -57,7 +57,7 @@ package {{name}}_infact_sequences_pkg;
 {% endif %}
 {% endfor %}
 {% endif %}
-  `include "src/infact_{{name}}_bench_sequence_base.svh"
+  `include "{{src_dir}}infact_{{name}}_bench_sequence_base.svh"
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new sequences to the src directory

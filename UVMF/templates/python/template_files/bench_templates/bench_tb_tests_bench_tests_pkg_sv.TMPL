@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/tests/{{name}}_tests_pkg.sv" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/tests/{{name}}_tests_pkg.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -25,12 +25,16 @@ package {{name}}_tests_pkg;
    import {{env_name}}_env_pkg::*;
    import {{name}}_sequences_pkg::*;
 {% for bfm in bfm_pkgs %}
-  import {{bfm}}_pkg::*;
-  import {{bfm}}_pkg_hdl::*;
+   import {{bfm}}_pkg::*;
+   import {{bfm}}_pkg_hdl::*;
 {% endfor %}
 {% for agent in qvip_bfm_pkgs %}
    import {{agent}}_pkg::*;
 {% endfor %}
+{% if qvip_bfm_pkgs|length > 0 %}
+   import QUESTA_MVC::*;
+   import qvip_utils_pkg::*;
+{% endif %}
 {% for ext_import in external_imports %}
    import {{ext_import}}::*;
 {% endfor %}
@@ -45,11 +49,11 @@ package {{name}}_tests_pkg;
   // pragma uvmf custom package_imports_additional begin 
   // pragma uvmf custom package_imports_additional end
 
-   `include "src/test_top.svh"
-   `include "src/register_test.svh"
-   `include "src/example_derived_test.svh"
+   `include "{{src_dir}}test_top.svh"
+   `include "{{src_dir}}register_test.svh"
+   `include "{{src_dir}}example_derived_test.svh"
 {% if inFactEnabled %}
-   `include "src/infact_test_base.svh"
+   `include "{{src_dir}}infact_test_base.svh"
 {% endif %}
 
   // pragma uvmf custom package_item_additional begin
