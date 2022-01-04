@@ -11,5 +11,5 @@
 #  structure, can be replaced with absolute path if desired
 TB_INFO ahb2wb { UVMF_VIP_LIBRARY_HOME=../../../../../../../../verification_ip UVMF_PROJECT_DIR=../../../../../../../../project_benches/ahb2wb } {}
 TB ahb2wb
-TEST test_top 3
+TEST test_top 3 0 random 0 { +my_plus_arg +plusarg2 }
 

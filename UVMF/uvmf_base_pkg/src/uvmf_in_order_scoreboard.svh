@@ -57,12 +57,29 @@ class uvmf_in_order_scoreboard #(type T = uvmf_transaction_base) extends uvmf_sc
       expected_results_af=new("expected_results_af",this);
    endfunction
 
+   // FUNCTION: 
+   // Used to flush all entries in the scoreboard
+   virtual function void flush_scoreboard();
+       expected_results_af.flush();
+   endfunction
+
+   // FUNCTION: 
+   // Used to remove an entry from the scoareboard
+   // An entry is removed from the out side of the FIFO
+   // The key argument is not applicable to the analysis fifo
+   virtual function void remove_entry(int unsigned key=0);
+      T flushed_transaction;
+      expected_results_af.try_get(flushed_transaction); 
+   endfunction
+
    // FUNCTION: write_expected
    // Transactions arrive through this interface from one or more predictors.
    // The transaction is stored in an analysis_fifo to wait for the actual transaction.
    function void write_expected( input T t);
-      super.write_expected(t);
-      void'(expected_results_af.try_put(t));
+      if (scoreboard_enabled) begin : in_write_expected
+         super.write_expected(t);
+         void'(expected_results_af.try_put(t));
+      end : in_write_expected
    endfunction
 
    // FUNCTION: write_actual
@@ -71,28 +88,30 @@ class uvmf_in_order_scoreboard #(type T = uvmf_transaction_base) extends uvmf_sc
    // next transaction in the analysis fifo that holds expected results.
    function void write_actual( input T t);
       T expected_transaction;
-      super.write_actual(t);
-
-      // Get next entry from analysis fifo.  Error if none exists
-      if ( !expected_results_af.try_get(expected_transaction)) 
-         begin : try_get_fail
-         nothing_to_compare_against_count++;
-         `uvm_error("SCBD",$sformatf("NO PREDICTED ENTRY TO COMPARE AGAINST:%s",t.convert2string()))
-         end : try_get_fail
-      else 
-         begin : try_get_pass
-            // Compare actual transaction to expected transaction
-            if (t.compare(expected_transaction)) 
-               begin : compare_pass
-               match_count++;
-               `uvm_info("SCBD",compare_message("MATCH! - ",expected_transaction,t),UVM_MEDIUM)
-               end : compare_pass
-            else 
-               begin : compare_fail
-               mismatch_count++;
-               `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_transaction,t))
-               end : compare_fail
-         end : try_get_pass
+      if (scoreboard_enabled) begin : in_write_actual
+         super.write_actual(t);
+   
+         // Get next entry from analysis fifo.  Error if none exists
+         if ( !expected_results_af.try_get(expected_transaction)) 
+            begin : try_get_fail
+            nothing_to_compare_against_count++;
+            `uvm_error("SCBD",$sformatf("NO PREDICTED ENTRY TO COMPARE AGAINST:%s",t.convert2string()))
+            end : try_get_fail
+         else 
+            begin : try_get_pass
+               // Compare actual transaction to expected transaction
+               if (t.compare(expected_transaction)) 
+                  begin : compare_pass
+                  match_count++;
+                  `uvm_info("SCBD",compare_message("MATCH! - ",expected_transaction,t),UVM_MEDIUM)
+                  end : compare_pass
+               else 
+                  begin : compare_fail
+                  mismatch_count++;
+                  `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_transaction,t))
+                  end : compare_fail
+            end : try_get_pass
+         end : in_write_actual
    endfunction : write_actual
 
 

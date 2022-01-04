@@ -1,4 +1,0 @@
-+incdir+@vinfodir
-@use ../../uvmf_base_pkg/uvmf_base_pkg.vinfo
-@use ../../interface_packages/ethernet_agent_pkg/ethernet_agent_pkg.vinfo
-qvip_ethernet_serial_env_pkg.sv

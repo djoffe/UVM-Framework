@@ -59,11 +59,11 @@ class wb2reg_adapter       #(
                              .WB_DATA_WIDTH(WB_DATA_WIDTH)                                
                              ) ::type_id::create("trans_h");
     //Adapt the following for your sequence item type
-    // trans_h.op = (rw.kind == UVM_READ) ? WB_READ : WB_WRITE;
+    trans_h.op = (rw.kind == UVM_READ) ? WB_READ : WB_WRITE;
     //Copy over address
-    // trans_h.addr = rw.addr;
+    trans_h.addr = rw.addr;
     //Copy over write data
-    // trans_h.data = rw.data;
+    trans_h.data = rw.data;
 
     // Return the adapted transaction
     return trans_h;
@@ -85,13 +85,13 @@ class wb2reg_adapter       #(
     end
     //Adapt the following for your sequence item type
     //Copy over instruction type 
-    // rw.kind = (trans_h.op == WB_WRITE) ? UVM_WRITE : UVM_READ;
+    rw.kind = (trans_h.op == WB_WRITE) ? UVM_WRITE : UVM_READ;
     //Copy over address
-    // rw.addr = trans_h.addr;
+    rw.addr = trans_h.addr;
     //Copy over read data
-    // rw.data = trans_h.data;
+    rw.data = trans_h.data;
     //Check for errors on the bus and return UVM_NOT_OK if there is an error
-    // rw.status = UVM_IS_OK;
+    rw.status = UVM_IS_OK;
 
   endfunction: bus2reg
 

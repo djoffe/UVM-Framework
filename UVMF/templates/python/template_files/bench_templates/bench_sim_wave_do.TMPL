@@ -8,7 +8,7 @@ quietly WaveActivateNextPane {} 0
 
 {% for bfm in bfms %}
 add wave -noupdate -divider {{bfm.name}} 
-add wave -noupdate /uvm_root/uvm_test_top/{{bfm.sub_env_path}}/{{bfm.name}}/{{bfm.name}}_monitor/txn_stream
+add wave -noupdate /uvm_root/uvm_test_top/{{bfm.sub_env_path}}/{{bfm.agent_inst_name}}/{{bfm.agent_inst_name}}_monitor/txn_stream
 add wave -noupdate -group {{bfm.name}}_bus /hdl_top/{{bfm.name}}_bus/*
 {% endfor %}
 

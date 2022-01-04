@@ -14,6 +14,7 @@ intf.addParamDef('ADDR_WIDTH','int','8')
 ## Specify the clock and reset signal for the interface
 intf.clock = 'clock'
 intf.reset = 'reset'
+intf.resetAssertionLevel = True
 
 ## Specify the ports associated with this interface
 ## The direction is from the perspective of the test bench as an INITIATOR on the bus.  

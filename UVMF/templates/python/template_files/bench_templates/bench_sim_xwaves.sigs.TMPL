@@ -1,0 +1,26 @@
+{% set fname = "project_benches/{{name}}/sim/xwaves.sigs" %}
+
+{% block description %}
+
+{% endblock %}
+
+{% block contents %}
+
+{% if veloceReady %}
+Group All
+
+#Top level signals
+hdl_top.*
+#Add additional levels or individual signals as needed
+hdl_top.*.*
+
+{% else %}
+
+This file intentionally left blank. 
+It is needed for UVMF testbench acceleration using the Veloce emulator, and so it 
+may be deleted as long as you are just using only pure simulation with Questa alone.
+
+{% endif %}
+
+{% endblock %}
+

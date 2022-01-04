@@ -1,0 +1,3 @@
++incdir+@vinfodir
+@use ../tests/ahb2spi_test_pkg.vinfo
+hvl_top.sv

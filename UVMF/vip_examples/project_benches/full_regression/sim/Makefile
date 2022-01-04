@@ -1,10 +1,10 @@
 #mvchome
 
 MSEED ?= random
-COLLAPSE ?= 1
+COLLAPSE ?= 0
 
 run: clean
-	vrun -GCOLLAPSE=$(COLLAPSE) -j 2 -nolocalrerun $(EXTRA_RUN_ARGS) -clean -mseed $(MSEED)
+	vrun -rmdb $(UVMF_HOME)/scripts/default.rmdb -GCOLLAPSE=$(COLLAPSE) -j 2 -nolocalrerun $(EXTRA_RUN_ARGS) -clean -mseed $(MSEED) -html
 
 clean:
-	rm -rf vrmhtmlreport transcript VRMDATA *.log
+	rm -rf vrmhtmlreport transcript VRMDATA *.log covhtmlreport *.ucdb

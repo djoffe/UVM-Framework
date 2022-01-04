@@ -13,7 +13,7 @@
 # If no repeat count is given, default is 1
 # Relative path to UVMF_VIP_LIBRARY_HOME and UVMF_PROJECT_DIR is from within the VRMDATA
 #  structure, can be replaced with absolute path if desired
-TB_INFO {{name}} { UVMF_VIP_LIBRARY_HOME=../../../../../../../../verification_ip UVMF_PROJECT_DIR=../../../../../../../../project_benches/{{name}} } {}
+TB_INFO {{name}} { UVMF_VIP_LIBRARY_HOME=../../../../../../../../verification_ip UVMF_PROJECT_DIR=../../../../../../../../project_benches/{{name}} } { {% if svLibNames|length > 0 %}{% for svLibName in svLibNames %} -sv_lib ../../build_task/{{svLibName}}{% endfor %}{% endif %} }
 TB {{name}}
 TEST test_top 3
 

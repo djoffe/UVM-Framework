@@ -1,0 +1,6 @@
+
++incdir+@vinfodir
+@use ../parameters/wb2spi_parameters_pkg.vinfo
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg_hdl.vinfo
+@use ../../rtl/rtl.vinfo
+hdl_top.sv

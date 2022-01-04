@@ -34,16 +34,21 @@ ben.resetDuration = '250ns'
 ##   addAgent(<agent_handle_name>,<agent_type_name>,<clock_name>,<reset_name>,<activity>,<{bfmParameter:value},<pathToSubEnvironmentsForTransactionViewing>)
 
 ## block a environment BFM's in the same order listed in block a config file
-ben.addBfm('block_a_env_control_plane_in',      'mem', 'clock', 'reset','ACTIVE', {},'environment/block_a_env')
-ben.addBfm('block_a_env_control_plane_out',     'mem', 'clock', 'reset','PASSIVE', {},'environment/block_a_env')
-ben.addBfm('block_a_env_secure_data_plane_in',  'pkt', 'pclk', 'prst','ACTIVE',   {},'environment/block_a_env')
-ben.addBfm('block_a_env_secure_data_plane_out', 'pkt', 'pclk', 'prst', 'ACTIVE',{},'environment/block_a_env')
+ben.addBfm('block_a_env_control_plane_in',      'mem', 'clock', 'reset','ACTIVE', {},'environment.block_a_env', agentInstName="control_plane_in")
+ben.addBfm('block_a_env_control_plane_out',     'mem', 'clock', 'reset','PASSIVE', {},'environment.block_a_env', agentInstName="control_plane_out")
+ben.addBfm('block_a_env_secure_data_plane_in',  'pkt', 'pclk', 'prst','ACTIVE',   {},'environment.block_a_env', agentInstName="secure_data_plane_in")
+ben.addBfm('block_a_env_secure_data_plane_out', 'pkt', 'pclk', 'prst', 'ACTIVE',{},'environment.block_a_env', agentInstName="secure_data_plane_out")
 
 ## block b environment BFM's in the same order listed in block b config file
-ben.addBfm('block_b_env_control_plane_in',       'mem', 'clock', 'reset','PASSIVE',{'ADDR_WIDTH':'TEST_CP_IN_ADDR_WIDTH','DATA_WIDTH':'TEST_CP_IN_DATA_WIDTH'},'environment/block_b_env')
-ben.addBfm('block_b_env_control_plane_out',      'mem', 'clock', 'reset','ACTIVE',{'ADDR_WIDTH':'TEST_CP_OUT_ADDR_WIDTH'},'environment/block_b_env')
-ben.addBfm('block_b_env_unsecure_data_plane_in', 'pkt', 'pclk', 'prst','ACTIVE',{'DATA_WIDTH':'TEST_UDP_DATA_WIDTH'},'environment/block_b_env')
-ben.addBfm('block_b_env_unsecure_data_plane_out','pkt', 'pclk', 'prst','ACTIVE',{},'environment/block_b_env')
+ben.addBfm('block_b_env_control_plane_in',       'mem', 'clock', 'reset','PASSIVE',{'ADDR_WIDTH':'TEST_CP_IN_ADDR_WIDTH','DATA_WIDTH':'TEST_CP_IN_DATA_WIDTH'},'environment.block_b_env', agentInstName="control_plane_in")
+ben.addBfm('block_b_env_control_plane_out',      'mem', 'clock', 'reset','ACTIVE',{'ADDR_WIDTH':'TEST_CP_OUT_ADDR_WIDTH'},'environment.block_b_env', agentInstName="control_plane_out")
+ben.addBfm('block_b_env_unsecure_data_plane_in', 'pkt', 'pclk', 'prst','ACTIVE',{'DATA_WIDTH':'TEST_UDP_DATA_WIDTH'},'environment.block_b_env', agentInstName="unsecure_data_plane_in")
+ben.addBfm('block_b_env_unsecure_data_plane_out','pkt', 'pclk', 'prst','ACTIVE',{},'environment.block_b_env', agentInstName="unsecure_data_plane_out")
+
+# This API identifies make targets that compile C code.
+# Compilation of c code is needed as a dependency for using the VINFO flow
+ben.addVinfoDependency('comp_pkt_pkg_c_files')
+ben.addVinfoDependency('comp_block_b_env_pkg_c_files')
 
 ## This will prompt the creation of all bench files in their specified
 ##  locations

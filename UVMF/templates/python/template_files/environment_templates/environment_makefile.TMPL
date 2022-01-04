@@ -31,7 +31,7 @@ C_FILE_COMPILE_LIST_{{name}}_env_pkg	= \
 O_FILE_COMPILE_LIST_{{name}}_env_pkg = $(notdir $(C_FILE_COMPILE_LIST_{{name}}_env_pkg:.c=.o))
 
 GCC_COMP_ARGS_{{name}}_env_pkg	+= -I$(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/dpi \
-	{{DPICompArgs}}
+	-fPIC {{DPICompArgs}}
 
 GCC_LINK_ARGS_{{name}}_env_pkg	+= \
 	{{DPILinkArgs}} \

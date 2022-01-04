@@ -34,7 +34,7 @@ extends uvmf_transaction_base;
 {% endif %}
 
 {% for txn in transVars %}
-  {% if txn.isrand %}rand {% endif %}{{txn.type}} {{txn.name}};
+  {% if txn.isrand %}rand {% endif %}{{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
 
 //Constraints for the transaction variables:
@@ -42,12 +42,9 @@ extends uvmf_transaction_base;
   constraint {{cnstr.name}} {{cnstr.type}}
 {% endfor %}
 
-
-{% for DPIImport in DPIImports %}
-  // System Verilog variables for C function {{DPIImport.type}} {{DPIImport.name}} {{DPIImport.cArgs}} 
-{% for argument in DPIImport.arguments %}
-  {{argument.type}}  {{argument.name}};
-{% endfor %}
+// System Verilog variables for C functions 
+{% for txn in DPITransDecl %}
+  {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
 
 // ****************************************************************************
@@ -58,7 +55,7 @@ extends uvmf_transaction_base;
     super.new( name );
 {% for DPIImport in DPIImports %}
     // Calling C functions
-    {{DPIImport.name}}({% for argument in DPIImport.arguments %}{{argument.name}}{% if not loop.last %},{% endif %}{% endfor %});
+    {{DPIImport.name}}({% for argument in DPIImport.arguments %}{{argument['name']}}{% if not loop.last %},{% endif %}{% endfor %});
 {% endfor %} 
   endfunction
 
@@ -69,7 +66,7 @@ extends uvmf_transaction_base;
 //
   virtual function string convert2string();
     // UVMF_CHANGE_ME : Customize format if desired.
-    return $sformatf("{% for txn in transVars %}{{txn.name}}:0x%x {% endfor %}"{% for txn in transVars %},{{txn.name}}{% endfor %});
+    return $sformatf("{% for txn in transVars %}{{txn.name}}:{%if txn.unpackedDim != "" %}%p {% else %}0x%x {% endif %}{% endfor %}"{% for txn in transVars %},{{txn.name}}{% endfor %});
   endfunction
 
 //*******************************************************************

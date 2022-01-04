@@ -67,9 +67,17 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 
 {% endfor %}
 
-{% for sub_env in qvipSubEnvironments %}
-    {{sub_env.envPkg}}_env_configuration            {{sub_env.name}}_config;
+{% for sub_env in subEnvironments %}
+    string                {{sub_env.name}}_interface_names[];
+    uvmf_active_passive_t {{sub_env.name}}_interface_activity[];
 {% endfor %}
+
+{% for sub_env in qvipSubEnvironments %}
+    {{sub_env.envPkg}}_env_configuration     {{sub_env.name}}_config;
+    string                                   {{sub_env.name}}_interface_names[];
+    uvmf_active_passive_t                    {{sub_env.name}}_interface_activity[];
+{% endfor %}
+
 
 // ****************************************************************************
 // FUNCTION : new()
@@ -156,27 +164,23 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
                                       uvm_reg_block register_model = null,
                                       uvmf_active_passive_t interface_activity[] = null
                                      );
-{% for sub_env in subEnvironments %}
-    string                {{sub_env.name}}_interface_names[];
-    uvmf_active_passive_t {{sub_env.name}}_interface_activity[];
-{% endfor %}
-
-{% for sub_env in qvipSubEnvironments %}
-    string                {{sub_env.name}}_interface_names[];
-    uvmf_active_passive_t {{sub_env.name}}_interface_activity[];
-{% endfor %}
 
     super.initialize(sim_level, environment_path, interface_names, register_model, interface_activity);
 
+{% if subEnvironments|length > 0 %}  // Interface initialization for sub-environments
+{% endif %}
 {% for sub_env in subEnvironments %}
+{% if sub_env.numAgents > 0 %}
     {{sub_env.name}}_interface_names    = new[{{sub_env.numAgents}}];
     {{sub_env.name}}_interface_activity = new[{{sub_env.numAgents}}];
 
     {{sub_env.name}}_interface_names     = interface_names[{{sub_env.agentMinIndex}}:{{sub_env.agentMaxIndex}}];
     {{sub_env.name}}_interface_activity  = interface_activity[{{sub_env.agentMinIndex}}:{{sub_env.agentMaxIndex}}];
-
+{% endif %}
 {% endfor %}
 
+{% if qvipSubEnvironments|length > 0 %}  // Interface initialization for QVIP sub-environments
+{% endif %}
 {% for sub_env in qvipSubEnvironments %}
     {{sub_env.name}}_interface_names    = new[{{sub_env.numAgents}}];
     {{sub_env.name}}_interface_activity = new[{{sub_env.numAgents}}];
@@ -185,6 +189,9 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
     {{sub_env.name}}_interface_activity  = interface_activity[{{sub_env.agentMinIndex}}:{{sub_env.agentMaxIndex}}];
 
 {% endfor %}
+
+{% if agents|length > 0 %}  // Interface initialization for local agents
+{% endif %}
 {% for agent in agents %}
      {{agent.name}}_config.initialize( interface_activity[{{agent.agentIndex}}], {environment_path,".{{agent.name}}"}, interface_names[{{agent.agentIndex}}]);
      {{agent.name}}_config.initiator_responder = {{agent.initResp}};

@@ -61,5 +61,4 @@ intf.addConfigVarConstraint('valid_packet_gap_range_c','{ transfer_gap inside {0
 
 ## This will prompt the creation of all interface files in their specified
 ##  locations
-## intf.inFactReady = False
 intf.create()

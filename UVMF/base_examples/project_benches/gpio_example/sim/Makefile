@@ -31,6 +31,15 @@ export UVMF_VIP_LIBRARY_HOME ?= ../../../verification_ip
 # For examples deployed with UVMF this will be $(UVMF_HOME)/<example_group>/project_benches/<example_bench>
 export UVMF_PROJECT_DIR ?= ../../../project_benches/gpio_example
 #
+
+## Check PATH for required vinfo scripts
+PVAL := $(shell command -v make_filelist.py 2> /dev/null)
+ifndef PVAL
+  MFLIST = $(UVMF_HOME)/scripts/make_filelist.py
+else
+  MFLIST = make_filelist.py
+endif
+
 #
 # *********************************************************************************************
 # Set test case specific Variables
@@ -41,7 +50,9 @@ UVM_CLI_ARGS         =
 
 # Usage of Veloce, etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
-USE_LEGACY_TBX_FLOW ?= 0
+
+# Usage of vinfo flow for generating file list
+USE_VINFO           ?= 0
 
 # Usage of Veloce and Questa profilers
 USE_VELOCE_PROFILER ?= 0
@@ -53,8 +64,7 @@ REPORTING_DO_FILE    = gpio_example_reports_script
 
 # Include makefile that includes targets for UVM_VIP_Library packages
 include $(UVMF_HOME)/scripts/Makefile
-include $(UVMF_HOME)/common/uvm_co_emulation_utilities/clock/Makefile
-include $(UVMF_HOME)/common/uvm_co_emulation_utilities/reset/Makefile
+include $(UVMF_HOME)/common/uvm_co_emulation_utilities/Makefile
 
 # Include all requisite interface package targets for this bench
 include $(UVMF_VIP_LIBRARY_HOME)/interface_packages/gpio_pkg/Makefile
@@ -132,5 +142,17 @@ comp_gpio_example_dut:
 #	$(HDL_COMP_CMD) $(gpio_example_DUT)
 
 
-build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg  comp_gpio_pkg  comp_gpio_example_env_pkg comp_gpio_example_parameters_pkg comp_gpio_example_sequence_pkg comp_gpio_example_test_pkg comp_gpio_example_dut comp_test_bench
+make_build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg  comp_gpio_pkg  comp_gpio_example_env_pkg comp_gpio_example_parameters_pkg comp_gpio_example_sequence_pkg comp_gpio_example_test_pkg comp_gpio_example_dut comp_test_bench
 
+BUILD_TGT_0 = make_build
+BUILD_TGT_1 = vinfo_build
+BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
+
+vinfo_build:
+	$(MFLIST) hvl.vinfo -o ./hvl.vf
+	$(HVL_COMP_CMD) -f hvl.vf
+	$(MFLIST) hdl.vinfo -o ./hdl.vf
+	$(HDL_COMP_CMD) -f hdl.vf
+	$(VEL_COMP)
+
+build: $(BUILD_TGT)

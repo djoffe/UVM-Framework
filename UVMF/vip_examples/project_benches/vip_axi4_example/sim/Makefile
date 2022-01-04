@@ -29,7 +29,6 @@ UVM_CLI_ARGS         =
 # Usage of Veloce, VTL etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
 USE_VTL             ?= $(USE_VELOCE)
-USE_LEGACY_TBX_FLOW ?= 0
 USE_64BIT_PLATFORM  ?= 1
 
 PROTOCOL = axi4

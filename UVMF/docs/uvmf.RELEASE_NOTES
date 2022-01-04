@@ -2,6 +2,55 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------               -----------------------------------------------------------------------------
+V3.6h     05/23/2018  QVIP Configurator compatability:
+                         - This UVMF release requires QVIP Configurator release 10.7a or later.  This
+                           is due to changes in the Configurator generated UVMF based code to support
+                           block to top reuse of Configurator generated environments. Please see 
+                           chapters 5.6.4 and 5.6.5 of the Users Guide for details.  
+
+                         - A generator tutorial is available in the docs directory.  This tutorial 
+                           walks through the creation of template files, generation, and post-generation 
+                           manual modifications of an ALU example.
+
+                      VRM Support Updates:
+                         - Added support for project preferences file. 
+
+                         - Added support for Visualizer debug within regression.
+
+                         - Added support for Windows
+
+                         - No longer using default.rmdb links in sim directory.  
+                           New Makefile target, vrun, now uses path reference to $UVMF_HOME/scripts/default.rmdb.
+
+                         - Added support for grid management systems.
+
+                         - Enhanced testlist content and control.
+
+                      Covercheck Updates:
+                         - Covercheck can be automatically invoked as part of a regression run.
+
+                      Miscellaneous:
+                         - Removed Veloce OS2 support from Makefile flow.
+
+                         - Control features added to UVMF scoreboards.  
+                           
+                      Code Generator Updates: See YAML and Python API reference guides for details.
+                         - Added support to generate code required to add DPI to generated environment 
+                           and interface packages.  
+                           
+                         - Added support to generate code required to add register model to generated 
+                           environment package.  Block to top register model use is supported.  
+                           
+                         - Added support for unpacked dimension for transaction variables.  
+                           
+                         - Added support for generating environment level coverage component.
+                           
+                      -----------------------------------------------------------------------------
+                      Changes required for 3.6g code to be compatable with 3.6h: None
+                      -----------------------------------------------------------------------------
+
+Version   Date        Updates
+-------               -----------------------------------------------------------------------------
 V3.6g     09/25/2017  Code Generator Updates:
                       
                          - Added yaml based front-end to the UVMF code generators.  

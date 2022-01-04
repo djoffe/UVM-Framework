@@ -1,0 +1,9 @@
+
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+@use $UVMF_HOME/common/uvm_co_emulation_utilities/clock_pkg_hvl.vinfo
+@use $UVMF_HOME/common/uvm_co_emulation_utilities/reset_pkg_hvl.vinfo
+@use ../../../../verification_ip/environment_packages/gpio_example_env_pkg/gpio_example_env_pkg.vinfo
+
+@use ../parameters/gpio_example_parameters_pkg.vinfo
+gpio_example_sequences_pkg.sv

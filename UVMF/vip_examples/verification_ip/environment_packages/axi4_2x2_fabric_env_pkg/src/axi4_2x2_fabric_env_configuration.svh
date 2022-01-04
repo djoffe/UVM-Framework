@@ -1,7 +1,8 @@
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Created by      : daerne
-// Creation Date   : 2016 Oct 16
+// Creation Date   : 2017 Nov 02
+// Created with uvmf_gen version 3.6g
 //----------------------------------------------------------------------
 //
 //----------------------------------------------------------------------
@@ -43,6 +44,7 @@ extends uvmf_environment_configuration_base;
 
 //Constraints for the configuration variables:
 
+
   covergroup axi4_2x2_fabric_configuration_cg;
     option.auto_bin_max=1024;
   endgroup
@@ -64,6 +66,19 @@ extends uvmf_environment_configuration_base;
     qvip_env_config = axi4_2x2_fabric_qvip_env_configuration::type_id::create("qvip_env_config");
 
   endfunction
+
+// ****************************************************************************
+// FUNCTION: post_randomize()
+// This function is automatically called after the randomize() function 
+// is executed.
+//
+  function void post_randomize();
+    super.post_randomize();
+
+
+
+  endfunction
+  
 // ****************************************************************************
 // FUNCTION: convert2string()
 // This function converts all variables in this class to a single string for
@@ -107,6 +122,7 @@ extends uvmf_environment_configuration_base;
 
     qvip_env_interface_names     = interface_names[0:3];
     qvip_env_interface_activity  = interface_activity[0:3];
+
 
 
 

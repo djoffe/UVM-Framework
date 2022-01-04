@@ -32,7 +32,7 @@
 // Define the major and minor UVMF release number
 `define UVMF_MAJOR_VERSION 3
 `define UVMF_MINOR_VERSION 6
-`define UVMF_LETTER_VERSION "g"
+`define UVMF_LETTER_VERSION "h"
 
 class uvmf_version;
   static bit b = print_version();

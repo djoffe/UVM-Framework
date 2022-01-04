@@ -47,11 +47,23 @@ intf.addConfigVar('src_address','bit [DATA_WIDTH-1:0]',isrand=True)
 intf.addConfigVarConstraint('valid_dst_c','{ src_address inside {[63:16], 1025}; }')
 
 ## Specify DPI information
-intf.setDPISOName('pktPkgCFunctions',compArgs='-c -DPRINT32 -O2 -fPIC',linkArgs='-shared')
+intf.setDPISOName('pktPkgCFunctions',compArgs='-c -DPRINT32 -O2',linkArgs='-shared')
 intf.addDPIFile('myFirstIfFile.c')
 intf.addDPIFile('mySecondIfFile.c')
-intf.addDPIImport('void', 'hello_world_from_interface','(unsigned int variable1, unsigned int variable2)',{'variable1':'int unsigned','variable2':'int unsigned'})
-intf.addDPIImport('void', 'good_bye_world_from_interface','(unsigned int variable3, unsigned int variable4)',{'variable3':'int unsigned','variable4':'int unsigned'})
+intf.addDPIImport('void','void', 'hello_world_from_interface','(unsigned int variable1, unsigned int variable2)',
+        [{'name':'variable1',
+          'type':'int unsigned',
+          'dir':'input'},
+         {'name':'variable2',
+          'type':'int unsigned',
+          'dir':'input'}])
+intf.addDPIImport('void','void', 'good_bye_world_from_interface','(unsigned int variable3, unsigned int variable4)',
+        [{'name':'variable3',
+          'type':'int unsigned',
+          'dir':'input'},
+         {'name':'variable4',
+          'type':'int unsigned',
+          'dir':'input'}])
 ## This will prompt the creation of all interface files in their specified
 ##  locations
 intf.create()

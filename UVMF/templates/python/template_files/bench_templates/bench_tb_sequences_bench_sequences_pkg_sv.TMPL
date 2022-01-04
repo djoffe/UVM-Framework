@@ -47,9 +47,21 @@ package {{name}}_sequences_pkg;
   
    `include "uvm_macros.svh"
 
+{% if inFactReady %}
+   `include "src/infact_{{name}}_bench_transactions.svh"
+{% endif %}
    `include "src/{{name}}_bench_sequence_base.svh"
-   `include "src/infact_bench_sequence.svh"
    `include "src/example_derived_test_sequence.svh"
+{% if inFactReady %}
+`ifdef INFACT_ENABLE_COMPILE
+{% for bfm in bfms %}
+{% if bfm.activity == 'ACTIVE' %}
+   `include "infact_proj_dir/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
+{% endif %}   
+{% endfor %}
+   `include "src/infact_{{name}}_bench_sequence_base.svh"
+`endif
+{% endif %}
 
 endpackage
 

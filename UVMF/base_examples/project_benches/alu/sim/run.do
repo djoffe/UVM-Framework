@@ -8,11 +8,11 @@ vlib work
 vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/fli_pkg $env(UVMF_HOME)/common/fli_pkg/fli_pkg.sv
 vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/uvmf_base_pkg -F $env(UVMF_HOME)/uvmf_base_pkg/uvmf_base_pkg_filelist_hvl.f
 vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/uvmf_base_pkg -F $env(UVMF_HOME)/uvmf_base_pkg/uvmf_base_pkg_filelist_hdl.f
-vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock/clock_filelist_hvl.f
-vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock/clock_filelist_hdl.f
-vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/reset -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/reset/reset_filelist_hvl.f
-vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/reset -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/reset/reset_filelist_hdl.f
-vlog $env(UVMF_HOME)/common/uvm_co_emulation_utilities/memload/memload_pkg.sv $env(UVMF_HOME)/common/uvm_co_emulation_utilities/memload/src/memload.cc -dpiheader dpiheader.h -ccflags "-FPIC -I/include -DQUESTA"
+vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock_filelist_hvl.f
+vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock_filelist_hdl.f
+vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/reset -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/reset_filelist_hvl.f
+vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/reset -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/reset_filelist_hdl.f
+vlog $env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/memload/memload_pkg.sv $env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/memload/memload.cc -dpiheader dpiheader.h -ccflags "-FPIC -I/include -DQUESTA"
 
 vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_VIP_LIBRARY_HOME)/interface_packages/alu_in_pkg -F $env(UVMF_VIP_LIBRARY_HOME)/interface_packages/alu_in_pkg/alu_in_filelist_hvl.f 
 vlog -sv -suppress 2223 -suppress 2286 +incdir+$env(UVMF_VIP_LIBRARY_HOME)/interface_packages/alu_in_pkg -F $env(UVMF_VIP_LIBRARY_HOME)/interface_packages/alu_in_pkg/alu_in_filelist_hdl.f 

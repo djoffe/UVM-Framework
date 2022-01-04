@@ -65,6 +65,7 @@ parameter string UVMF_AGENT_CONFIG       = "AGENT_CONFIG";
 parameter string UVMF_CLOCK_APIS         = "UVMF_CLOCK_APIS";
 parameter string UVMF_RESET_APIS         = "UVMF_RESET_APIS";
 
-
+parameter C_BIT_ARRAY_SIZE = 4096;
+typedef bit [C_BIT_ARRAY_SIZE-1:0] c_bit_array_t;
 
 

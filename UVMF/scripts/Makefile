@@ -6,15 +6,24 @@
 # DASH_F_OPTION value for 3.6f generator output compatability with 3.6g core code
 DASH_F_OPTION = -F
 
-# Visualizer enable switch
-USE_VIS ?= 0
 # Visualizer class debug switch
 USE_VIS_UVM ?= 0
+# Visualizer enable switch (forced on if USE_VIS_UVM==1)
+ifeq ($(USE_VIS_UVM),1)
+  USE_VIS = 1
+else
+  USE_VIS ?= 0
+endif
+
+# VRM Variables, used in the 'vrun' target
+VRUN_ARGS ?= -html
+RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
+EXTRA_VRUN_ARGS ?= 
+VRUN_RUNNABLE ?= 
 
 # Usage of Veloce, VTL etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
 USE_VTL             ?= 0
-USE_LEGACY_TBX_FLOW ?= 0
 USE_QUESTA_PROFILER ?= 0
 USE_VELOCE_PROFILER ?= 0
 
@@ -26,15 +35,28 @@ USE_VELOCE_AND_VTL_0 = 0
 USE_VELOCE_AND_VTL_1 = $(USE_VTL)
 USE_VELOCE_AND_VTL   = $(USE_VELOCE_AND_VTL_$(USE_VELOCE))
 
+EN_BETA         ?= 0
+
+BETA_VOPT_0 =
+BETA_VOPT_1 = +keeplrmcompliantvhdlbracket
+BETA_VOPT   = $(BETA_VOPT_$(EN_BETA))
+
+BETA_VELHVL_0 =
+BETA_VELHVL_1 = -vlog_opts "+define+VISUALIZER_DBG"
+BETA_VELHVL   = $(BETA_VELHVL_$(EN_BETA))
+
 # # Add to default compile/load/run arguments
 GCC_ARG_0 =
 GCC_ARG_1 = 
 GCC_ARG   = $(GCC_ARG_$(USE_VELOCE_OR_VTL))
 
-BATCH_VOPT_ARGS   += $(GCC_ARG)
-DEBUG_VOPT_ARGS   += $(GCC_ARG)
+# Enable/disable transaction logging
+ENABLE_TRLOG ?= 1
+
+BATCH_VOPT_ARGS   += $(GCC_ARG) $(BETA_VOPT)
+DEBUG_VOPT_ARGS   += $(GCC_ARG) $(BETA_VOPT)
 COMMON_VSIM_ARGS  += $(GCC_ARG)
-LINK_ARGS         += $(GCC_ARG)
+LINK_ARGS         += $(GCC_ARG) $(BETA_VELHVL)
 
 # QVIP vs VTL flow
 QVIP_HOME  = $(QUESTA_MVC_HOME)
@@ -44,18 +66,14 @@ VIP_HOME_1 = $(VVIP_HOME)
 VIP_HOME   = $(VIP_HOME_$(USE_VTL))
 
 # Veloce SW used to identify tbx or os3
-VEL_SW_0 = OS3
-VEL_SW_1 = TBX
-VEL_SW   = $(VEL_SW_$(USE_LEGACY_TBX_FLOW))
+VEL_SW   = OS3
 
-# Simulator vs emulator compile commands
-SIM_COMP_CMD = $(PRE_VLOG_SETENV) vlog $(VLOG_ARGS)
+# Simulator vs emulator compile commands for verilog
+SIM_COMP_CMD = $(PRE_VLOG_SETENV) vlog $(VLOG_ARGS) $(EXTRA_VLOG_ARGS)
 EMU_COMP_CMD = $(VELANALYZE_CMD)
 
-# Veloce analyze command as determined by OS3 vs legacy TBX usage
-VELANALYZE_CMD_0   = velanalyze
-VELANALYZE_CMD_1   = veanalyze
-VELANALYZE_CMD     = $(VELANALYZE_CMD_$(USE_LEGACY_TBX_FLOW)) $(VELANALYZE_ARGS)
+# Veloce analyze command as determined by OS3
+VELANALYZE_CMD     = velanalyze $(VELANALYZE_ARGS) $(EXTRA_VELANALYZE_ARGS)
 VELANALYZE_HVL_CMD = $(VELANALYZE_CMD) -extract_hvl_info $(VELANALYZE_HVL_ARGS)
 
 # Compile command as determined by simulator vs emulator usage
@@ -70,17 +88,26 @@ HDL_COMP_CMD_0 = $(SIM_COMP_CMD)
 HDL_COMP_CMD_1 = $(EMU_COMP_CMD)
 HDL_COMP_CMD   = $(HDL_COMP_CMD_$(USE_VELOCE))
 
-# Veloce compile command as determined by OS3 vs legacy TBX usage
-VELCOMP_CMD_0 = velcomp
-VELCOMP_CMD_1 = tbxcomp
-VELCOMP_CMD   = $(VELCOMP_CMD_$(USE_LEGACY_TBX_FLOW)) -top $(TOP_HDL)
 
-# Link command as determined by puresim vs Veloce and OS3 vs legacy TBX usage
-LINK_CMD_0_0 = velhvl -sim puresim
-LINK_CMD_0_1 = tbxsvlink -puresim
-LINK_CMD_1_0 = velhvl -sim veloce
-LINK_CMD_1_1 = tbxsvlink -veloce
-LINK_CMD     = $(LINK_CMD_$(USE_VELOCE)_$(USE_LEGACY_TBX_FLOW)) $(LINK_ARGS)
+# Veloce analyze command as determined by OS3
+VELANALYZE_ARGS_VHDL = -hdl vhdl 
+VELANALYZE_CMD_VHDL  = velanalyze $(VELANALYZE_ARGS_VHDL) $(EXTRA_VELANALYZE_ARGS_VHDL)
+
+# Simulator vs emulator compile commands for verilog
+SIM_COMP_CMD_VHDL = $(PRE_VCOM_SETENV) vcom $(VCOM_ARGS) $(EXTRA_VCOM_ARGS)
+EMU_COMP_CMD_VHDL = $(VELANALYZE_CMD_VHDL)
+
+HDL_COMP_CMD_VHDL_0 = $(SIM_COMP_CMD_VHDL)
+HDL_COMP_CMD_VHDL_1 = $(EMU_COMP_CMD_VHDL)
+HDL_COMP_CMD_VHDL   = $(HDL_COMP_CMD_VHDL_$(USE_VELOCE))
+
+# Veloce compile command as determined by OS3
+VELCOMP_CMD   = velcomp -top $(TOP_HDL)
+
+# Link command as determined by puresim vs Veloce and OS3
+LINK_CMD_0 = velhvl -sim puresim
+LINK_CMD_1 = velhvl -sim veloce
+LINK_CMD     = $(LINK_CMD_$(USE_VELOCE)) $(LINK_ARGS)
 
 # Library platform as implied by 32 vs 64 bit MTI_VCO_MODE
 # Default assumption is 32-bit (if MTI_VCO_MODE isn't set)
@@ -123,47 +150,122 @@ DEBUG_VOPT_ARGS += +acc
 COMMON_VSIM_ARGS_0 = 
 COMMON_VSIM_ARGS_1 = -autoprofile
 COMMON_VSIM_ARGS   += -sv_seed $(TEST_SEED) +UVM_TESTNAME=$(TEST_NAME) \
-                      +UVM_VERBOSITY=$(TEST_VERBOSITY) $(UVM_CLI_ARGS) \
+                      $(UVM_CLI_ARGS) \
                       -permit_unmatched_virtual_intf \
                       +notimingchecks -suppress 8887 \
                       -solvefaildebug -solvefailtestcase \
                       $(COMMON_VSIM_ARGS_$(USE_QUESTA_PROFILER))
 
 # Default Visualizer dumping for RTL and Testbench
-VIS_DUMP_RTL ?= +signal+report
-VIS_DUMP_TB  ?= +class+transaction+uvm_schematic
+VISWAVE_TRLOG_0 =
+VISWAVE_TRLOG_1 = +transaction
+VISWAVE_TRLOG = $(VISWAVE_TRLOG_$(ENABLE_TRLOG))
+VIS_MEM_SIZE ?= 1024
+VIS_DUMP_RTL ?= +signal+report+memory=$(VIS_MEM_SIZE)$(VISWAVE_TRLOG)
+VIS_DUMP_TB_0 = 
+VIS_DUMP_TB_1 = +class+uvm_schematic
+VIS_DUMP_TB  ?= $(VIS_DUMP_TB_$(USE_VIS_UVM))
+VIS_DUMP_OPTIONS ?= $(VIS_DUMP_RTL)$(VIS_DUMP_TB)
+
+EN_TRLOG_CFG_0 =
+EN_TRLOG_CFG_1 = +uvm_set_config_int=*,enable_transaction_viewing,1
+EN_TRLOG_CFG = $(EN_TRLOG_CFG_$(ENABLE_TRLOG))
 
 # Batch simulation arguments minimizes debug capabilities
-VIS_VSIM_ARGS_0 = -qwavedb=$(VIS_DUMP_RTL)
-VIS_VSIM_ARGS_1 = $(VIS_VSIM_ARGS_0)+$(VIS_DUMP_TB) -classdebug \
-                  +uvm_set_config_int=*,enable_transaction_viewing,1
-VIS_VSIM_ARGS += $(VIS_VSIM_ARGS_$(USE_VIS_UVM))
+VIS_VSIM_ARGS = -qwavedb=$(VIS_DUMP_OPTIONS)
 
 BATCH_VSIM_ARGS_0 = $(COMMON_VSIM_ARGS) -uvmcontrol=none
 BATCH_VSIM_ARGS_1 = $(COMMON_VSIM_ARGS) -uvmcontrol=none $(VIS_VSIM_ARGS)
-BATCH_VSIM_ARGS += $(BATCH_VSIM_ARGS_$(USE_VIS))
+BATCH_VSIM_ARGS = $(BATCH_VSIM_ARGS_$(USE_VIS)) $(EN_TRLOG_CFG)
 BATCH_VSIM_ARGS += -printsimstats
 
-# Debug simulation arguments turns on class debug, assertion debug, UVM debug, and custom transaction recording 
-DEBUG_VSIM_ARGS += $(COMMON_VSIM_ARGS) -uvmcontrol=all -msgmode both -classdebug -assertdebug \
-                   +uvm_set_config_int=*,enable_transaction_viewing,1 \
-                   -title $(TEST_NAME)
-WAVE_FILE_0 = ; do wave.do
-WAVE_FILE_1 =
-WAVE_FILE = $(WAVE_FILE_$(USE_VIS))
+## No transaction viewing, classic debugger
+DBG_VSIM_TRLOG_0_0 = -uvmcontrol=all,-trlog
+## Transaction viewing, classic debugger
+DBG_VSIM_TRLOG_0_1 = -uvmcontrol=all +uvm_set_config_int=*,enable_transaction_viewing,1
+## No transaction viewing, Visualizer debugger
+DBG_VSIM_TRLOG_1_0 = 
+## Transaction viewing, Visualizer debugger
+DBG_VSIM_TRLOG_1_1 = +uvm_set_config_int=*,enable_transaction_viewing,1
 
-# Dofile commands - debug only does a run 0, adds everything to waves
-DEBUG_DO_COMMANDS = -do " \
+DBG_VSIM_TRLOG = $(DBG_VSIM_TRLOG_$(USE_VIS)_$(ENABLE_TRLOG))
+
+DBG_VSIM_VIS_0 = -classdebug -title $(TEST_NAME) -msgmode both 
+DBG_VSIM_VIS_1 = $(VIS_VSIM_ARGS)
+DBG_VSIM_VIS = $(DBG_VSIM_VIS_$(USE_VIS))
+
+# Debug simulation arguments turns on class debug, assertion debug, UVM debug, and custom transaction recording 
+DEBUG_VSIM_ARGS += $(COMMON_VSIM_ARGS) -assertdebug $(DBG_VSIM_TRLOG) $(DBG_VSIM_VIS) 
+
+# Pick the wavefile name depending on debug environment. Format is slightly
+# different between Questa Classic and Visualizer
+WAVE_FILE_0 = wave.do
+WAVE_FILE_1 = viswave.do
+WAVE_FILE ?= $(WAVE_FILE_$(USE_VIS))
+
+## Test to see if the wavefile exists
+ifneq ("$(wildcard $(WAVE_FILE))","")
+  WAVE_FILE_EXISTS = 1
+else
+  WAVE_FILE_EXISTS = 0
+endif
+WAVE_FILE_CMD_0 = 
+WAVE_FILE_CMD_1 = ; do $(WAVE_FILE)
+WAVE_FILE_CMD = $(WAVE_FILE_CMD_$(WAVE_FILE_EXISTS))
+
+# VWAVES_CMD, XWAVE_CMD, VSIM_VIS, VSIM_VIS_DO for use with Visualizer only when USE_VELOCE=1
+# Controlled by USE_AUTOUP and USE_XWAVE
+USE_AUTOUP      ?= 0
+USE_XWAVE       ?= 0
+
+VWAVES_CMD_1_1 = velocecmd \"hwtrace autoupload on -tracedir waves -gen crd -crd_options \\\"-o waves.crd -siglist xwaves.sigs\\\" \";
+VWAVES_CMD   = $(VWAVES_CMD_$(USE_VELOCE)_$(USE_AUTOUP))
+
+XWAVE_CMD_1_1 = +velrun+xwave_on +velrun+xwave_select_all_groups "+velrun+xwave_dump waves"
+XWAVE_CMD   = $(XWAVE_CMD_$(USE_VELOCE)_$(USE_XWAVE))
+BATCH_VSIM_ARGS += $(XWAVE_CMD)
+
+VSIM_VIS_1_1_0 = -qwavedb=+signal+memory=5000+transaction+class+report+assertion
+VSIM_VIS_1_0_1 = -qwavedb=+signal+memory=5000+transaction+class+report+assertion $(XWAVE_CMD)
+VSIM_VIS   = $(VSIM_VIS_$(USE_VELOCE)_$(USE_AUTOUP)_$(USE_XWAVE))
+BATCH_VSIM_ARGS += $(VSIM_VIS)
+
+
+all: info
+info:
+	@echo "The following make targets are available:"
+	@echo "  clean:      Removes proceduraly created files"
+	@echo "  debug:      Runs the simulation in GUI mode.  Not valid for Veloce use"
+	@echo "  cli:        Runs the simulation in command line mode. Valid for Questa or Veloce"
+	@echo "  vis:        Opens a single visualizer session for Questa only use"
+	@echo "  vis_veloce: When running with Veloce, 2 Visualizer invocations are opened"
+	@echo ""
+	@echo "Control Variables:"
+	@echo " Control variables are available to enable/disable functionality (USE_VELOCE=1)"
+	@echo "  USE_VELOCE      - 0 (default) for pure sim.  1 to run on Veloce"
+	@echo "  TEST_NAME       - Change which test is run. Default is test_top"
+	@echo "  USE_AUTOUP      - 0 (default) disabled.  When USE_VELOCE=1, 1 to use the "
+	@echo "                  - Veloce trace buffers to capture all signals"
+	@echo "  USE_XWAVE       - 0 (default) disabled.  When USE_VELOCE=1, 1 to use "
+	@echo "                  - xwave (live stream) wave form capture. Requires signal list"
+	@echo "                  - added in veloce.config (rtlc -xwave_siglist xwaves.sigs)"
+
+# Dofile commands - debug only does a run 0, adds everything to waves. 
+# Will run 1ns into sim for Visualizer in order to add waves.
+DEBUG_DO_COMMANDS_0 = -do " \
                     set NoQuitOnFinish 1; \
-                    onbreak {resume}; \
-                    run 0 $(WAVE_FILE)" 
+                    run 0 $(WAVE_FILE_CMD)" 
+DEBUG_DO_COMMANDS_1 = -do " \
+                    run 1ns $(WAVE_FILE_CMD)" 
+DEBUG_DO_COMMANDS = $(DEBUG_DO_COMMANDS_$(USE_VIS))
 
 # Batch dofile commands - run each test to completion
 BATCH_DO_COMMANDS = -do " \
 	 	    coverage save -onexit $(TEST_NAME).ucdb; \
                     set IterationLimit 140000; \
                     set NoQuitOnFinish 1; \
-                    onbreak {resume}; \
+                    $(VWAVES_CMD) \
+                    $(EXTRA_DO_CMD) \
                     run -all; \
                     quit -f;" 
 
@@ -217,24 +319,43 @@ help:
 	@echo "make cli: Invoke build and run default test in command-line mode"
 	@echo "  can specify TEST_NAME=<testname> to run a different test"
 	@echo "make clean: Delete work library, generated files, log files, etc."
+	@echo "make vrun: Invoke a regression using VRM and test list as guide"
 
-clean:
+clean::
 	@-rm -rfv *~ *.ucdb vsim.dbg *.vstf *.log work *.mem *.transcript.txt certe_dump.xml *.wlf transcript covhtmlreport VRMDATA
-	@-rm -rfv design.bin qwave.db dpiheader.h visualizer*.ses
+	@-rm -rfv design.bin qwave.db dpiheader.h visualizer*.ses vrmhtmlreport
 	@-rm -rfv veloce.med veloce.wave veloce.map tbxbindings.h modelsim.ini edsenv
 	@-rm -rfv sv_connect.*
 	@-rm -rfv *.o *.so
+	@-rm -rfv covercheck_results
 
 libs:
 	test -e work || vlib work 
 
-# Visualizer target
-VIS_ARGS_0 = 
-VIS_ARGS_1 = -tracedir veloce.wave/waves.stw -comodel
-VIS_ARGS   = $(VIS_ARGS_$(USE_VELOCE))
+# Visualizer target arguments
+VIS_ARGS_0 =
+VIS_ARGS_1 = -do $(WAVE_FILE)
+VIS_ARGS = $(VIS_ARGS_$(WAVE_FILE_EXISTS))
 
+VIS_VEL_ARGS_0 =
+VIS_VEL_ARGS_1 = -tracedir veloce.wave/waves.stw -comodel
+VIS_VEL_ARGS   = $(VIS_VEL_ARGS_$(USE_VELOCE))
+
+DEBUG_VOPT_TOP_0 = optimized_debug_top_tb
+DEBUG_VOPT_TOP_1 = optimized_batch_top_tb
+DEBUG_VOPT_TOP = $(DEBUG_VOPT_TOP_$(USE_VIS))
+
+DEBUG_SWITCH_0 = -i
+DEBUG_SWITCH_1 = -visualizer
+DEBUG_SWITCH = $(DEBUG_SWITCH_$(USE_VIS))
+
+vis: USE_VIS = 1
 vis:
-	visualizer -designfile design.bin -wavefile qwave.db $(VIS_ARGS)
+	visualizer -designfile design.bin -wavefile qwave.db $(VIS_ARGS) $(VIS_VEL_ARGS)
+
+vis_veloce:
+	visualizer -tracedir veloce.wave/waves.stw &
+	visualizer -designfile design.bin -wavefile qwave.db &
 
 # Top Test Bench Modules
 comp_test_bench:
@@ -248,8 +369,10 @@ VEL_COMP  = $(VEL_COMP_$(USE_VELOCE))
 
 # Code coverage enabled by setting CODE_COVERAGE_ENABLE to 1 (default 0)
 CODE_COVERAGE_ENABLE ?= 0
+CODE_COVERAGE_TYPES ?= bsf
+CODE_COVERAGE_TARGET ?= /hdl_top/DUT.
 VOPT_CODE_COV_ARGS_0 = 
-VOPT_CODE_COV_ARGS_1 = +cover=bsf+/hdl_top/DUT.
+VOPT_CODE_COV_ARGS_1 = +cover=$(CODE_COVERAGE_TYPES)+$(CODE_COVERAGE_TARGET)
 VOPT_CODE_COV_ARGS ?= $(VOPT_CODE_COV_ARGS_$(CODE_COVERAGE_ENABLE))
 VSIM_CODE_COV_ARGS_0 =
 VSIM_CODE_COV_ARGS_1 = -coverage
@@ -285,6 +408,26 @@ comp_vtl_base_pkg:
 	$(HVL_COMP_CMD) $(VTL_BASE_PKG_HVL)
 	$(HDL_COMP_CMD) $(VTL_BASE_PKG_HDL)
 
+VINFO_TGT_0 = q_vinfo_comp
+VINFO_TGT_1 = v_vinfo_comp
+VINFO_TGT = $(VINFO_TGT_$(USE_VELOCE))
+
+q_vinfo_comp:
+	$(HVL_COMP_CMD) -F hvl.vf
+
+v_vinfo_comp: comp_uvm_pkg q_vinfo_comp
+	$(VELANALYZE_HVL_CMD) -F hvl.vf
+
+build_hdl_vinfo:
+	$(MFLIST) hdl.vinfo -o ./hdl.vf
+
+build_hvl_vinfo:
+	$(MFLIST) hvl.vinfo -o ./hvl.vf
+
+BUILD_TGT_0 = make_build
+BUILD_TGT_1 = vinfo_build
+BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
+
 # Link target (Veloce)
 link:
 	$(LINK)
@@ -293,47 +436,81 @@ LINK_0 =
 LINK_1 = $(LINK_CMD)
 LINK = $(LINK_$(USE_VELOCE_OR_VTL))
 
-# Optimize target - run vopt twice.. one for batch mode (high performance, low visibility) and
+# Optimize target - For Classic run vopt twice.. one for batch mode (high performance, low visibility) and
 #   one for debug mode (full visibility).  Doing it twice here allows the gui_run and cli_run
 #   targets to be run at the user's convenience later on without reoptimizing.  Also utilized
 #   by VRM's rerun capabilities
+#   For Visualizer, only run vopt once (always with -debug)
 optimize:
 	$(PRE_VOPT_CLI_CMD)
 	$(PRE_VOPT_CLI_SETENV) vopt $(VOPT_CODE_COV_ARGS) $(BATCH_VOPT_ARGS) $(EXTRA_VOPT_ARGS) $(TOP_TB) -o optimized_batch_top_tb
+ifeq ($(USE_VIS),0)
 	$(PRE_VOPT_GUI_CMD) 
 	$(PRE_VOPT_GUI_SETENV) vopt $(VOPT_CODE_COV_ARGS) $(DEBUG_VOPT_ARGS) $(EXTRA_VOPT_ARGS) $(TOP_TB) -o optimized_debug_top_tb
+endif
 
 # Invoke a GUI mode simulation
 gui_run: 
 	$(PRE_VSIM_GUI_CMD) 
-	$(PRE_VSIM_GUI_SETENV) vsim -i $(VSIM_CODE_COV_ARGS) $(EXTRA_VSIM_ARGS) $(DEBUG_VSIM_ARGS) $(DEBUG_DO_COMMANDS) optimized_debug_top_tb $(EXTRA_VSIM_TOPS)
+	$(PRE_VSIM_GUI_SETENV) vsim $(DEBUG_SWITCH) $(VSIM_CODE_COV_ARGS) $(EXTRA_VSIM_ARGS) $(DEBUG_VSIM_ARGS) $(DEBUG_DO_COMMANDS) $(DEBUG_VOPT_TOP) $(EXTRA_VSIM_TOPS)
 
 # Invoke a batch mode simulation
 cli_run: 
 	$(PRE_VSIM_CLI_CMD) 
 	$(PRE_VSIM_CLI_SETENV) vsim -c $(VSIM_CODE_COV_ARGS) $(EXTRA_VSIM_ARGS) $(BATCH_VSIM_ARGS) $(BATCH_DO_COMMANDS) optimized_batch_top_tb  $(EXTRA_VSIM_TOPS)
 
+## Because sometimes we forget what these are called. :)
+run_cli: cli_run
+run_gui: gui_run
+
 cli: libs build link optimize cli_run
 debug: clean libs build link optimize gui_run
 
-# Test plan targets
-import_test_plan:
-	xml2ucdb -format Excel $(TEST_PLAN_NAME).xml testplan.ucdb
+vrun:
+	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(EXTRA_VRUN_ARGS)
 
-merge_all_ucdb:
-	vcover merge regression.merged.ucdb *.ucdb
+## This target runs covercheck verify using an existing work library and UCDB
+COVERCHECK_TOP ?= verilog_dut
+COVERCHECK_UCDB ?= test_top.ucdb
+COVERCHECK_TIMEOUT ?= 15m
+COVERCHECK_BUILD_DIR ?= .
+COVERCHECK_DIRECTIVES_FILE ?=
+COVERCHECK_INIT_FILE ?=
+EXTRA_COVERCHECK_COMPILE_ARGS ?= 
+EXTRA_COVERCHECK_VERIFY_ARGS ?=
 
-rank_all_ucdb:
-	vcover ranktest -log regression.ranked.txt *.ucdb
+COVERCHECK_DIRECTIVES_CMD_0 =
+COVERCHECK_DIRECTIVES_CMD_1 = do $(COVERCHECK_DIRECTIVES_FILE);
+ifeq ($(COVERCHECK_DIRECTIVES_FILE),)
+  USE_COVERCHECK_DIRECTIVES = 0
+else
+  USE_COVERCHECK_DIRECTIVES = 1
+endif
+COVERCHECK_DIRECTIVES_CMD = $(COVERCHECK_DIRECTIVES_CMD_$(USE_COVERCHECK_DIRECTIVES))
 
-create_html_report:
-	vcover report -html -htmldir coverage_html_report -threshL 50 -threshH 90 regression.merged.ucdb
+COVERCHECK_INIT_CMD_0 =
+COVERCHECK_INIT_CMD_1 = -init $(COVERCHECK_INIT_FILE)
+ifeq ($(COVERCHECK_INIT_FILE),)
+  USE_COVERCHECK_INIT = 0
+else
+  USE_COVERCHECK_INIT = 1
+endif
+COVERCHECK_INIT_CMD = $(COVERCHECK_INIT_CMD_$(USE_COVERCHECK_INIT))
 
-create_verbose_html_report:
-	vcover report -html -htmldir coverage_verbose_html_report -verbose -threshL 50 -threshH 90 regression.merged.ucdb
+COVERCHECK_MODELSIMINI_CMD_0 = 
+COVERCHECK_MODELSIMINI_CMD_1 = -modelsimini $(COVERCHECK_BUILD_DIR)/modelsim.ini
+ifneq ("$(wildcard $(COVERCHECK_BUILD_DIR)/modelsim.ini)","")
+  USE_COVERCHECK_MODELSIMINI = 1
+else
+  USE_COVERCHECK_MODELSIMINI = 0
+endif
+COVERCHECK_MODELSIMINI_CMD = $(COVERCHECK_MODELSIMINI_CMD_$(USE_COVERCHECK_MODELSIMINI))
 
-generate_assignment_reports:
-	vsim -viewcov regression.merged.ucdb -c -do $(REPORTING_DO_FILE).do
-
-finalize_regression: import_test_plan merge_all_ucdb generate_assignment_reports create_html_report 
-
+covercheck:
+	qverify -c -od covercheck_results -do " \
+	  $(COVERCHECK_DIRECTIVES_CMD) \
+	  covercheck compile -work $(COVERCHECK_BUILD_DIR)/work $(COVERCHECK_MODELSIMINI_CMD) -d $(COVERCHECK_TOP) $(EXTRA_COVERCHECK_COMPILE_ARGS); \
+	  covercheck load ucdb $(COVERCHECK_UCDB); \
+	  covercheck verify -timeout $(COVERCHECK_TIMEOUT) $(COVERCHECK_INIT_CMD) $(EXTRA_COVERCHECK_VERIFY_ARGS); \
+	  covercheck generate exclude covercheck_exclude.do; \
+	  exit"

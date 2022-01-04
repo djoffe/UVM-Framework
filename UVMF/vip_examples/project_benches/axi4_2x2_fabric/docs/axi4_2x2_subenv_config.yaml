@@ -13,12 +13,18 @@ uvmf:
             - port_name: "ap"
               key: "trans_ap"
               type: "axi4_master_rw_transaction#(<enter_parameters_here>)"
+          imports :
+            - 'mgc_axi4_v1_0_pkg'
         - name: 'mgc_axi4_m1'
           active_passive: 'ACTIVE'
+          imports :
+            - 'mgc_axi4_v1_0_pkg'
         - name: 'mgc_axi4_s0'
           active_passive: 'ACTIVE'
+          imports :
+            - 'mgc_axi4_v1_0_pkg'
         - name: 'mgc_axi4_s1'
           active_passive: 'ACTIVE'
-      imports:
-        - { name: 'mgc_axi4_v1_0_pkg' }
+          imports :
+            - 'mgc_axi4_v1_0_pkg'
 ...

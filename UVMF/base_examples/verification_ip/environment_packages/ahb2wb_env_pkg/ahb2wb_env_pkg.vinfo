@@ -1,0 +1,5 @@
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+@use ../../interface_packages/wb_pkg/wb_pkg.vinfo
+@use ../../interface_packages/ahb_pkg/ahb_pkg.vinfo
+ahb2wb_env_pkg.sv

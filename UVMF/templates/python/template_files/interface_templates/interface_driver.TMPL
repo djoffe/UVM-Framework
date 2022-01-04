@@ -27,7 +27,7 @@ extends uvmf_driver_base #(
                    .CONFIG_T({{name}}_configuration {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             ) {% endif %}),
-                   .BFM_BIND_T(virtual {{name}}_driver_bfm{%if paramDefs|length > 0%} #(
+                   .BFM_BIND_T({% if useDpiLink %}{{name}}_driver_proxy {% else %}virtual {{name}}_driver_bfm {% endif %}{%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             ) {% endif %}),
                    .REQ({{name}}_transaction {%if paramDefs|length > 0%} #(
@@ -57,24 +57,23 @@ extends uvmf_driver_base #(
 // ****************************************************************************
    virtual function void configure(input CONFIG_T cfg);
       bfm.configure(
-
 {% if veloceReady %}
           cfg.active_passive,
           cfg.initiator_responder
 {% for config in configVars %}
           ,cfg.{{config.name}}
 {% endfor %}
-);                    
+          );                    
    
 {% else %}
                          cfg
-     );
+          );
 {% endif %}
    endfunction
 
 // ****************************************************************************
    virtual function void set_bfm_proxy_handle();
-      bfm.proxy = this;
+      {%if useDpiLink %}{% else %}bfm.proxy = this;{% endif %}
    endfunction
 
 // ****************************************************************************              
@@ -89,7 +88,7 @@ extends uvmf_driver_base #(
         end
         bfm.response(
 {% if veloceReady %}
-{% for trans in transVars %}      txn.{{trans.name}}{% if not loop.last %},
+{% for trans in transVars %}                txn.{{trans.name}}{% if not loop.last %},
 {% endif %}
 {% endfor %}
 {% else %}
@@ -99,7 +98,7 @@ extends uvmf_driver_base #(
       end else begin    
         bfm.access(
 {% if veloceReady %}
-{% for trans in transVars %}      txn.{{trans.name}}{% if not loop.last %},
+{% for trans in transVars %}                txn.{{trans.name}}{% if not loop.last %},
 {% endif %}
 {% endfor %}
 {% else %}

@@ -35,15 +35,16 @@ extends uvm_subscriber #(.T({{name}}_transaction {%if paramDefs|length > 0%} #(
 {% endif %}
 
 {%for txn in transVars %}
-  {{txn.type}} {{txn.name}};
+  {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
 
 // ****************************************************************************
   // UVMF_CHANGE_ME : Add coverage bins, crosses, exclusions, etc. according to coverage needs.
   covergroup {{name}}_transaction_cg;
     option.auto_bin_max=1024;
+    option.per_instance=1;
 {%for txn in transVars %}
-    coverpoint {{txn.name}};
+    {%if txn.unpackedDim != "" %}// {% endif %}coverpoint {{txn.name}};
 {% endfor %}
   endgroup
 
@@ -54,6 +55,14 @@ extends uvm_subscriber #(.T({{name}}_transaction {%if paramDefs|length > 0%} #(
   function new(string name="", uvm_component parent=null);
     super.new(name,parent);
     {{name}}_transaction_cg=new;
+    {{name}}_transaction_cg.set_inst_name($sformatf("{{name}}_transaction_cg_%s",get_full_name()));
+ endfunction
+
+ // ****************************************************************************
+// FUNCTION : build_phase()
+// This function is the standard UVM build_phase.
+//
+  function void build_phase(uvm_phase phase);
     {{name}}_transaction_cg.set_inst_name($sformatf("{{name}}_transaction_cg_%s",get_full_name()));
  endfunction
 

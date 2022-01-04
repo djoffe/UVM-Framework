@@ -39,7 +39,7 @@ import {{name}}_pkg_hdl::*;
 import {{name}}_pkg::*;
 {% endif %}
 
-interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
+{% if useDpiLink %}module{% else %}interface{% endif %} {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
 {% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
 {% endfor %}      )
 {% endif %}
@@ -48,7 +48,13 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
 // pragma attribute {{name}}_monitor_bfm partition_interface_xif                                  
 // The above pragma and additional ones in-lined below are for running this BFM on Veloce
 {% endif %}
-
+{% if useDpiLink %}
+  import "DPI-C" context function void C_{{name}}_notify_transaction( input c_bit_array_t bit_vec_in);
+  export "DPI-C" function configure;
+  export "DPI-C" function start_monitoring;
+  export "DPI-C" task     wait_for_reset;
+  export "DPI-C" task     wait_for_num_clocks;
+{% endif %}
 
    tri        {{clock}}_i;
    tri        {{reset}}_i;
@@ -72,7 +78,7 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
 
 //******************************************************************                         
 {% if veloceReady %}
-   task wait_for_reset(); // pragma tbx xtf                                                  
+   task wait_for_reset(); {% if useDpiLink %}{% else %}// pragma tbx xtf  {% endif %}                                                
 {% else %}
    task wait_for_reset();
 {% endif %}
@@ -86,20 +92,24 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
       @(posedge {{clock}}_i) ;                                                                    
    endtask    
    
+   
 //******************************************************************                         
-{% if veloceReady %}
-   task wait_for_num_clocks( input int unsigned count); // pragma tbx xtf                           
-{% else %}
-   task wait_for_num_clocks( input int unsigned count);
+{%if useDpiLink %}
+   task wait_for_num_clocks( c_bit_array_t bit_vec);   
+     int unsigned count;  
+{% else %} 
+   task wait_for_num_clocks( input int unsigned count); {% if veloceReady %}// pragma tbx xtf {% endif %}
 {% endif %}
-      @(posedge {{clock}}_i);                                                                     
+
+      @(posedge {{clock}}_i);  
+      {% if useDpiLink %}{count}=bit_vec;  {% endif %}                                                               
       repeat (count-1) @(posedge {{clock}}_i);                                                    
    endtask      
 
 //******************************************************************                         
   event go;                                                                                 
 {% if veloceReady %}
-  function void start_monitoring(); // pragma tbx xtf      
+  function void start_monitoring(); {% if useDpiLink %}{% else %}// pragma tbx xtf  {% endif %}      
 {% else %}
   function void start_monitoring();
 {% endif %}
@@ -111,7 +121,7 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
      @go;                                                                                   
      forever begin                                                                          
 {% for txn in transVars %}
-        {{txn.type}} {{txn.name}};
+        {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
         @(posedge {{clock}}_i);                                                                   
 
@@ -121,17 +131,30 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
 {% endif %}
 {% endfor %}
                   );
+{% if useDpiLink %}
+        C_{{name}}_notify_transaction({
+{% else %} 
         proxy.notify_transaction(
+{% endif %}
 {% for txn in transVars %}
                    {{txn.name}}{% if not loop.last %},
 {% endif %}
 {% endfor %}
+{% if useDpiLink %}
+        } {% endif %}
                                 );     
      end                                                                                    
   end                                                                                       
 
 //******************************************************************
-   function void configure(
+   function void configure({%if useDpiLink %}  c_bit_array_t bit_vec);
+           uvmf_active_passive_t act_pass;
+           uvmf_initiator_responder_t   init_resp;
+{% for config in configVars %}
+            {{config.type}} {{config.name}};
+{% endfor %}
+          {act_pass,init_resp{% for config in configVars %},{{config.name}}{% endfor %}} = bit_vec;
+{% else %}
 {% if veloceReady %}
           uvmf_active_passive_t active_passive,
           uvmf_initiator_responder_t   initiator_responder
@@ -143,14 +166,14 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
           {{name}}_configuration cfg
 ); 
 {% endif %}
-
+{% endif %}
    endfunction
 
 
 // ****************************************************************************              
      task do_monitor(
 {% for txn in transVars %}
-                   output {{txn.type}} {{txn.name}}{% if not loop.last %},
+                   output {{txn.type}} {{txn.name}} {{txn.unpackedDim}}{% if not loop.last %},
 {% endif %}
 {% endfor %}
                     );
@@ -168,5 +191,9 @@ interface {{name}}_monitor_bfm {%if paramDefs|length > 0%}      #(
 
      endtask         
   
+{% if useDpiLink %}
+endmodule
+{% else %} 
 endinterface
+{% endif %}
 {% endblock %}

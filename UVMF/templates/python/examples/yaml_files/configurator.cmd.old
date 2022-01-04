@@ -1,0 +1,22 @@
+// Version '20170517'
+// Library '10_6a:06/17/2017:09:36'
+// Version '20170517'
+// Library '10_6a:06/17/2017:09:36'
+"Configurator" create VIP_instance pcie/pcie
+"Configurator" change instance /top/pcie_rc_serial_0
+"Configurator" change name pcie_ep
+"Configurator" change type pcie_ep_serial rename
+"Configurator" create VIP_instance amba/axi4
+"Configurator" create VIP_instance amba/axi4
+"Configurator" create VIP_instance amba/axi4
+"Configurator" change instance /top/axi4_master_0
+"Configurator" change instance /top/axi4_master_1
+"Configurator" change instance /top/axi4_master_2
+"Configurator" change instance /top/axi4_master_2
+"Configurator" change name axi4_slave
+"Configurator" change type axi4_slave rename
+"Configurator" create VIP_instance amba/apb3
+"Configurator" change instance /top/apb_master_0
+"Configurator" change name apb3_config_master
+"Configurator" change test qvip_agents
+exit

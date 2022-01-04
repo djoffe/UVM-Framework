@@ -60,6 +60,15 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
   int report_variables[];
   string report_header = "SCOREBOARD_RESULTS: ";
 
+  // Variable used to enable/disable scoreboard
+  bit scoreboard_enabled=1;
+  bit enable_expected_port=1;
+  bit enable_actual_port=1;
+
+  // Variable used to select use of convert2string() or sprint() in display of
+  // transaction compare results.
+  bit use_sprint_to_display_compare_results;
+
   // Variable used to enable end of test scoreboard empty check
   bit end_of_test_empty_check=1;
 
@@ -91,6 +100,18 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
       // This is NOT recommended for use when verifying a design.
       void'(uvm_config_db #(uvm_bitstream_t)::get(this,"","end_of_test_empty_check",end_of_test_empty_check));
    endfunction
+
+  // FUNCTION: enable_scoarboard
+  // Used to enable the scoreboard.
+  function void enable_scoreboard();
+     scoreboard_enabled=1;
+  endfunction
+
+  // FUNCTION: disable_scoarboard
+  // Used to disable the scoreboard.
+  function void disable_scoreboard();
+     scoreboard_enabled=0;
+  endfunction
 
   // FUNCTION: disable_end_of_test_empty_check
   // Used to diable the end of test empty check.
@@ -135,6 +156,28 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
      max_remaining_transaction_print=count;
   endfunction
 
+  // FUNCTION: enable_sprint_use_to_display_compare_results
+  // Used to enable use of sprint to display compare results
+  function void enable_sprint_use_to_display_compare_results();
+     use_sprint_to_display_compare_results=1;
+  endfunction
+
+  // FUNCTION: disable_sprint_use_to_display_compare_results
+  // Used to disable use of sprint to display compare results
+  function void disable_sprint_use_to_display_compare_results();
+     use_sprint_to_display_compare_results=0;
+  endfunction
+
+  // FUNCTION: 
+  // Used to flush all entries in the scoreboard
+  virtual function void flush_scoreboard();
+  endfunction
+
+  // FUNCTION: 
+  // Used to remove an entry from the scoareboard
+  virtual function void remove_entry(int unsigned key=0);
+  endfunction
+
   // FUNCTION: write_expected
   // That predicted transactions are received through
   virtual function void write_expected(T t);
@@ -157,7 +200,10 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
   // Builds the message printed when comparing transactions
   // Provides for customization of mismatch output formatting
   virtual function string compare_message(string header, T expected, T actual);
-        return {header,"EXPECTED: ",expected.convert2string(),"ACTUAL: ",actual.convert2string()};
+        if ( use_sprint_to_display_compare_results )
+           return {header,"EXPECTED: ",expected.sprint(),"ACTUAL: ",actual.sprint()};
+        else
+           return {header,"EXPECTED: ",expected.convert2string(),"ACTUAL: ",actual.convert2string()};
   endfunction
 
   // FUNCTION: check_phase

@@ -44,8 +44,9 @@ package {{env_name}}_reg_pkg;
       // 
       virtual function void build();
 {% if busMap != None %}
-         {{busMap}} = new("{{busMap}}");
+{{busMap}} = create_map("{{busMap}}", 0, 4, UVM_LITTLE_ENDIAN);
 {% endif %}
+lock_model();
 {% for sub_env in subEnvironments %}
 {% if sub_env.regSubBlock != None %}
          {{sub_env.regSubBlock}} = new("{{sub_env.regSubBlock}}");
