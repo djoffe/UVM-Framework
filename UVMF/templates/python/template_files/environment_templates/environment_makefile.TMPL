@@ -1,0 +1,62 @@
+{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/Makefile" %}
+# {{name}} environment packages source and make target
+
+# Include all requisite sub-environment package targets for this bench
+{% for sub_env in subEnvironments %}
+include $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{sub_env.envPkg}}_env_pkg/Makefile
+{% endfor %}
+
+{{name}}_ENV_PKG =\
+{% for regModel in regModels %}
+		 $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/registers/{{name}}_reg_pkg.sv \
+{% endfor %}
+		 $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/{{name}}_env_pkg.sv
+
+comp_{{name}}_env_pkg: {% if uvmc_cpp_files|length > 0 %} compile_sc {% endif %} {% if DPIFiles|length > 0 %} comp_{{name}}_env_pkg_c_files {% endif %} {% for sub_env in subEnvironments %} comp_{{sub_env.envPkg}}_env_pkg {% endfor %}
+
+		$(HVL_COMP_CMD) +incdir+$(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg $({{name}}_ENV_PKG)
+
+{%if DPIFile != ""%}
+ifeq ($(MTI_VCO_MODE),64)
+  GCC_COMP_ARCH = -m64
+else
+  GCC_COMP_ARCH = -m32
+endif
+
+C_FILE_COMPILE_LIST_{{name}}_env_pkg	= \
+{% for cFile in DPIFiles %}
+	$(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/dpi/{{cFile}} \
+{% endfor %}
+
+O_FILE_COMPILE_LIST_{{name}}_env_pkg = $(notdir $(C_FILE_COMPILE_LIST_{{name}}_env_pkg:.c=.o))
+
+GCC_COMP_ARGS_{{name}}_env_pkg	+= -I$(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/dpi \
+	{{DPICompArgs}}
+
+GCC_LINK_ARGS_{{name}}_env_pkg	+= \
+	{{DPILinkArgs}} \
+ 	-o {{soName}}.so
+
+comp_{{name}}_env_pkg_c_files:
+	@echo "--------------------------------"
+	@echo "Compiling Environment C source"
+	@echo "--------------------------------"
+	gcc $(GCC_COMP_ARCH) $(GCC_COMP_ARGS_{{name}}_env_pkg) $(C_FILE_COMPILE_LIST_{{name}}_env_pkg)
+	@echo "--------------------------------"
+	@echo "Linking Environment C objects into a shared object"
+	@echo "--------------------------------"
+	gcc $(GCC_COMP_ARCH) $(GCC_LINK_ARGS_{{name}}_env_pkg) $(O_FILE_COMPILE_LIST_{{name}}_env_pkg)
+	@echo "--------------------------------"
+{% endif %}
+
+{% if uvmc_cpp_files|length > 0 %}
+# UVMConnect support - target is 'compile_uvmc'.
+include $(UVMF_HOME)/common/uvmc/Makefile
+compile_sc: compile_uvmc
+	-@echo "Compiling SystemC TLM models"
+{% for cppFile in uvmc_cpp_files %}
+	sccom $(MACHINE_ARCH) -I$(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sc -I$(QUESTA_HOME)/includes/systemc -g -Wall -fmessage-length=0 -fPIC -pipe -scv -DQUESTA -DSC_INCLUDE_DYNAMIC_PROCESSES -O0 -DDEBUG_COUTX -DSC_INCLUDE_MTI_AC -DMTI_BIND_SC_MEMBER_FUNCTION -verbose {{uvmc_cpp_flags}} {{cppFile}}
+{% endfor %}
+	sccom $(MACHINE_ARCH) -g -link -I$(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sc -I$(QUESTA_HOME)/includes/systemc -g -Wall -fmessage-length=0 -fPIC -pipe -work work -scv -DQUESTA -DSC_INCLUDE_DYNAMIC_PROCESSES -O0
+{% endif %}
+

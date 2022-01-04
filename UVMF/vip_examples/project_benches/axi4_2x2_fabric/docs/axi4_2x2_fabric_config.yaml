@@ -1,0 +1,67 @@
+---
+uvmf:
+  util_components:
+    "master_axi4_txn_adapter":  
+      type: "predictor"
+      analysis_ports:
+        - { name: "master_axi4_txn_ap", type: "axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE))" }
+      analysis_exports:
+        - { name: "master_axi4_txn_ae", type: "mvc_sequence_item_base" }
+    "slave_axi4_txn_predictor":  
+      type: "predictor"
+      analysis_exports:
+        - { name: "slave_axi4_txn_ae", type: "mvc_sequence_item_base"  }
+      analysis_ports:
+        - { name: "slave_axi4_txn_m0_ap", type: "axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE))" }
+        - { name: "slave_axi4_txn_m1_ap", type: "axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE))" }
+  environments:
+    "axi4_2x2_fabric" :
+      parameters :
+        - { name: "AXI4_ADDRESS_WIDTH", type: "int", value: '32' }
+        - { name: "AXI4_RDATA_WIDTH", type: "int", value: '32' }
+        - { name: "AXI4_WDATA_WIDTH", type: "int", value: '32' }
+        - { name: "AXI4_MASTER_ID_WIDTH", type: "int", value: '4' }
+        - { name: "AXI4_SLAVE_ID_WIDTH", type: "int", value: '5' }
+        - { name: "AXI4_USER_WIDTH", type: "int", value: '4' }
+        - { name: "AXI4_REGION_MAP_SIZE", type: "int", value: '16' }
+      imports:
+        - { name: 'rw_txn_pkg' }
+      qvip_subenvs :
+        ## This is the instantiation of the QVIP Configurator generated YAML definition
+        - { name: "qvip_env", type: "axi4_2x2_fabric_qvip" }
+      analysis_components :
+        - { name: "m0_axi4_txn_pred", type: "master_axi4_txn_adapter" }
+        - { name: "m1_axi4_txn_pred", type: "master_axi4_txn_adapter" }
+        - { name: "slave_axi4_txn_pred", type: "slave_axi4_txn_predictor" }
+        - { name: "m0_rw_txn_pred", type: "axi4_rw_adapter", extdef: "True" }
+        - { name: "m1_rw_txn_pred", type: "axi4_rw_adapter", extdef: "True" }
+        - { name: "slave_rw_txn_pred", type: "slave_axi4_rw_adapter", extdef: "True" }
+      scoreboards :
+        - { name: "axi4_txn_m0_sb", sb_type: "uvmf_in_order_race_scoreboard", trans_type: "axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE))" }
+        - { name: "axi4_txn_m1_sb", sb_type: "uvmf_in_order_race_scoreboard", trans_type: "axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE))" }
+        - { name: "rw_txn_m0_sb",   sb_type: "uvmf_in_order_race_scoreboard", trans_type: "rw_txn" }
+        - { name: "rw_txn_m1_sb",   sb_type: "uvmf_in_order_race_scoreboard", trans_type: "rw_txn" }
+      qvip_connections :
+        - { driver: "qvip_env_mgc_axi4_m0", ap_key: "trans_ap", receiver: "m0_axi4_txn_pred.master_axi4_txn_ae" }
+        - { driver: "qvip_env_mgc_axi4_m1", ap_key: "trans_ap", receiver: "m1_axi4_txn_pred.master_axi4_txn_ae" }
+        - { driver: "qvip_env_mgc_axi4_s0", ap_key: "trans_ap", receiver: "slave_axi4_txn_pred.slave_axi4_txn_ae" }
+        - { driver: "qvip_env_mgc_axi4_s1", ap_key: "trans_ap", receiver: "slave_axi4_txn_pred.slave_axi4_txn_ae" }
+        - { driver: "qvip_env_mgc_axi4_m0", ap_key: "trans_ap", receiver: "m0_rw_txn_pred.analysis_export" }
+        - { driver: "qvip_env_mgc_axi4_m1", ap_key: "trans_ap", receiver: "m1_rw_txn_pred.analysis_export" }
+        - { driver: "qvip_env_mgc_axi4_s0", ap_key: "trans_ap", receiver: "slave_rw_txn_pred.analysis_export" }
+        - { driver: "qvip_env_mgc_axi4_s1", ap_key: "trans_ap", receiver: "slave_rw_txn_pred.analysis_export" }
+      tlm_connections :
+        - { driver: "m0_axi4_txn_pred.master_axi4_txn_ap", receiver: "axi4_txn_m0_sb.expected_analysis_export" }
+        - { driver: "m1_axi4_txn_pred.master_axi4_txn_ap", receiver: "axi4_txn_m1_sb.expected_analysis_export" }
+        - { driver: "slave_axi4_txn_pred.slave_axi4_txn_m0_ap", receiver: "axi4_txn_m0_sb.actual_analysis_export" }
+        - { driver: "slave_axi4_txn_pred.slave_axi4_txn_m1_ap", receiver: "axi4_txn_m1_sb.actual_analysis_export" }
+        - { driver: "m0_rw_txn_pred.port_rw", receiver: "rw_txn_m0_sb.expected_analysis_export" }
+        - { driver: "m1_rw_txn_pred.port_rw", receiver: "rw_txn_m1_sb.expected_analysis_export" }
+        - { driver: "slave_rw_txn_pred.port_rw_m0", receiver: "rw_txn_m0_sb.actual_analysis_export" }
+        - { driver: "slave_rw_txn_pred.port_rw_m1", receiver: "rw_txn_m1_sb.actual_analysis_export" }
+  benches:
+    "axi4_2x2_fabric" :
+      top_env: "axi4_2x2_fabric"
+      imports:
+        - { name: 'mgc_axi4_v1_0_pkg' }
+...

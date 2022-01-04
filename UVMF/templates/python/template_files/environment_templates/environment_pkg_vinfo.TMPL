@@ -1,0 +1,16 @@
+{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/{{name}}_env_pkg.vinfo" %}
+{% block description %}
+{% endblock %}
+{% block contents %}
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+{% for agent in agent_pkgs %}
+@use ../../interface_packages/{{agent}}_pkg/{{agent}}_pkg.vinfo
+{% endfor %}
+{% for sub_env in subEnvironments %}
+@use ../{{sub_env.name}}_pkg/{{sub_env.name}}_pkg.vinfo
+{% endfor %}
+{% for regModel in regModels %}
+registers/{{name}}_reg_pkg.sv
+{% endfor %}
+{{name}}_env_pkg.sv
+{% endblock %}

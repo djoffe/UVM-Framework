@@ -1,0 +1,12 @@
+{% set fname = "project_benches/{{name}}/tb/sequences/{{name}}_sequences_pkg.vinfo" %}
+{% block description %}
+{% endblock %}
+{% block contents %}
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+{% for bfm in bfm_pkgs %}
+@use ../../../../verification_ip/interface_packages/{{bfm}}_pkg/{{bfm}}_pkg.vinfo
+{% endfor %}
+@use ../../../../verification_ip/environment_packages/{{env_name}}_env_pkg/{{env_name}}_env_pkg.vinfo
+@use ../parameters/{{name}}_parameters_pkg.vinfo
+{{name}}_sequences_pkg.sv
+{% endblock %}

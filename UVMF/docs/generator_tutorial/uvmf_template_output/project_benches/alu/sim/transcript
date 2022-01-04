@@ -1,0 +1,413 @@
+# vsim -c -sv_seed random "+UVM_TESTNAME=test_top" "+UVM_VERBOSITY=UVM_HIGH" -permit_unmatched_virtual_intf "+notimingchecks" -suppress 8887 -solvefaildebug -solvefailtestcase -uvmcontrol=none -printsimstats -do " coverage save -onexit test_top.ucdb; set IterationLimit 140000; set NoQuitOnFinish 1; onbreak {resume}; run -all; quit -f;" optimized_batch_top_tb 
+# Start time: 21:27:23 on Sep 25,2017
+# //  Questa Sim-64
+# //  Version 10.6c linux_x86_64 Jul 25 2017
+# //
+# //  Copyright 1991-2017 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# //
+# //  QuestaSim and its associated documentation contain trade
+# //  secrets and commercial or financial information that are the property of
+# //  Mentor Graphics Corporation and are privileged, confidential,
+# //  and exempt from disclosure under the Freedom of Information Act,
+# //  5 U.S.C. Section 552. Furthermore, this information
+# //  is prohibited from disclosure under the Trade Secrets Act,
+# //  18 U.S.C. Section 1905.
+# //
+# Loading sv_std.std
+# Loading work.uvmf_base_pkg_hdl(fast)
+# Loading work.alu_parameters_pkg(fast)
+# Loading work.alu_out_monitor_bfm(fast)
+# Loading work.alu_out_pkg_hdl(fast)
+# Loading sv_std.mti_fli
+# Loading mtiUvm.uvm_pkg
+# Loading work.fli_pkg(fast)
+# Loading mtiUvm.questa_uvm_pkg
+# Loading work.uvmf_base_pkg(fast)
+# Loading work.alu_out_pkg(fast)
+# Loading work.alu_in_driver_bfm(fast)
+# Loading work.alu_in_monitor_bfm(fast)
+# Loading work.alu_in_pkg_hdl(fast)
+# Loading work.alu_in_pkg(fast)
+# Loading work.alu_sequences_pkg(fast)
+# Loading work.alu_env_pkg(fast)
+# Loading work.alu_test_pkg(fast)
+# Loading work.hvl_top_sv_unit(fast)
+# Loading work.hvl_top(fast)
+# Loading work.alu_out_if_sv_unit(fast)
+# Loading work.alu_in_if_sv_unit(fast)
+# Loading work.hdl_top_sv_unit(fast)
+# Loading work.hdl_top(fast)
+# Loading work.alu_in_monitor_bfm_sv_unit(fast)
+# Loading work.alu_in_monitor_bfm(fast)
+# Loading work.alu_out_monitor_bfm_sv_unit(fast)
+# Loading work.alu_out_monitor_bfm(fast)
+# Loading work.alu_in_driver_bfm_sv_unit(fast)
+# Loading work.alu_in_driver_bfm(fast)
+# Loading /scratch/aedemo/tools/Questa_10.6c/questasim/uvm-1.1d/linux_x86_64/uvm_dpi.so
+# Sv_Seed = 3833261869
+#  coverage save -onexit test_top.ucdb
+#  set IterationLimit 140000
+# 140000
+#  set NoQuitOnFinish 1
+# 1
+#  onbreak {resume}
+#  Warning: onbreak command for use within macro
+#  run -all
+# ----------------------------------------------------------------
+# UVM-1.1d
+# (C) 2007-2013 Mentor Graphics Corporation
+# (C) 2007-2013 Cadence Design Systems, Inc.
+# (C) 2006-2013 Synopsys, Inc.
+# (C) 2011-2013 Cypress Semiconductor Corp.
+# ----------------------------------------------------------------
+# 
+#   ***********       IMPORTANT RELEASE NOTES         ************
+# 
+#   You are using a version of the UVM library that has been compiled
+#   with `UVM_NO_DEPRECATED undefined.
+#   See http://www.eda.org/svdb/view.php?id=3313 for more details.
+# 
+#   You are using a version of the UVM library that has been compiled
+#   with `UVM_OBJECT_MUST_HAVE_CONSTRUCTOR undefined.
+#   See http://www.eda.org/svdb/view.php?id=3770 for more details.
+# 
+#       (Specify +UVM_NO_RELNOTES to turn off this notice)
+# 
+# ----------------------------------------------------------------
+# //  UVM Framework 
+# //  Version 3.6g
+# //  (C) 2017 Mentor Graphics Corporation
+# //  All Rights Reserved.
+# ----------------------------------------------------------------
+# 
+# 
+# UVM_INFO verilog_src/questa_uvm_pkg-1.2/src/questa_uvm_pkg.sv(215) @ 0: reporter [Questa UVM] QUESTA_UVM-1.2.3
+# UVM_INFO verilog_src/questa_uvm_pkg-1.2/src/questa_uvm_pkg.sv(217) @ 0: reporter [Questa UVM]  questa_uvm::init()
+# UVM_INFO @ 0: reporter [RNTST] Running test test_top...
+# UVM_INFO @ 0: uvm_test_top [CFG] 
+# 
+# 
+# ----------------------------------------------------------------------
+# report handler state dump
+# 
+# 
+# +-----------------+
+# |   Verbosities   |
+# +-----------------+
+# 
+# max verbosity level =         300
+# *** verbosities by id
+# [ILLEGALNAME] --> UVM_LOW
+# [Questa Debug] --> UVM_LOW
+# [Questa UVM Settings] --> UVM_LOW
+# 
+# *** verbosities by id and severity
+# 
+# +-------------+
+# |   actions   |
+# +-------------+
+# 
+# *** actions by severity
+# UVM_INFO = DISPLAY 
+# UVM_WARNING = DISPLAY 
+# UVM_ERROR = DISPLAY COUNT 
+# UVM_FATAL = DISPLAY EXIT 
+# 
+# *** actions by id
+# 
+# *** actions by id and severity
+# 
+# +-------------+
+# |    files    |
+# +-------------+
+# 
+# default file handle =           0
+# 
+# *** files by severity
+# UVM_INFO =           0
+# UVM_WARNING =           0
+# UVM_ERROR =           0
+# UVM_FATAL =           0
+# 
+# *** files by id
+# 
+# *** files by id and severity
+# report server state
+# 
+# +-------------+
+# |   counts    |
+# +-------------+
+# 
+# max quit count =     0
+# quit count =     0
+# UVM_INFO :    4
+# UVM_WARNING :    0
+# UVM_ERROR :    0
+# UVM_FATAL :    0
+# CFG :    1
+# Questa UVM :    2
+# RNTST :    1
+# ----------------------------------------------------------------------
+# UVM_INFO verilog_src/questa_uvm_pkg-1.2/src/questa_uvm_pkg.sv(277) @ 0: reporter [Questa UVM] End Of Elaboration
+# UVM_INFO @ 209: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 209: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x0 a:0x00 b:0x00 
+# alu_in_driver_bfm: Inside access()
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 339: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x0 a:0xb0 b:0x9c 
+# UVM_INFO @ 339: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x0 a:0xb0 b:0x9c 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 349: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 349: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x0 a:0xb0 b:0x9c 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 419: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0xd1 b:0xe7 
+# UVM_INFO @ 419: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0xd1 b:0xe7 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 429: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 429: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x01b8 
+# UVM_INFO @ 429: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0xd1 b:0xe7 
+# UVM_INFO @ 479: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x01b8 ACTUAL: result:0x01b8 
+# UVM_INFO @ 479: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x01b8 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 509: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x4 a:0xab b:0xb7 
+# UVM_INFO @ 509: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x4 a:0xab b:0xb7 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 519: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 519: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x7a3d 
+# UVM_INFO @ 519: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x4 a:0xab b:0xb7 
+# UVM_INFO @ 569: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x7a3d ACTUAL: result:0x7a3d 
+# UVM_INFO @ 569: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x7a3d 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 599: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x2 a:0x81 b:0x14 
+# UVM_INFO @ 599: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x2 a:0x81 b:0x14 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 609: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 609: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0000 
+# UVM_INFO @ 609: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x2 a:0x81 b:0x14 
+# UVM_INFO @ 659: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0000 ACTUAL: result:0x0000 
+# UVM_INFO @ 659: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0000 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 689: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x2 a:0x75 b:0xaa 
+# UVM_INFO @ 689: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x2 a:0x75 b:0xaa 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 699: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 699: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0020 
+# UVM_INFO @ 699: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x2 a:0x75 b:0xaa 
+# UVM_INFO @ 749: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0020 ACTUAL: result:0x0020 
+# UVM_INFO @ 749: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0020 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 779: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x3 a:0x66 b:0x96 
+# UVM_INFO @ 779: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x3 a:0x66 b:0x96 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 789: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 789: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x00f0 
+# UVM_INFO @ 789: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x3 a:0x66 b:0x96 
+# UVM_INFO @ 839: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x00f0 ACTUAL: result:0x00f0 
+# UVM_INFO @ 839: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x00f0 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 869: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x2 a:0xbb b:0xfe 
+# UVM_INFO @ 869: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x2 a:0xbb b:0xfe 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 879: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 879: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x00ba 
+# UVM_INFO @ 879: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x2 a:0xbb b:0xfe 
+# UVM_INFO @ 929: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x00ba ACTUAL: result:0x00ba 
+# UVM_INFO @ 929: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x00ba 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 959: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x2 a:0x20 b:0x6b 
+# UVM_INFO @ 959: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x2 a:0x20 b:0x6b 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 969: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 969: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0020 
+# UVM_INFO @ 969: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x2 a:0x20 b:0x6b 
+# UVM_INFO @ 1019: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0020 ACTUAL: result:0x0020 
+# UVM_INFO @ 1019: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0020 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1049: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0xf4 b:0x77 
+# UVM_INFO @ 1049: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0xf4 b:0x77 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1059: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1059: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x016b 
+# UVM_INFO @ 1059: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0xf4 b:0x77 
+# UVM_INFO @ 1109: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x016b ACTUAL: result:0x016b 
+# UVM_INFO @ 1109: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x016b 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1139: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x3 a:0x7d b:0xa2 
+# UVM_INFO @ 1139: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x3 a:0x7d b:0xa2 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1149: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1149: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x00df 
+# UVM_INFO @ 1149: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x3 a:0x7d b:0xa2 
+# UVM_INFO @ 1199: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x00df ACTUAL: result:0x00df 
+# UVM_INFO @ 1199: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x00df 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1229: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0x59 b:0xff 
+# UVM_INFO @ 1229: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0x59 b:0xff 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1239: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1239: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0158 
+# UVM_INFO @ 1239: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0x59 b:0xff 
+# UVM_INFO @ 1289: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0158 ACTUAL: result:0x0158 
+# UVM_INFO @ 1289: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0158 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1319: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x4 a:0xcc b:0x34 
+# UVM_INFO @ 1319: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x4 a:0xcc b:0x34 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1329: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1329: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x2970 
+# UVM_INFO @ 1329: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x4 a:0xcc b:0x34 
+# UVM_INFO @ 1379: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x2970 ACTUAL: result:0x2970 
+# UVM_INFO @ 1379: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x2970 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1409: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x4 a:0xa4 b:0xce 
+# UVM_INFO @ 1409: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x4 a:0xa4 b:0xce 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1419: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1419: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x83f8 
+# UVM_INFO @ 1419: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x4 a:0xa4 b:0xce 
+# UVM_INFO @ 1469: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x83f8 ACTUAL: result:0x83f8 
+# UVM_INFO @ 1469: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x83f8 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1499: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0xfc b:0xd8 
+# UVM_INFO @ 1499: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0xfc b:0xd8 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1509: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1509: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x01d4 
+# UVM_INFO @ 1509: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0xfc b:0xd8 
+# UVM_INFO @ 1559: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x01d4 ACTUAL: result:0x01d4 
+# UVM_INFO @ 1559: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x01d4 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1589: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x0 a:0xfc b:0x0d 
+# UVM_INFO @ 1589: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x0 a:0xfc b:0x0d 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1599: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1599: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x0 a:0xfc b:0x0d 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1669: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x4 a:0xef b:0x07 
+# UVM_INFO @ 1669: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x4 a:0xef b:0x07 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1679: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1679: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0689 
+# UVM_INFO @ 1679: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x4 a:0xef b:0x07 
+# UVM_INFO @ 1729: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0689 ACTUAL: result:0x0689 
+# UVM_INFO @ 1729: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0689 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1759: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0x29 b:0xea 
+# UVM_INFO @ 1759: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0x29 b:0xea 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1769: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1769: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0113 
+# UVM_INFO @ 1769: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0x29 b:0xea 
+# UVM_INFO @ 1819: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0113 ACTUAL: result:0x0113 
+# UVM_INFO @ 1819: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0113 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1849: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x0 a:0xee b:0x25 
+# UVM_INFO @ 1849: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x0 a:0xee b:0x25 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1859: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1859: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x0 a:0xee b:0x25 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 1929: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x3 a:0x5e b:0x9f 
+# UVM_INFO @ 1929: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x3 a:0x5e b:0x9f 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 1939: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 1939: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x00c1 
+# UVM_INFO @ 1939: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x3 a:0x5e b:0x9f 
+# UVM_INFO @ 1989: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x00c1 ACTUAL: result:0x00c1 
+# UVM_INFO @ 1989: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x00c1 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 2019: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0x7b b:0xea 
+# UVM_INFO @ 2019: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0x7b b:0xea 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 2029: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 2029: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0165 
+# UVM_INFO @ 2029: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0x7b b:0xea 
+# UVM_INFO @ 2079: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0165 ACTUAL: result:0x0165 
+# UVM_INFO @ 2079: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0165 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 2109: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x2 a:0xab b:0x5d 
+# UVM_INFO @ 2109: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x2 a:0xab b:0x5d 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 2119: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 2119: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0009 
+# UVM_INFO @ 2119: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x2 a:0xab b:0x5d 
+# UVM_INFO @ 2169: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0009 ACTUAL: result:0x0009 
+# UVM_INFO @ 2169: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0009 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 2199: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x4 a:0x9e b:0x6a 
+# UVM_INFO @ 2199: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x4 a:0x9e b:0x6a 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 2209: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 2209: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x416c 
+# UVM_INFO @ 2209: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x4 a:0x9e b:0x6a 
+# UVM_INFO @ 2259: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x416c ACTUAL: result:0x416c 
+# UVM_INFO @ 2259: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x416c 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 2289: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x1 a:0x09 b:0xfd 
+# UVM_INFO @ 2289: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x1 a:0x09 b:0xfd 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 2299: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 2299: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x0106 
+# UVM_INFO @ 2299: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x1 a:0x09 b:0xfd 
+# UVM_INFO @ 2349: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x0106 ACTUAL: result:0x0106 
+# UVM_INFO @ 2349: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x0106 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 2379: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x0 a:0x09 b:0x48 
+# UVM_INFO @ 2379: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x0 a:0x09 b:0x48 
+# alu_in_driver_bfm: Inside access()
+# UVM_INFO @ 2389: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 2389: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x0 a:0x09 b:0x48 
+# alu_in_driver_bfm: Inside do_transfer()
+# UVM_INFO @ 2459: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [random_seq response from driver] op:0x3 a:0x20 b:0x8d 
+# UVM_INFO @ 2459: uvm_test_top.environment.alu_in_agent.sequencer@@alu_in_agent_random_seq [NEW_RSP] New response transaction:op:0x3 a:0x20 b:0x8d 
+# UVM_INFO @ 2469: uvm_test_top.environment.alu_pred [alu_predictor] Transaction Received through alu_in_agent_ae
+# UVM_INFO @ 2469: uvm_test_top.environment.alu_pred [PREDICT] ALU_OUT: result:0x00ad 
+# UVM_INFO @ 2469: uvm_test_top.environment.alu_in_agent.alu_in_agent_monitor [MON] op:0x3 a:0x20 b:0x8d 
+# UVM_INFO @ 2519: uvm_test_top.environment.alu_sb [SCBD] MATCH! - EXPECTED: result:0x00ad ACTUAL: result:0x00ad 
+# UVM_INFO @ 2519: uvm_test_top.environment.alu_out_agent.alu_out_agent_monitor [MON] result:0x00ad 
+# UVM_INFO verilog_src/uvm-1.1d/src/base/uvm_objection.svh(1268) @ 6459: reporter [TEST_DONE] 'run' phase is ready to proceed to the 'extract' phase
+# UVM_INFO @ 6459: uvm_test_top.environment.alu_sb [SCBD] SCOREBOARD_RESULTS:  PREDICTED_TRANSACTIONS=21 MATCHES=21 MISMATCHES=0
+# 
+# --- UVM Report Summary ---
+# 
+# ** Report counts by severity
+# UVM_INFO :  172
+# UVM_WARNING :    0
+# UVM_ERROR :    0
+# UVM_FATAL :    0
+# ** Report counts by id
+# [CFG]     1
+# [MON]    47
+# [NEW_RSP]    25
+# [PREDICT]    21
+# [Questa UVM]     3
+# [RNTST]     1
+# [SCBD]    22
+# [TEST_DONE]     1
+# [alu_predictor]    26
+# [random_seq response from driver]    25
+# ** Note: $finish    : /scratch/aedemo/tools/Questa_10.6c/questasim/linux_x86_64/../verilog_src/uvm-1.1d/src/base/uvm_root.svh(430)
+#    Time: 6459 ns  Iteration: 60  Instance: /hvl_top
+# 1
+# Break in Task uvm_pkg/uvm_root::run_test at /scratch/aedemo/tools/Questa_10.6c/questasim/linux_x86_64/../verilog_src/uvm-1.1d/src/base/uvm_root.svh line 430
+# Stopped at /scratch/aedemo/tools/Questa_10.6c/questasim/linux_x86_64/../verilog_src/uvm-1.1d/src/base/uvm_root.svh line 430
+#  quit -f
+# Saving coverage database on exit...
+# Memory Statistics                         
+#     mem: size after elab (VSZ)                 403.07 Mb
+#     mem: size during sim (VSZ)                 403.07 Mb
+# Elaboration Time                          
+#    elab: wall time                               0.70 s
+#    elab: cpu time                                0.62 s
+# Simulation Time                           
+#     sim: wall time                               0.08 s
+#     sim: cpu time                                0.04 s
+# Coverage Save Time                        
+#    save: wall time                               0.01 s
+#    save: cpu time                                0.01 s
+# Total Time                                
+#   total: wall time                               0.79 s
+#   total: cpu time                                0.67 s
+# 
+# End time: 21:27:24 on Sep 25,2017, Elapsed time: 0:00:01
+# Errors: 0, Warnings: 0

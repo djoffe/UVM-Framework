@@ -1,0 +1,4 @@
+TB_INFO qvip_pcie_3.0_pipe_example {UVMF_VIP_LIBRARY_HOME=../../../../../../../../verification_ip UVMF_PROJECT_DIR=../../../../../../../../project_benches/qvip_pcie_3.0_pipe_example} {-t 1fs}
+TB qvip_pcie_3.0_pipe_example
+TEST test_top 3
+#TEST example_derived_test 5

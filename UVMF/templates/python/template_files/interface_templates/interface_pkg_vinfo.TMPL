@@ -1,0 +1,8 @@
+{% set fname = "verification_ip/interface_packages/{{name}}_pkg/{{name}}_pkg.vinfo" %}
+{% block description %}
+{% endblock %}
+{% block contents %}
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+@use {{name}}_pkg_hdl.vinfo
+{{name}}_pkg.sv
+{% endblock %}

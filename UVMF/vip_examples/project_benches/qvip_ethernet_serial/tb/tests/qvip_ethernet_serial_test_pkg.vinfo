@@ -1,0 +1,8 @@
+
++incdir+@vinfodir
+@use ../../../../verification_ip/uvmf_base_pkg/uvmf_base_pkg.vinfo
+@use ../../../../verification_ip/environment_packages/qvip_ethernet_serial_env_env_pkg/qvip_ethernet_serial_env_env_pkg.vinfo
+
+@use ../sequences/qvip_ethernet_serial_sequences_pkg.vinfo
+@use ../parameters/qvip_ethernet_serial_parameters_pkg.vinfo
+qvip_ethernet_serial_test_pkg.sv

@@ -1,0 +1,33 @@
+uvmf:
+  interfaces:
+    "mem":
+      clock: "clock"
+      reset: "reset"
+      reset_assertion_level: "True"
+      parameters:
+        - { name: "DATA_WIDTH" , type: "int", value: "220" }
+        - { name: "ADDR_WIDTH" , type: "int", value: "210" }
+      hdl_typedefs:
+        - { name: "my_byte_t", type: "byte" }
+        - { name: "my_word_t", type: "bit [15:0] " }
+      hvl_typedefs:
+        - { name: "my_object_t", type: "uvm_object" }
+      ports: 
+        - { name: "cs"   , width: "1", dir: "output" }
+        - { name: "rwn"  , width: "1", dir: "output" }
+        - { name: "rdy"  , width: "1", dir: "input" }
+        - { name: "addr" , width: "ADDR_WIDTH", dir: "output" }
+        - { name: "wdata", width: "DATA_WIDTH", dir: "output" }
+        - { name: "rdata", width: "DATA_WIDTH", dir: "input" }
+      transaction_vars:
+        - { name: "read_data"   , type: "bit [DATA_WIDTH-1:0]", isrand: "False", iscompare: "True" }
+        - { name: "write_data"  , type: "bit [DATA_WIDTH-1:0]", isrand: "False", iscompare: "True" }
+        - { name: "address"     , type: "bit [ADDR_WIDTH-1:0]", isrand: "True", iscompare: "True" }
+        - { name: "byte_enable" , type: "bit [3:0]", isrand: "True", iscompare: "False" }
+        - { name: "chksum"      , type: "int", isrand: "False", iscompare: "False" }
+      transaction_constraints:
+        - { name: "address_word_align_c", value: "{ address[1:0]==0; }" }
+      config_vars:
+        - { name: "transfer_gap", type: "bit [3:0]", isrand: "True" }
+      config_constraints:
+        - { name: "valid_packet_gap_range_c", value: "{ transfer_gap inside {0, 2, 4, 8, 15}; }" }
