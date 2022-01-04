@@ -2,16 +2,12 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Environment 
-// Unit            : Environment Sequence Base
-// File            : {{name}}_env_sequence_base.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This file contains environment level sequences that will
 //    be reused from block to top level simulations.
 //
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
@@ -25,6 +21,9 @@ class {{name}}_env_sequence_base extends uvmf_sequence_base #(uvm_sequence_item)
   {{name}}_reg_model  reg_model;
 {% endfor %}
 
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
   function new(string name = "" );
     super.new(name);
   endfunction

@@ -3,6 +3,9 @@
 ## get access to common parameters and targets
 .PHONY: all help clean libs vis link optimize cli_run debug_run cli debug build common wrappers 
 
+# Generic debug switch for underlying commands
+DEBUG ?= 0
+
 # DASH_F_OPTION value for 3.6f generator output compatability with 3.6g core code
 DASH_F_OPTION = -F
 
@@ -20,6 +23,20 @@ VRUN_ARGS ?= -html
 RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
 EXTRA_VRUN_ARGS ?= 
 VRUN_RUNNABLE ?= 
+VRUN_DISABLE_TIMEOUTS ?= 0
+ifeq ($(VRUN_DISABLE_TIMEOUTS),1)
+	VRUN_TIMEOUT ?= 0:0
+else
+	VRUN_TIMEOUT ?= 
+endif
+ifeq ($(VRUN_TIMEOUT),)
+	VRUN_TIMEOUT_CMD =
+else
+	VRUN_TIMEOUT_CMD = -mintimeout $(VRUN_TIMEOUT)
+endif
+ifeq ($(DEBUG),1) 
+	EXTRA_VRUN_ARGS += -GDEBUG=1 -debug
+endif
 
 # Control whether or not to run at all in debug simulation
 NO_RUN ?= 0
@@ -166,7 +183,7 @@ VISWAVE_TRLOG = $(VISWAVE_TRLOG_$(ENABLE_TRLOG))
 VIS_MEM_SIZE ?= 1024
 VIS_DUMP_RTL ?= +signal+report+memory=$(VIS_MEM_SIZE)$(VISWAVE_TRLOG)
 VIS_DUMP_TB_0 = 
-VIS_DUMP_TB_1 = +class+uvm_schematic
+VIS_DUMP_TB_1 = +class+uvm_schematic+msgmode=both+displaymsgmode=both
 VIS_DUMP_TB  ?= $(VIS_DUMP_TB_$(USE_VIS_UVM))
 VIS_DUMP_OPTIONS ?= $(VIS_DUMP_RTL)$(VIS_DUMP_TB)
 
@@ -197,7 +214,7 @@ DBG_VSIM_TRLOG_1_1 = +uvm_set_config_int=*,enable_transaction_viewing,1
 
 DBG_VSIM_TRLOG = $(DBG_VSIM_TRLOG_$(USE_VIS)_$(ENABLE_TRLOG))
 
-DBG_VSIM_VIS_0 = -classdebug -title $(TEST_NAME) -msgmode both 
+DBG_VSIM_VIS_0 = -classdebug -title $(TEST_NAME) -msgmode tran 
 DBG_VSIM_VIS_1 = $(VIS_VSIM_ARGS)
 DBG_VSIM_VIS = $(DBG_VSIM_VIS_$(USE_VIS))
 
@@ -282,7 +299,7 @@ info:
 # Dofile commands - debug only does a run 0, adds everything to waves. 
 # Will run 1ns into sim for Visualizer in order to add waves.
 DBG_RUN_0 = run 0;
-DBG_RUN_1 = run 1ns;
+DBG_RUN_1 = run 0;
 DBG_RUN = $(DBG_RUN_$(USE_VIS))
 RUN_CMD_0 = $(DBG_RUN)
 RUN_CMD_1 =
@@ -456,9 +473,6 @@ v_comp_uvm_pkg: q_comp_uvm_pkg
 # UVMF Base class targets
 include $(UVMF_HOME)/uvmf_base_pkg/Makefile
 
-# Utility packages
-include $(UVMF_HOME)/common/utility_packages/qvip_utils_pkg/Makefile
-
 # VIP common targets
 comp_vip_base_pkg:
 	$(HVL_COMP_CMD) $(VIP_BASE_PKG)
@@ -530,10 +544,10 @@ run_cli: cli_run
 run_gui: gui_run
 
 cli: libs build link optimize cli_run
-debug: libs build link optimize gui_run
+debug gui: libs build link optimize gui_run
 
 vrun:
-	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(EXTRA_VRUN_ARGS)
+	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(VRUN_TIMEOUT_CMD) $(EXTRA_VRUN_ARGS)
 
 ## This target runs covercheck verify using an existing work library and UCDB
 COVERCHECK_TOP ?= verilog_dut

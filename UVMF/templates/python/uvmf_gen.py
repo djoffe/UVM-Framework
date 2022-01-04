@@ -41,20 +41,26 @@ import time
 import re
 import inspect
 import sys
-from optparse import (OptionParser,BadOptionError,AmbiguousOptionError)
+from optparse import (OptionParser,BadOptionError,AmbiguousOptionError,SUPPRESS_HELP)
 from fnmatch import fnmatch
 from shutil import copyfile
-__version__ = '2019.1'
+
+from uvmf_version import version
+
+__version__ = version
+
+if (sys.version_info[0] < 3):
+  sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/python/python2");
 
 try:
   import jinja2
-except ImportError,e:
-  print "ERROR : Jinja2 package not found.  See templates.README for more information"
+except ImportError:
+  print("ERROR : Jinja2 package not found.  See templates.README for more information")
   sys.exit(1)
 ## Require version 2.8 or later of Jinja2 package
 s = jinja2.__version__.split(".")
 if ( (int(s[0]) < 2) | ( (int(s[0]) == 2) & (int(s[1]) < 8))):
-  print "ERROR : Jinja2 package version "+jinja2.__version__+" incorrect, must be 2.8 or later"
+  print("ERROR : Jinja2 package version "+jinja2.__version__+" incorrect, must be 2.8 or later")
   sys.exit(1)
 from jinja2._compat import string_types
 
@@ -94,7 +100,7 @@ class PassThroughOptionParser(OptionParser):
     while rargs:
       try:
         OptionParser._process_args(self,largs,rargs,values)
-      except (BadOptionError,AmbiguousOptionError), e:
+      except (BadOptionError,AmbiguousOptionError) as e:
         largs.append(e.opt_str)
 
 ## Underlying class definitions
@@ -102,7 +108,7 @@ class UserError(Exception):
   def __init__(self,value):
     self.value = value
   def __str__(self):
-    return repr(self.value)
+    return str(self.value)
 
 ## Base element class for use in other generators
 class BaseElementClass(object):
@@ -111,6 +117,7 @@ class BaseElementClass(object):
     self.paramDefs = []
     self.hdlPkgParamDefs = []
     self.hvlPkgParamDefs = []
+    self.configVariableValues = []
     self.DPIExports = []
     self.DPIImports = []
     self.DPITransDecl = []
@@ -121,6 +128,7 @@ class BaseElementClass(object):
     self.svLibNames = []
     self.vipLibEnvVariable = 'UVMF_VIP_LIBRARY_HOME'
     self.vipLibEnvVariableNames = []
+    self.header = None
 
   def addParamDef(self,name,type,value=None):
     """Add a parameter to the package"""
@@ -133,6 +141,10 @@ class BaseElementClass(object):
   def addHvlPkgParamDef(self,name,type,value):
     """Add a parameter to the package"""
     self.hvlPkgParamDefs.append(ParamDef(name,type,value))
+
+  def addConfigVariableValue(self,name,value):
+    """Add a parameter to the package"""
+    self.configVariableValues.append(ConfigVariableValueClass(name,value))
 
   def addDPIFile(self,name):
     if self.soName == "":
@@ -182,11 +194,11 @@ class UVMFCommandLineParser:
   def __init__(self,version=None,usage=None):
     self.parser = PassThroughOptionParser(version=version,usage=usage)
     self.parser.add_option("-c","--clean",dest="clean",action="store_true",help="Clean up generated code instead of generate code")
-    self.parser.add_option("-q","--quiet",dest="quiet",action="store_true",help="Suppress output while running")
-    self.parser.add_option("-d","--dest_dir",dest="dest_dir",action="store",type="string",help="Override destination directory.  Default is \"$CWD/uvmf_template_output\"")
+    self.parser.add_option("-q","--quiet",dest="quiet",action="store_true",help="Suppress output while running",default=False)
+    self.parser.add_option("-d","--dest_dir",dest="dest_dir",action="store",type="string",help="Override destination directory.  Default is \"$CWD/uvmf_template_output\"",default="./uvmf_template_output")
     self.parser.add_option("-t","--template_dir",dest="template_dir",action="store",type="string",help="Override which template directory to utilize.  Default is relative to location of uvmf_gen.py file")
     self.parser.add_option("-o","--overwrite",dest="overwrite",action="store_true",help="Overwrite existing output files (default is to skip)",default=False)
-    self.parser.add_option("-b","--debug",dest="debug",action="store_true",help="Enable Python traceback for debug purposes",default=False)
+    self.parser.add_option("-b","--debug",dest="debug",action="store_true",help=SUPPRESS_HELP,default=False)
     self.parser.add_option("-y","--yaml",dest="yaml",action="store_true",help="Dump YAML file instead of generate code",default=False)
 
 ## Base class for the generator types, this is where the create method is defined.
@@ -205,7 +217,8 @@ class BaseGeneratorClass(BaseElementClass):
                                            "year" : self.year,
                                            "date" : self.date,
                                            "root_dir" : self.root,
-                                           "uvmf_gen_version" : __version__
+                                           "uvmf_gen_version" : __version__,
+                                           "header_content": self.header,
                                          })
     templateVars.update(ExtraTemplateVars)
     try:
@@ -253,7 +266,7 @@ class BaseGeneratorClass(BaseElementClass):
       ##   "symlink" represents the source
       if (self.options.clean == True):
         if (self.options.quiet != True):
-          print "Removing symbolic link "+full
+          print("Removing symbolic link "+full)
         if (dirpath not in self.cleanupdirs):
           re.sub('\{\{name\}\}',self.name,template.module.symlink)
           self.cleanupdirs.append(dirpath)
@@ -264,10 +277,10 @@ class BaseGeneratorClass(BaseElementClass):
       else:
         if (os.path.exists(full) & (self.options.overwrite == False)):
           if (self.options.quiet != True):
-            print "Skipping symbolic link "+symlink+", already exists"
+            print("Skipping symbolic link "+symlink+", already exists")
         else:
           if (self.options.quiet != True):
-            print "Creating symbolic link "+full+" pointing to "+symlink
+            print("Creating symbolic link "+full+" pointing to "+symlink)
           if (os.path.exists(dirpath) == False):
             os.makedirs(dirpath)
           # os.symlink will fail if the file already exists, so delete it first.  Dangerous but the only
@@ -290,7 +303,7 @@ class BaseGeneratorClass(BaseElementClass):
       isExecutable = False
     if (self.options.clean == True):
       if (self.options.quiet != True):
-        print "Removing "+full
+        print("Removing "+full)
       if (dirpath not in self.cleanupdirs):
         self.cleanupdirs.append(dirpath)
       try:
@@ -300,10 +313,10 @@ class BaseGeneratorClass(BaseElementClass):
     else:
       if (os.path.exists(full) & os.path.isfile(full) & (self.options.overwrite == False)):
         if (self.options.quiet != True):
-          print "Skipping "+full+", already exists"
+          print("Skipping "+full+", already exists")
       else:
         if (self.options.quiet != True):
-          print "Generating "+full
+          print("Generating "+full)
         if (os.path.exists(dirpath) == False):
           os.makedirs(dirpath)
         fh = open(full,'w')
@@ -311,14 +324,14 @@ class BaseGeneratorClass(BaseElementClass):
         fh.close()
         if (isExecutable):
           st = os.stat(full)
-          os.chmod(full,st.st_mode | 0111)
+          os.chmod(full,st.st_mode | 0x0111)
 
-  def create(self,desired_template='all',parser=None):
+  def create(self,desired_template='all',parser=None,archive_yaml=True):
     """This exists across all generator classes and will initiate the creation of all files associated
     with the given object type.  Command-line are also availale in any script that calls this 
     function, use the --help switch for details."""
     if (parser==None):
-      parser = UVMFCommandLineParser()
+      parser = UVMFCommandLineParser(version=__version__)
     (self.options,args) = parser.parser.parse_args()
     if (self.options.debug == False):
       sys.tracebacklimit = 0
@@ -328,7 +341,7 @@ class BaseGeneratorClass(BaseElementClass):
       uvmf_yaml.YAMLGenerator(dumper.data,self.name+"_"+self.gen_type+".yaml")
       if (self.gen_type == "environment"):
         for d in dumper.util_data:
-          uvmf_yaml.YAMLGenerator(d,self.name+"_util_comp_"+d['uvmf']['util_components'].keys()[0]+".yaml")
+          uvmf_yaml.YAMLGenerator(d,self.name+"_util_comp_"+list(d['uvmf']['util_components'].keys())[0]+".yaml")
       sys.exit(0)
     # Use USER for Linux or USERNAME for Windows
     if (os.name == 'nt'):
@@ -381,6 +394,31 @@ class BaseGeneratorClass(BaseElementClass):
       templates = [desired_template]
     for template_str in templates:
       self.runTemplate(template_str)
+    if (archive_yaml == True):
+      import uvmf_yaml
+      dumper = uvmf_yaml.Dumper(self,is_archive=True)
+      # Archive to the anticipated location of the rest of the output for this item
+      if (self.gen_type == "interface"):
+        ap = dest_dir+"/verification_ip/interface_packages/"+self.name+"_pkg/yaml"
+      elif (self.gen_type == "environment"):
+        ap = dest_dir+"/verification_ip/environment_packages/"+self.name+"_env_pkg/yaml"
+      elif (self.gen_type == "bench"):
+        ap = dest_dir+"/project_benches/"+self.name+"/yaml"
+      else:
+        ## Error somewhere.. either a new type of output has been defined or a typo exists somewhere
+        raise UserError("Internal error during YAML archive: \""+self.gen_type+"\" is not a recognized output type. Contact Mentor support")
+      if (os.path.exists(ap) == False):
+        ## YAML directory doesn't exist, create it
+        os.makedirs(ap)
+      fn = ap+"/"+self.name+"_"+self.gen_type+".yaml"
+      if ((self.options.overwrite == True) | (os.path.exists(fn) == False)):
+        ## Only generate archive if it isn't already there or if overwrite option is enabled
+        uvmf_yaml.YAMLGenerator(dumper.data,fn)
+      if (self.gen_type == "environment"):
+        for d in dumper.util_data:
+          fn = ap+"/"+self.name+"_util_comp_"+list(d['uvmf']['util_components'].keys())[0]+".yaml"
+          if ((self.options.overwrite == True) | (os.path.exists(fn) == False)):
+            uvmf_yaml.YAMLGenerator(d,fn)
     if (self.options.clean == True):
       cwd = os.getcwd();
       os.chdir(self.root)
@@ -390,7 +428,7 @@ class BaseGeneratorClass(BaseElementClass):
             (dir,num) = re.subn(self.root+"/","",dir)
             if (num > 0):
               if (self.options.quiet != True):
-                print "Removing directory "+dir
+                print("Removing directory "+dir)
               os.removedirs(dir)
         except OSError:
           pass
@@ -459,6 +497,11 @@ class ParameterValueClass(BaseElementClass):
     super(ParameterValueClass,self).__init__(name)
     self.value = value
 
+class ConfigVariableValueClass(BaseElementClass):
+  def __init__(self,name,value):
+    super(ConfigVariableValueClass,self).__init__(name)
+    self.value = value
+
 class DpiImportClass(BaseElementClass):
   def __init__(self, name, cType,svType, cArgs,argumentsList):
     super(DpiImportClass,self).__init__(name)
@@ -507,15 +550,26 @@ class RegModelClass(BaseElementClass):
     self.busMap = busMap
 
 class analysisComponentClass(BaseElementClass):
-  def __init__(self,keyword,name,aeDict,apDict):
+  def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList):
     super(analysisComponentClass,self).__init__(name)
     self.keyword = keyword
     self.analysisExports = []
     self.analysisPorts = []
+    self.qvipAnalysisExports = []
+    self.parameters = []
     for aeName in aeDict:
       self.analysisExports.append(AnalysisExportClass(aeName,aeDict[aeName]))
     for apName in apDict:
       self.analysisPorts.append(AnalysisPortClass(apName,apDict[apName]))
+    for aeName in qvipAeDict:
+      self.qvipAnalysisExports.append(AnalysisExportClass(aeName,qvipAeDict[aeName]))
+    for parameter in parametersList:
+      try:
+        self.parameters.append(ParamDef(parameter['name'],parameter['type'],parameter['value']))
+      except KeyError:
+        ## Value is optional, so a key error means it wasn't provided
+        self.parameters.append(ParamDef(parameter['name'],parameter['type'],None))
+        pass
 
 class BfmClass(BaseElementClass):
   def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName):
@@ -584,6 +638,7 @@ class QvipHdlModuleClass(BaseElementClass):
     self.envPkg = envPkg
     self.unique_id = unique_id
     self.unique_id_with_underscores = unique_id_with_underscores
+    self.agent_names = []
 
 class QvipConnectionClass(object):
   def __init__(self, output_component, output_port_name, input_component, input_component_export_name):
@@ -603,10 +658,11 @@ class VmapClass(BaseElementClass):
     self.dirName = dirName
 
 class AnalysisExportClass(BaseElementClass):
-  def __init__(self,name,tType,connection=""):
+  def __init__(self,name,tType,connection="",QVIPConn=False):
     super(AnalysisExportClass,self).__init__(name)
     self.tType = tType
     self.connection = connection
+    self.QVIPConn = QVIPConn
 
 class AnalysisPortClass(BaseElementClass):
   def __init__(self,name,tType,connection=""):
@@ -615,9 +671,13 @@ class AnalysisPortClass(BaseElementClass):
     self.connection = connection
 
 class analysisComponentInstClass(BaseElementClass):
-  def __init__(self,name,type):
+  def __init__(self,name,type,parametersDict,extDef):
     super(analysisComponentInstClass,self).__init__(name)
     self.type = type
+    self.extDef = extDef
+    self.parameters = []
+    for parameter in parametersDict:
+      self.parameters.append(ParameterValueClass(parameter['name'],parameter['value']))
 
 class envScoreboardClass(BaseElementClass):
   def __init__(self,name,sType,tType,parametersDict):
@@ -646,6 +706,7 @@ class InterfaceClass(BaseGeneratorClass):
     self.reset = 'defaultRst'
     self.resetAssertionLevel = False
     self.useDpiLink = False
+    self.genInBoundStreamingDriver = False
     self.hdlTypedefs = []
     self.external_imports = []
     self.hvlTypedefs = []
@@ -664,6 +725,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['clock'] = self.clock
     template['resetAssertionLevel'] = self.resetAssertionLevel
     template['useDpiLink'] = self.useDpiLink
+    template['genInBoundStreamingDriver'] = self.genInBoundStreamingDriver
     template['reset'] = self.reset
     template['inputPorts'] = self.getInputPorts()
     template['outputPorts'] = self.getOutputPorts()
@@ -672,6 +734,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['configVars'] = self.configVars
     template['hdlTypedefs'] = self.hdlTypedefs
     template['paramDefs'] = self.paramDefs
+    template['configVariableValues'] = self.configVariableValues
     template['hdlPkgParamDefs'] = self.hdlPkgParamDefs
     template['hvlPkgParamDefs'] = self.hvlPkgParamDefs
     template['external_imports'] = self.external_imports
@@ -805,8 +868,32 @@ class InterfaceClass(BaseGeneratorClass):
         self.runTemplate("c_file.TMPL",'c_file',{ "fileName":DPIFile,
                                                   "name":self.name,
                                                   "DPIImports":''})
-
-
+    # Generation of in-bound streaming driver and driver BFM
+    if ( self.genInBoundStreamingDriver ):
+      self.runTemplate("interface_ibs_driver_bfm.TMPL",'gen_inbound_streaming_driver',
+           { "name":self.name,
+             "paramDefs":self.paramDefs,
+             "transVars":self.transVars,
+             "configVars":self.configVars,
+             "responseList":self.responseList,
+             "responseVarNames":self.responseVarNames,
+             "useDpiLink":self.useDpiLink,
+             "veloceReady":self.veloceReady,
+             "clock":self.clock,
+             "reset":self.reset,
+             "resetAssertionLevel":self.resetAssertionLevel,
+             "inputPorts":self.getInputPorts(),
+             "outputPorts":self.getOutputPorts(),
+             "inoutPorts":self.getInoutPorts()
+           })
+      self.runTemplate("interface_ibs_driver.TMPL",'gen_inbound_streaming_driver',
+           {"name":self.name,
+             "paramDefs":self.paramDefs,
+             "transVars":self.transVars,
+             "configVars":self.configVars,
+             "responseList":self.responseList,
+             "responseVarNames":self.responseVarNames
+            })
 
 class EnvironmentClass(BaseGeneratorClass):
   """Use this class to generate files associated with an environment package"""
@@ -842,9 +929,9 @@ class EnvironmentClass(BaseGeneratorClass):
     self.acTypes = []
     self.configVars = []
     self.configVarsConstraints = []
-    self.uvmc_cpp_flags = []
+    self.uvmc_cpp_flags = ""
     self.uvmc_cpp_files = []
-    self.uvmc_cpp_link_args = []
+    self.uvmc_cpp_link_args = ""
     self.analysis_ports = []
     self.analysis_exports = []
 
@@ -857,6 +944,7 @@ class EnvironmentClass(BaseGeneratorClass):
     template['qvip_agents'] = self.qvip_agents
     template['external_imports'] = self.external_imports
     template['paramDefs'] = self.paramDefs
+    template['configVariableValues'] = self.configVariableValues
     template['hvlPkgParamDefs'] = self.hvlPkgParamDefs
     template['subEnvironments'] = self.subEnvironments
     template['qvipSubEnvironments'] = self.qvipSubEnvironments
@@ -962,13 +1050,15 @@ class EnvironmentClass(BaseGeneratorClass):
     """Add a constraint to the config class's Constraint item definition"""
     self.configVarsConstraints.append(ConstraintsClass(name,type))
 
-  def defineAnalysisComponent(self,keyword,name,exportDict,portDict):
+  def defineAnalysisComponent(self,keyword,name,exportDict,portDict,qvipExportDict={},parametersList=[]):
     """Defines a type of analysis component for use later on."""
     ## Register the desired analysis component on the types array
-    self.analysisComponentTypes.append(analysisComponentClass(keyword,name,exportDict,portDict))
+    self.analysisComponentTypes.append(analysisComponentClass(keyword,name,exportDict,portDict,qvipExportDict,parametersList))
     self.addAnalysisComponentType(name)
     ## Add any non-existent imp-decl calls based on contents of the aeDict
     for aeName in exportDict:
+      self.addImpDecl(aeName)
+    for aeName in qvipExportDict:
       self.addImpDecl(aeName)
 
   def addRegisterModel(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True):
@@ -977,9 +1067,9 @@ class EnvironmentClass(BaseGeneratorClass):
     self.regModels.append(RegModelClass(sequencer,transactionType,adapterType, busMap,useAdapter,useExplicitPrediction))
 
   # addAnalysisComponent(instanceName, analysisComponentType)
-  def addAnalysisComponent(self, name, pType):
+  def addAnalysisComponent(self, name, pType, parametersList=[],extDef=False):
     """Add an analysis component instance  to the definition of this environment class"""
-    self.analysisComponents.append(analysisComponentInstClass(name,pType))
+    self.analysisComponents.append(analysisComponentInstClass(name,pType,parametersList,extDef))
 
   # addUvmfScoreboard(instanceName, scoreboardType, transactionType)
   def  addUvmfScoreboard(self, name, sType, tType,parametersDict={}):
@@ -994,12 +1084,22 @@ class EnvironmentClass(BaseGeneratorClass):
   ## Overload of the create function - add some extra loops on the end for analysis components
   def create(self,desired_template='all',parser=None):
     """Environment class specific create function - allows for the production of multiple analysis component files"""
+    ## Prepand the environment config typedef to the front of all util component instantiations, too
+    ## Need to do this before call to super.create since these changes will be needed then
+    for ac in self.analysisComponents:
+      ac.parameters = [ParameterValueClass("CONFIG_T", "CONFIG_T")] + ac.parameters
     super(EnvironmentClass,self).create(desired_template,parser)
     for analysisComp in self.analysisComponentTypes:
+      ## All analysis components have one parameter at the front that is a typedef for the
+      ## parent environment's configuration type. Prepend that to the parameters list now
+      analysisComp.parameters = [ParamDef("CONFIG_T","type",None)] + analysisComp.parameters
       self.runTemplate(analysisComp.keyword+".TMPL",analysisComp.keyword,{"name":analysisComp.name,
                                                      "env_name":self.name,
                                                      "exports":analysisComp.analysisExports,
-                                                     "ports":analysisComp.analysisPorts})
+                                                     "ports":analysisComp.analysisPorts,
+                                                     "qvip_exports":analysisComp.qvipAnalysisExports,
+                                                     "parameters":analysisComp.parameters,
+                                                      })
     for regModel in self.regModels:
       self.runTemplate("reg_model.TMPL",'reg_model',{"env_name":self.name,
                                                      "useAdapter":regModel.useAdapter,
@@ -1030,7 +1130,6 @@ class EnvironmentClass(BaseGeneratorClass):
 
   def addUVMCfile(self,filename):
     """Add SystemC TLM source file"""
-    print "Adding SystemC Source: "+filename
     self.uvmc_cpp_files.append(filename)
 
 class BenchClass(BaseGeneratorClass):
@@ -1042,6 +1141,7 @@ class BenchClass(BaseGeneratorClass):
     self.template_ext_dir = 'bench_templates'
     self.vinfoDependencies = []
     self.bfms = []
+    self.scoreboards = []
     self.bfm_packages = []
     self.bfm_pkg_env_variables = []
     self.vipLibEnvVariableNames = []
@@ -1072,6 +1172,7 @@ class BenchClass(BaseGeneratorClass):
     template['vinfoDependencies'] = self.vinfoDependencies
     template['resource_parameter_names'] = self.resource_parameter_names
     template['bfms'] = self.bfms
+    template['scoreboards'] = self.scoreboards
     template['bfm_pkgs'] = self.bfm_packages
     template['bfm_pkg_env_variables'] = self.bfm_pkg_env_variables
     template['vipLibEnvVariableNames'] = self.vipLibEnvVariableNames
@@ -1146,14 +1247,20 @@ class BenchClass(BaseGeneratorClass):
     self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity,unique_id,unique_id_with_underscores))
     if (ifPkg not in self.qvip_bfm_packages):
       self.qvip_bfm_packages.append(ifPkg)
-      self.qvip_pkg_env_variables.append(unicode(ifPkg).upper())
+      self.qvip_pkg_env_variables.append(str(ifPkg).upper())    ## PYTHON3
     if (unique_id not in self.qvip_hdl_module_list):
       self.qvip_hdl_module_list.append(unique_id)
       self.qvip_hdl_modules.append(QvipHdlModuleClass(name,ifPkg,unique_id,unique_id_with_underscores))
+    for hdl_module in self.qvip_hdl_modules:
+      if unique_id_with_underscores == hdl_module.unique_id_with_underscores:
+        hdl_module.agent_names.append(str(name).upper())       ## PYTHON3
 
   def addTopLevel(self,topName):
     """Add additional top-level module for simulation"""
     self.additionalTops.append(topName)
+
+  def addScoreboard(self, scoreboard):
+    self.scoreboards.append(scoreboard)
 
 class PredictorClass(BaseGeneratorClass):
   """Use this class to generate a predictor"""

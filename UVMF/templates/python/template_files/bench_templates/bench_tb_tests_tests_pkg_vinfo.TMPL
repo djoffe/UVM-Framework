@@ -9,5 +9,6 @@
 @use $UVMF_VIP_LIBRARY_HOME/environment_packages/{{env_name}}_env_pkg/{{env_name}}_env_pkg.vinfo
 @use $UVMF_PROJECT_DIR/tb/parameters/{{name}}_parameters_pkg.vinfo
 @use $UVMF_PROJECT_DIR/tb/sequences/{{name}}_sequences_pkg.vinfo
++incdir+@vinfodir
 {{name}}_tests_pkg.sv
 {% endblock %}

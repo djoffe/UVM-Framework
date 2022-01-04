@@ -2,19 +2,13 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} environment package
-// Unit            : Interface Typedefs
-// File            : {{name}}_typedefs.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This file contains defines and typedefs to be compiled for use in
 // the environment package.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 
 
@@ -23,6 +17,9 @@
 {% for types in typedefs %}
 typedef {{types.type}} {{types.name}};
 {% endfor %}
+
+  // pragma uvmf custom additional begin
+  // pragma uvmf custom additional end
 
 {% endblock %}
 ~                

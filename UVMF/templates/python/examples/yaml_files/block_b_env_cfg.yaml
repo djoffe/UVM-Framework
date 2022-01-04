@@ -85,8 +85,20 @@ uvmf:
       analysis_components :
         - name: "control_plane_pred"
           type: "control_plane_predictor"
+          parameters:
+            - name: "ae_mem_transaction_t"
+              value: "mem_transaction#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))"
+            - name: "ap_mem_transaction_t"
+              value: "mem_transaction #(.ADDR_WIDTH(CP_OUT_ADDR_WIDTH))"
         - name: "unsecure_data_plane_pred"
           type: "unsecure_data_plane_predictor"
+          parameters:
+            - name: "control_plane_in_ae_t"
+              value: "mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))"
+            - name: "unsecure_data_plane_in_ae_t"
+              value: "pkt_transaction #(.DATA_WIDTH(UDP_DATA_WIDTH))"
+            - name: "unsecure_data_plane_sb_ap_t"
+              value: "pkt_transaction"
       ## Each scoreboard is keyed by the scoreboard instantiation name with
       ## information on the scoreboard type and what type of transaction it
       ## will be parsing
@@ -100,18 +112,25 @@ uvmf:
       ## Define internal TLM connections. Each entry must have a 'driver' and
       ## a 'receiver' entry used to determine the full connection.
       tlm_connections :
+        # Connection 0
         - driver:   "control_plane_in.monitored_ap"
           receiver: "control_plane_pred.control_plane_in_ae"
+        # Connection 1
         - driver:   "control_plane_in.monitored_ap"
           receiver: "unsecure_data_plane_pred.control_plane_in_ae"
+        # Connection 2
         - driver:   "unsecure_data_plane_in.monitored_ap"
           receiver: "unsecure_data_plane_pred.unsecure_data_plane_in_ae"
+        # Connection 3
         - driver:   "control_plane_pred.control_plane_sb_ap"
           receiver: "control_plane_sb.expected_analysis_export"
+        # Connection 4
         - driver:   "unsecure_data_plane_pred.unsecure_data_plane_sb_ap"
           receiver: "unsecure_data_plane_sb.expected_analysis_export"
+        # Connection 5
         - driver:   "control_plane_out.monitored_ap"
           receiver: "control_plane_sb.actual_analysis_export"
+        # Connection 6
         - driver:   "unsecure_data_plane_out.monitored_ap"
           receiver: "unsecure_data_plane_sb.actual_analysis_export"
       ## Environment-level configuration variables. Each entry is keyed with a 

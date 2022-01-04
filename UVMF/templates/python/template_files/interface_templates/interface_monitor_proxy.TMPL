@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 {% set conditional = "dpi_link" %}
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Monitor proxy
-// File            : {{name}}_monitor_proxy.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION:  This class communicates with the monitor BFM using the 
@@ -15,8 +10,7 @@
 //      for generic C routines that can be used with any interface package
 //      using DPI link for BFM communication.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
 
@@ -34,6 +28,9 @@ class {{name}}_monitor_proxy {%if paramDefs|length > 0%}      #(
 
         {{name}}_monitor {%if paramDefs|length > 0%} #({% for param in paramDefs %}.{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}{% endfor %}) {% endif %} {{name}}_monitor_h;
 
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
 	protected function new(string name = "{{name}}_monitor_proxy");
 		super.new(name);
                 C_initialize_monitor(get_xrtl_path());

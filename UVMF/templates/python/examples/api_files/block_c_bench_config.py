@@ -47,6 +47,12 @@ ben.addBfm('pkt_out', 'pkt', 'pclk', 'prst', 'ACTIVE',agentInstName='pkt_out')
 # Compilation of c code is needed as a dependency for using the VINFO flow
 ben.addVinfoDependency('comp_pkt_pkg_c_files')
 
+# Identify scoreboards to be disabled during register test
+ben.addScoreboard("environment.mem_sb")
+ben.addScoreboard("environment.pkt_sb")
+ben.addScoreboard("environment.axi4_slave_sb")
+ben.addScoreboard("environment.apb3_cfg_sb")
+
 ## This will prompt the creation of all bench files in their specified
 ##  locations
 ben.create()

@@ -2,37 +2,20 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Environment 
-// Unit            : Environment configuration
-// File            : {{name}}_env_configuration.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: THis is the configuration for the {{name}} environment.
 //  it contains configuration classes for each agent.  It also contains
 //  environment level configuration variables.
 //
-//
-//
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
-class {{name}}_env_configuration 
-{%if paramDefs|length > 0%}            #(
-{% for param in paramDefs %}             {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
-{% endfor %}             )
-{% endif %}
+class {{name}}_env_configuration {{macro.paramDeclare(paramDefs)|indent(13)}}
 extends uvmf_environment_configuration_base;
 
-{%if paramDefs|length > 0%}
-  `uvm_object_param_utils( {{name}}_env_configuration #(
-  {% for param in paramDefs %}                         {{param.name}}{% if not loop.last %},{% endif %}
-
-  {% endfor %}                       ))
-{% else %}
-  `uvm_object_utils( {{name}}_env_configuration ); 
-{% endif %}
+{{macro.objUtils([ name,'_env_configuration']|join(""),paramDefs)}}
 
 {% for config in configVars %}
   {% if config.isrand %}rand {% endif %}{{config.type}} {{config.name}}{% if config.value != '' %} = {{config.value}}{% endif %};
@@ -49,20 +32,22 @@ extends uvmf_environment_configuration_base;
 {% endfor %}
 
   covergroup {{name}}_configuration_cg;
+    // pragma uvmf custom covergroup begin
     option.auto_bin_max=1024;
 {% for config in configVars %}
     coverpoint {{config.name}};
 {% endfor %}
+    // pragma uvmf custom covergroup end
   endgroup
 
 {% for sub_env in subEnvironments %}
-typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0 %}#({% endif %}{% for param in sub_env.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if sub_env.parameters|length > 0 %}) {% endif %} {{sub_env.name}}_config_t;
+typedef {{sub_env.envPkg}}_env_configuration{{macro.paramUseNested(sub_env.parameters)|indent(16)}} {{sub_env.name}}_config_t;
 {{sub_env.name}}_config_t {{sub_env.name}}_config;
 
 {% endfor %}
 
 {% for agent in agents %}
-    typedef {{agent.ifPkg}}_configuration {% if agent.parameters|length > 0 %}#({% endif %}{% for param in agent.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if agent.parameters|length > 0 %}) {% endif %}{{agent.name}}_config_t;
+    typedef {{agent.ifPkg}}_configuration{{macro.paramUseNested(agent.parameters)|indent(16)}} {{agent.name}}_config_t;
     {{agent.name}}_config_t {{agent.name}}_config;
 
 {% endfor %}
@@ -78,6 +63,8 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
     uvmf_active_passive_t                    {{sub_env.name}}_interface_activity[];
 {% endfor %}
 
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // FUNCTION : new()
@@ -98,7 +85,8 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 {% for sub_env in qvipSubEnvironments %}
     {{sub_env.name}}_config = {{sub_env.envPkg}}_env_configuration::type_id::create("{{sub_env.name}}_config");
 {% endfor %}
-
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
   endfunction
 
 // ****************************************************************************
@@ -108,7 +96,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 //
   function void post_randomize();
     super.post_randomize();
-
+    // pragma uvmf custom post_randomize begin
 {% for sub_env in subEnvironments %}
    if(!{{sub_env.name}}_config.randomize()) `uvm_fatal("RAND","{{sub_env.name}} randomization failed");
 {% endfor %}
@@ -116,6 +104,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 {% for agent in agents %}
     if(!{{agent.name}}_config.randomize()) `uvm_fatal("RAND","{{agent.name}} randomization failed");
 {% endfor %}
+    // pragma uvmf custom post_randomize end
 
   endfunction
   
@@ -126,6 +115,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 // each agent configuration in this configuration class.
 //
   virtual function string convert2string();
+    // pragma uvmf custom convert2string begin
     return {
      {% if configVars|length > 0 %}$sformatf("{% for config in configVars %}{{config.name}}:0x%x {% endfor %}"{% for config in configVars %},{{config.name}}{% endfor %}){% if agents|length > 0 or subEnvironments|length > 0 or qvipSubEnvironments|length > 0 %},{% endif %}{% endif %}
 
@@ -146,7 +136,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 {% endfor %}
 
        };
-
+    // pragma uvmf custom convert2string end
   endfunction
 // ****************************************************************************
 // FUNCTION: initialize();
@@ -162,7 +152,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
                                       string environment_path,
                                       string interface_names[],
                                       uvm_reg_block register_model = null,
-                                      uvmf_active_passive_t interface_activity[] = null
+                                      uvmf_active_passive_t interface_activity[] = {}
                                      );
 
     super.initialize(sim_level, environment_path, interface_names, register_model, interface_activity);
@@ -198,6 +188,7 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
 {% endfor %}
 
 {% for regModel in regModels %}
+    // pragma uvmf custom reg_model_config_initialize begin
     // Register model creation and configuation
     if (register_model == null) begin
       {{name}}_rm = {{name}}_reg_model::type_id::create("{{name}}_rm");
@@ -214,16 +205,23 @@ typedef {{sub_env.envPkg}}_env_configuration {% if sub_env.parameters|length > 0
       enable_reg_prediction = {% if regModel.useExplicitPrediction %}1{% else %}0{% endif %};
 {% endif %}
     end
+    // pragma uvmf custom reg_model_config_initialize end
 {% endfor %}
 
 {% for sub_env in subEnvironments %}
-     {{sub_env.name}}_config.initialize( NA, {environment_path,".{{sub_env.name}}"}, {{sub_env.name}}_interface_names, {% if sub_env.regSubBlock != None %}{{name}}_rm.{{sub_env.name}}_rm{% else %}null{% endif %},   {{sub_env.name}}_interface_activity);
+     {{sub_env.name}}_config.initialize( sim_level, {environment_path,".{{sub_env.name}}"}, {{sub_env.name}}_interface_names, {% if sub_env.regSubBlock != None %}{{name}}_rm.{{sub_env.name}}_rm{% else %}null{% endif %},   {{sub_env.name}}_interface_activity);
 {% endfor %}
 
 {% for sub_env in qvipSubEnvironments %}
-     {{sub_env.name}}_config.initialize( NA, {environment_path,".{{sub_env.name}}"}, {{sub_env.name}}_interface_names, null,   {{sub_env.name}}_interface_activity);
+     {{sub_env.name}}_config.initialize( sim_level, {environment_path,".{{sub_env.name}}"}, {{sub_env.name}}_interface_names, null,   {{sub_env.name}}_interface_activity);
 {% endfor %}
 
+{% for configVariable in configVariableValues %}
+     {{configVariable.name}} = {{configVariable.value}};
+{% endfor %}
+
+  // pragma uvmf custom initialize begin
+  // pragma uvmf custom initialize end
 
   endfunction
 

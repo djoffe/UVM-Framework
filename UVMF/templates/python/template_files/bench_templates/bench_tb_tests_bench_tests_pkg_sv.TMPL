@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : Test package
-// File            : {{name}}_tests_pkg.sv
 //----------------------------------------------------------------------
 //
 // DESCRIPTION: This package contains all tests currently written for
@@ -17,6 +12,7 @@
 //     -<test_top>
 //     -<example_derived_test>
 //
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
@@ -46,16 +42,22 @@ package {{name}}_tests_pkg;
 
    `include "uvm_macros.svh"
 
+  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional end
+
    `include "src/test_top.svh"
+   `include "src/register_test.svh"
    `include "src/example_derived_test.svh"
 {% if inFactReady %}
    `include "src/infact_test_base.svh"
 {% endif %}
 
-// UVMF_CHANGE_ME : When adding new tests to the src directory
-//    be sure to add the test file here so that it will be
-//    compiled as part of the test package.  Be sure to place
-//    the new test after any base tests of the new test.
+  // pragma uvmf custom package_item_additional begin
+  // UVMF_CHANGE_ME : When adding new tests to the src directory
+  //    be sure to add the test file here so that it will be
+  //    compiled as part of the test package.  Be sure to place
+  //    the new test after any base tests of the new test.
+  // pragma uvmf custom package_item_additional end
 
 endpackage
 

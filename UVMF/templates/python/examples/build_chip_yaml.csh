@@ -1,4 +1,3 @@
-
 ./api_files/mem_if_config.py --yaml
 ./api_files/pkt_if_config.py --yaml
 ./api_files/dma_if_config.py --yaml

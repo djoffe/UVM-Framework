@@ -68,7 +68,7 @@ class uvmf_catapult_scoreboard #(type T = uvmf_transaction_base) extends uvmf_in
         begin
         `uvm_info("SCBD",$sformatf(" Mismatch count               %d",mismatch_count),UVM_LOW)
         end
-      if ((mismatch_count > 0) || (transaction_count == 0) || (actual_count == 0))
+      if ((mismatch_count > 0) || ((end_of_test_activity_check ==1) && ((transaction_count == 0) || (actual_count == 0))))
         begin
         `uvm_error("SCBD"," Scoreboard FAILED")
         end

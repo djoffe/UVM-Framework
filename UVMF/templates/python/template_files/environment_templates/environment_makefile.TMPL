@@ -1,6 +1,9 @@
 {% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/Makefile" %}
 # {{name}} environment packages source and make target
 
+# pragma uvmf custom additional begin
+# pragma uvmf custom additional end
+
 # Include all requisite sub-environment package targets for this bench
 {% for sub_env in subEnvironments %}
 include $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{sub_env.envPkg}}_env_pkg/Makefile

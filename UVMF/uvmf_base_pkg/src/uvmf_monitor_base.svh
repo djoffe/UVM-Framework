@@ -67,7 +67,9 @@ class uvmf_monitor_base #(
   // Static associative array of back-references to instances derived from
   // this UVMF monitor class, from corresponding monitor HDL BFM instances 
   // as referenced by the 'bfm' field
+`ifdef QUESTA
   static uvmf_monitor_base_t bfm_proxy_map[BFM_BIND_T];
+`endif // QUESTA
 
   // Convenience variable for storing timestamps.
   // (For instance for tracking previous transaction end_times for 'push' approach ...).
@@ -104,7 +106,9 @@ class uvmf_monitor_base #(
         $stacktrace;
         `uvm_fatal("MON", $sformatf("BFM handle with interface_name %s is null",configuration.interface_name));
      end
+  `ifdef QUESTA
      bfm_proxy_map[bfm] = this;
+  `endif
      set_bfm_proxy_handle();
      configure(configuration);
   endfunction
@@ -112,9 +116,12 @@ class uvmf_monitor_base #(
 // ****************************************************************************
   // FUNCTION: start_of_simulation_phase
   virtual function void start_of_simulation_phase(uvm_phase phase);
-     if (configuration.enable_transaction_viewing)
-       transaction_viewing_stream = $create_transaction_stream({"..",get_full_name(),".","txn_stream"});
-    endfunction
+  `ifdef QUESTA
+     if (configuration.enable_transaction_viewing) begin
+       transaction_viewing_stream = $create_transaction_stream({"..",get_full_name(),".","txn_stream"},"TVM");
+     end
+  `endif // QUESTA   
+  endfunction
 
 // ****************************************************************************
   // TASK: monitor
@@ -145,7 +152,6 @@ class uvmf_monitor_base #(
   protected virtual function void analyze(TRANS_T trans);
      if ( configuration.enable_transaction_viewing )
       trans.add_to_wave(transaction_viewing_stream);
-
      monitored_ap.write(trans);
 
      `uvm_info("MON",trans.convert2string(),UVM_HIGH);

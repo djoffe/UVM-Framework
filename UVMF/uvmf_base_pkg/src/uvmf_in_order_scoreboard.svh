@@ -97,6 +97,11 @@ class uvmf_in_order_scoreboard #(type T = uvmf_transaction_base) extends uvmf_sc
          else 
             begin : item_to_compare_against
                expected_transaction = expected_results_q.pop_front();
+               // Exit function if comparison is disabled
+               if ( disable_entry_compare ) begin : comparison_disabled
+                  `uvm_warning("SCBD", "COMPARISONS DISABLED")
+                  return;
+                end : comparison_disabled
                // Compare actual transaction to expected transaction
                if (t.compare(expected_transaction)) 
                   begin : compare_pass

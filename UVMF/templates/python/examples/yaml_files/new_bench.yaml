@@ -11,6 +11,10 @@ uvmf:
       clock_phase_offset : "21ns"
       reset_assertion_level : "True"
       reset_duration : "250ns"
+#      veloce_ready: "True"
+#      use_coemu_clk_rst_gen: "True"
+      ## Set this flag to disable generation of this bench
+#      existing_library_component : "True"
 #      imports:
 #        - name: "name_of_package_to_be_imported"
 #      parameters:

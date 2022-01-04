@@ -1,31 +1,12 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
-//   All Rights Reserved Worldwide
-//
-//   Licensed under the Apache License, Version 2.0 (the
-//   "License"); you may not use this file except in
-//   compliance with the License.  You may obtain a copy of
-//   the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in
-//   writing, software distributed under the License is
-//   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-//   CONDITIONS OF ANY KIND, either express or implied.  See
-//   the License for the specific language governing
-//   permissions and limitations under the License.
+// Created with uvmf_gen version 2019.4_1
+//----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-//                   Mentor Graphics Inc
-//----------------------------------------------------------------------
-// Project         : spi interface agent
-// Unit            : Monitor Bus Functional Model
-// File            : spi_monitor_bfm.sv
-//----------------------------------------------------------------------
-// Creation Date   : 05.12.2011
-//----------------------------------------------------------------------
-// Description: This interface performs the spi signal monitoring.
+//     
+// DESCRIPTION: This interface performs the spi signal monitoring.
 //      It is accessed by the uvm spi monitor through a virtual
 //      interface handle in the spi configuration.  It monitors the
 //      signals passed in through the port connection named bus of
@@ -37,135 +18,146 @@
 //     The input signal connections are as follows:
 //       bus.signal -> signal_i 
 //
-//      BFM interface functions and tasks used by UVM components:
-//             configure(spi_configuration_s spi_cfg);
-//                   This function gets configuration attributes from the 
-//                   UVM driver to set any required BFM configuration  
-//                   variables such as 'master_slave'.
+//      Interface functions and tasks used by UVM components:
+//             monitor(inout TRANS_T txn);
+//                   This task receives the transaction, txn, from the
+//                   UVM monitor and then populates variables in txn
+//                   from values observed on bus activity.  This task
+//                   blocks until an operation on the spi bus is complete.
 //
-//             wait_for_sck(int clocks);
-//                   This task waits for the number of clock events
-//                   specified by the clocks argument.
-//
-//             start_monitoring()/run();
-//                   This function/task kicks off an autonomous monitor 
-//                   thread to observe interface activity and pass sampled 
-//                   bus transaction attributes to the associated 
-//                   UVM monitor (the proxy) where they are used to
-//                   populate transaction objects.
-//
-//             monitor(output bit [SPI_XFER_WIDTH-1:0] mosi_data, 
-//                     output bit [SPI_XFER_WIDTH-1:0] miso_data);
-//             monitor_mosi(output bit [SPI_XFER_WIDTH-1:0] data);
-//             monitor_miso(output bit [SPI_XFER_WIDTH-1:0] data);
-//                   A 'pull' alternative to using the preferred 'push' 
-//                   variant with start_monitoring()/run() above.
-//
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 import uvmf_base_pkg_hdl::*;
 import spi_pkg_hdl::*;
 
-interface spi_monitor_bfm( spi_if bus );
-// pragma attribute spi_monitor_bfm partition_interface_xif
+`include "src/spi_macros.svh"
 
-   spi_configuration_s cfg;
+interface spi_monitor_bfm 
+  ( spi_if  bus );
+  // The pragma below and additional ones in-lined further down are for running this BFM on Veloce
+  // pragma attribute spi_monitor_bfm partition_interface_xif                                  
 
-   spi_pkg::spi_monitor proxy; // pragma tbx oneway proxy.notify_transaction
+  // Structure used to pass transaction data from monitor BFM to monitor class in agent.
+`spi_MONITOR_STRUCT
+  spi_monitor_s spi_monitor_struct;
 
-//******************************************************************
-   function void configure(spi_configuration_s spi_cfg); // pragma tbx xtf
-      cfg = spi_cfg;
-      // Configuration fields available from spi_configuration_s and embedded
-      // uvmf_parameterized_agent_configuration_base_s packed structs:
-      // - uvmf_cfg.master_slave
-      // - uvmf_cfg.active_passive
-      // - uvmf_cfg.has_coverage
-      // - SPCR_SPIE     // Serial Peripheral Interrupt Enable
-      // - SPCR_SPE      // Serial Peripheral Enable
-      // - SPCR_MSTR     // Master Mode Select
-      // - SPCR_CPOL     // Clock Polarity
-      // - SPCR_CPHA     // Clock Phase
-      // - SPCR_SPR      // SPI Clock Rate Select
-      // - SPER_ESPR     // Extended SPI Clock Rate Select
-   endfunction
+  // Structure used to pass configuration data from monitor class to monitor BFM.
+ `spi_CONFIGURATION_STRUCT
+ 
 
-// ****************************************************************************
-   task wait_for_sck(input int unsigned count); // pragma tbx xtf
-      @(posedge bus.sck);
-      repeat (count-1) @(posedge bus.sck);
-   endtask
+  // Config value to determine if this is an initiator or a responder 
+  uvmf_initiator_responder_t initiator_responder;
+  // Custom configuration variables.  
+  // These are set using the configure function which is called during the UVM connect_phase
 
-//******************************************************************
-   event go;
-   function void start_monitoring(); // pragma tbx xtf
-      -> go;
-   endfunction
+  tri sck_i;
+  tri rst_i;
+  tri  mosi_i;
+  tri  miso_i;
+  assign sck_i = bus.sck;
+  assign rst_i = bus.rst;
+  assign mosi_i = bus.mosi;
+  assign miso_i = bus.miso;
 
-// ****************************************************************************
-   initial begin
-      @go;
-      forever begin
-        bit [SPI_XFER_WIDTH-1:0] mosi_data;
-        bit [SPI_XFER_WIDTH-1:0] miso_data;
+  // Proxy handle to UVM monitor
+  spi_pkg::spi_monitor  proxy;
+  // pragma tbx oneway proxy.notify_transaction                 
 
-        @(posedge bus.sck);
-        do_monitor(mosi_data, miso_data);
-        proxy.notify_transaction(mosi_data, miso_data);
-      end
-   end
+  // pragma uvmf custom interface_item_additional begin
+  // pragma uvmf custom interface_item_additional end
+  
+  //******************************************************************                         
+  task wait_for_reset();// pragma tbx xtf  
+    @(posedge sck_i) ;                                                                    
+    do_wait_for_reset();                                                                   
+  endtask                                                                                   
 
-// ****************************************************************************
-   task monitor(output bit [SPI_XFER_WIDTH-1:0] mosi_data,
-                output bit [SPI_XFER_WIDTH-1:0] miso_data); // pragma tbx xtf
-      @(posedge bus.sck);
-      do_monitor(mosi_data, miso_data);
-   endtask
+  // ****************************************************************************              
+  task do_wait_for_reset();                                                                 
+    wait ( rst_i == 0 ) ;                                                              
+    @(posedge sck_i) ;                                                                    
+  endtask    
 
-// ****************************************************************************
-   task do_monitor(output bit [SPI_XFER_WIDTH-1:0] mosi_data,
-                   output bit [SPI_XFER_WIDTH-1:0] miso_data);
-      //-start_time = $time;
-      mosi_data[SPI_XFER_WIDTH-1]=bus.mosi;
-      miso_data[SPI_XFER_WIDTH-1]=bus.miso;
-      for (int i=(SPI_XFER_WIDTH-2);i>=0;i--) begin
-          @(posedge bus.sck);
-          mosi_data[i]=bus.mosi;
-          miso_data[i]=bus.miso;
-      end
-      //-end_time = $time;
-   endtask
+  //******************************************************************                         
+ 
+  task wait_for_num_clocks(input int unsigned count); // pragma tbx xtf 
+    @(posedge sck_i);  
+                                                                   
+    repeat (count-1) @(posedge sck_i);                                                    
+  endtask      
 
-// ****************************************************************************
-   task monitor_mosi(output bit [SPI_XFER_WIDTH-1:0] data); // pragma tbx xtf
-      @(posedge bus.sck);
-      do_monitor_mosi(data);
-   endtask
+  //******************************************************************                         
+  event go;                                                                                 
+  function void start_monitoring();// pragma tbx xtf    
+    -> go;
+  endfunction                                                                               
+  
+  // ****************************************************************************              
+  initial begin                                                                             
+    @go;                                                                                   
+    forever begin                                                                        
+      @(posedge sck_i);  
+      do_monitor( spi_monitor_struct );
+                                                                 
+ 
+      proxy.notify_transaction( spi_monitor_struct );
+ 
+    end                                                                                    
+  end                                                                                       
 
-// ****************************************************************************
-   task monitor_miso(output bit [SPI_XFER_WIDTH-1:0] data); // pragma tbx xtf
-      @(posedge bus.sck);
-      do_monitor_miso(data);
-   endtask
+  //******************************************************************
+  // The configure() function is used to pass agent configuration
+  // variables to the monitor BFM.  It is called by the monitor within
+  // the agent at the beginning of the simulation.  It may be called 
+  // during the simulation if agent configuration variables are updated
+  // and the monitor BFM needs to be aware of the new configuration 
+  // variables.
+  //
+    function void configure(spi_configuration_s spi_configuration_arg); // pragma tbx xtf  
+    initiator_responder = spi_configuration_arg.initiator_responder;
+  // pragma uvmf custom configure begin
+  // pragma uvmf custom configure end
+  endfunction   
 
-// ****************************************************************************
-   task do_monitor_mosi(output bit [SPI_XFER_WIDTH-1:0] data);
-      //-start_time = $time;
-      data[SPI_XFER_WIDTH-1]=bus.mosi;
-      for (int i=(SPI_XFER_WIDTH-2);i>=0;i--) begin
-          @(posedge bus.sck) data[i]=bus.mosi;
-      end
-      //-end_time = $time;
-   endtask
 
-// ****************************************************************************
-   task do_monitor_miso(output bit [SPI_XFER_WIDTH-1:0] data);
-      //-start_time = $time;
-      data[SPI_XFER_WIDTH-1]=bus.miso;
-      for (int i=(SPI_XFER_WIDTH-2);i>=0;i--) begin
-          @(posedge bus.sck) data[i]=bus.miso;
-      end
-      //-end_time = $time;
-   endtask
+  // ****************************************************************************  
+            
+  task do_monitor(output spi_monitor_s spi_monitor_struct);
+    // UVMF_CHANGE_ME : Implement protocol monitoring.  The commented reference code 
+    // below are examples of how to capture signal values and assign them to 
+    // structure members.  All available input signals are listed.  The 'while' 
+    // code example shows how to wait for a synchronous flow control signal.  This
+    // task should return when a complete transfer has been observed.  Once this task is
+    // exited with captured values, it is then called again to wait for and observe 
+    // the next transfer. One clock cycle is consumed between calls to do_monitor.
+    //
+    // Available struct members:
+    //     //    spi_monitor_struct.dir
+    //     //    spi_monitor_struct.mosi_data
+    //     //    spi_monitor_struct.miso_data
+    //     //
+    // Reference code;
+    //    How to wait for signal value
+    //      while (control_signal == 1'b1) @(posedge sck_i);
+    //    
+    //    How to assign a struct member, named xyz, from a signal.   
+    //    All available input signals listed.
+    //      spi_monitor_struct.xyz = mosi_i;  //     
+    //      spi_monitor_struct.xyz = miso_i;  //     
+    // pragma uvmf custom do_monitor begin
+    spi_monitor_struct.mosi_data[7] = mosi_i;
+    spi_monitor_struct.miso_data[7] = miso_i;
+    for (int i=6;i>=0;i--) begin
+       @(posedge sck_i);
+       spi_monitor_struct.mosi_data[i] = mosi_i;
+       spi_monitor_struct.miso_data[i] = miso_i;
+    end
 
+
+
+    // pragma uvmf custom do_monitor end
+  endtask         
+  
+ 
 endinterface

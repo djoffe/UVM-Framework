@@ -58,10 +58,10 @@ class spi_mem_slave_transaction_coverage extends uvm_subscriber#(spi_transaction
   virtual function void write (T t);
     `uvm_info("COV","Received transaction",UVM_LOW);
     if ( t.dir == MOSI ) begin
-       if ( t.spi_data[7] == 1'b1 ) op = SPI_SLAVE_WRITE;
+       if ( t.mosi_data[7] == 1'b1 ) op = SPI_SLAVE_WRITE;
        else                         op = SPI_SLAVE_READ;
-       addr = t.spi_data[6:4];
-       data = t.spi_data[3:0];
+       addr = t.mosi_data[6:4];
+       data = t.mosi_data[3:0];
        spi_mem_slave_transaction_cg.sample();
     end
 

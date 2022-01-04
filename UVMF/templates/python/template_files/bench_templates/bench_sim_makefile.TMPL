@@ -3,17 +3,17 @@
 {% block description %}
 #
 #----------------------------------------------------------------------
-# Project         : {{name}} Simulation Bench 
-# Unit            : Bench makefile
-# File            : Makefile
-#----------------------------------------------------------------------
 #                                          
 # DESCRIPTION: This makefile includes the shared makefile and contains
 #   bench level make targets.
 #
+#----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
+
+# pragma uvmf custom additional begin
+# pragma uvmf custom additional end
 
 # *********************************************************************************************
 # UVMF library directory:
@@ -23,6 +23,7 @@
 # This code below looks "upward" for directory starting with UVMF_* and returns first match for use with the release examples.
 UVMF_HOME ?= ___PLEASE_SET_AN_ENVIRONMENT_VARIABLE_NAMED_UVMF_HOME_TO_POINT_TO_THE_UVMF_INSTALLATION___
 
+# pragma uvmf custom exports begin
 #
 # Project(s) specific verification_ip library:
 # Directory where reusable verification packages for interfaces, environments, utilities, etc. reside.
@@ -54,6 +55,7 @@ export UVMF_PROJECT_DIR ?= $(PWD)/..
 export {{qvip_env_vars}}_DIR_NAME ?= the_environment_variable_named_{{qvip_env_vars}}_DIR_NAME_needs_to_point_to_the_QVIP_configurator_generated_code_for_this_sub_environment
 {% endfor %}
 #
+# pragma uvmf custom exports end
 # *********************************************************************************************
 
 ## Check PATH for required vinfo scripts
@@ -96,6 +98,12 @@ USE_INFACT ?= 0
 TEST_PLAN_NAME       = {{name}}_TestPlan
 REPORTING_DO_FILE    = {{name}}_reports_script
 
+{% if inFactReady %}
+# We must always pass this inFact .ini file to VRM
+# This must be set before the common makefile is included
+VRUN_ARGS += -GINFACT_INI="+infact=(%TASKDIR%)/../../build_task/infact_proj_dir/infact_proj_dir.ini"
+{% endif %}
+
 # Include makefile that includes targets for UVM_VIP_Library packages
 include $(UVMF_HOME)/scripts/Makefile
 
@@ -119,6 +127,7 @@ include $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{env_name}}_env_pkg/Makef
 INFACT_VSIM_ARGS_0 =
 INFACT_VSIM_ARGS_1 += +infact=infact_proj_dir/infact_proj_dir.ini
 INFACT_VSIM_ARGS = $(INFACT_VSIM_ARGS_$(USE_INFACT))
+
 
 INFACT_VLOG_ARGS_0 =
 INFACT_VLOG_ARGS_1 += +incdir+./infact_proj_dir +define+INFACT_ENABLE_COMPILE
@@ -156,7 +165,7 @@ VELANALYZE_HVL_ARGS   +=
 
 BATCH_VOPT_ARGS       +=
 DEBUG_VOPT_ARGS       +=
-EXTRA_VOPT_TOPS       +=
+EXTRA_VOPT_TOPS       += {% if additionalTops|length > 0 %} {% for top in additionalTops %}{{top}} {% endfor %}{% endif %}
 
 COMMON_VSIM_ARGS      += {% if qvip_bfm_pkgs|length > 0 %} -mvchome $(QUESTA_MVC_HOME) {% endif %} 
 COMMON_VSIM_ARGS      += {% if svLibNames|length > 0 %} {% for svLibName in svLibNames %} -sv_lib {{svLibName}} {% endfor %} {% endif %} 
@@ -169,7 +178,7 @@ DEBUG_VOPT_ARGS       += $(INFACT_VOPT_ARGS)
 
 BATCH_VSIM_ARGS       += #-uvmcontrol=none
 DEBUG_VSIM_ARGS       += 
-EXTRA_VSIM_TOPS       += {% if additionalTops|length > 0 %} {% for top in additionalTops %}{{top}} {% endfor %}{% endif %}
+EXTRA_VSIM_TOPS       += 
 
 {% if vmaps|length > 0 %}
 create_{{name}}_vmaps: 
@@ -194,6 +203,7 @@ $(UVMF_PROJECT_DIR)/tb/sequences/{{name}}_infact_sequences_pkg.sv
 {{name}}_TEST_PKG =\
 $(UVMF_PROJECT_DIR)/tb/tests/{{name}}_tests_pkg.sv
 
+# pragma uvmf custom dut_files begin
 # UVMF_CHANGE_ME : Reference Verilog DUT source.
 {{name}}_VERILOG_DUT =\
 $(UVMF_PROJECT_DIR)/rtl/verilog/verilog_dut.v
@@ -201,6 +211,7 @@ $(UVMF_PROJECT_DIR)/rtl/verilog/verilog_dut.v
 # UVMF_CHANGE_ME : Reference VHDL DUT source.
 {{name}}_VHDL_DUT =\
 $(UVMF_PROJECT_DIR)/rtl/vhdl/vhdl_dut.vhd
+# pragma uvmf custom dut_files end
 
 
 # Project bench package targets
@@ -223,6 +234,7 @@ comp_{{name}}_sequence_pkg:
 comp_{{name}}_tests_pkg:
 	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/tests $({{name}}_TEST_PKG)
 
+# pragma uvmf custom dut_compile_make_target begin
 # UVMF_CHANGE_ME : Add make target to compile your verilog dut here
 comp_{{name}}_verilog_dut: 
 	echo "Compile your verilog DUT here"
@@ -235,6 +247,7 @@ comp_{{name}}_vhdl_dut:
 
 # UVMF_CHANGE_ME : Add make target to compile your dut here
 comp_{{name}}_dut: comp_{{name}}_verilog_dut comp_{{name}}_vhdl_dut
+# pragma uvmf custom dut_compile_make_target end
 
 {% if qvip_bfm_pkgs|length > 0 %}
 comp_qvip: 

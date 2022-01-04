@@ -1,39 +1,54 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 06
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb2wb Environment 
-// Unit            : Environment configuration
-// File            : ahb2wb_env_configuration.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: THis is the configuration for the ahb2wb environment.
 //  it contains configuration classes for each agent.  It also contains
 //  environment level configuration variables.
 //
-//
-//
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
-class ahb2wb_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
-   extends uvmf_environment_configuration_base;
+class ahb2wb_env_configuration #(
+             int WB_DATA_WIDTH = 16,
+             int WB_ADDR_WIDTH = 32
+             )
+extends uvmf_environment_configuration_base;
 
-  `uvm_object_param_utils( ahb2wb_env_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) );
+  `uvm_object_param_utils( ahb2wb_env_configuration #(
+                           WB_DATA_WIDTH,
+                           WB_ADDR_WIDTH
+                           ))
 
 
 //Constraints for the configuration variables:
 
+
   covergroup ahb2wb_configuration_cg;
+    // pragma uvmf custom covergroup begin
     option.auto_bin_max=1024;
+  // pragma uvmf custom covergroup end
   endgroup
 
 
-    ahb_configuration ahb_config;
-    wb_configuration #(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) wb_config;
+    typedef wb_configuration#(
+                .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                ) wb_config_t;
+    wb_config_t wb_config;
 
+    typedef ahb_configuration ahb_config_t;
+    ahb_config_t ahb_config;
+
+
+
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // FUNCTION : new()
@@ -44,14 +59,29 @@ class ahb2wb_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
     super.new( name );
 
 
-    ahb_config = ahb_configuration::type_id::create("ahb_config");
-    ahb_config.master_slave = MASTER;
+    wb_config = wb_config_t::type_id::create("wb_config");
+    ahb_config = ahb_config_t::type_id::create("ahb_config");
 
-    wb_config = wb_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("wb_config");
-    wb_config.initiator_responder = RESPONDER;
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
+  endfunction
 
+// ****************************************************************************
+// FUNCTION: post_randomize()
+// This function is automatically called after the randomize() function 
+// is executed.
+//
+  function void post_randomize();
+    super.post_randomize();
+    // pragma uvmf custom post_randomize begin
+
+    if(!wb_config.randomize()) `uvm_fatal("RAND","wb randomization failed");
+    if(!ahb_config.randomize()) `uvm_fatal("RAND","ahb randomization failed");
+
+    // pragma uvmf custom post_randomize end
 
   endfunction
+  
 // ****************************************************************************
 // FUNCTION: convert2string()
 // This function converts all variables in this class to a single string for
@@ -59,14 +89,18 @@ class ahb2wb_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
 // each agent configuration in this configuration class.
 //
   virtual function string convert2string();
+    // pragma uvmf custom convert2string begin
     return {
      
-     "\n", ahb_config.convert2string,
-     "\n", wb_config.convert2string
+     "\n", wb_config.convert2string,
+     "\n", ahb_config.convert2string
 
 
        };
 
+
+
+    // pragma uvmf custom convert2string end
   endfunction
 // ****************************************************************************
 // FUNCTION: initialize();
@@ -82,18 +116,25 @@ class ahb2wb_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
                                       string environment_path,
                                       string interface_names[],
                                       uvm_reg_block register_model = null,
-                                      uvmf_active_passive_t interface_activity[] = null
+                                      uvmf_active_passive_t interface_activity[] = {}
                                      );
-
 
     super.initialize(sim_level, environment_path, interface_names, register_model, interface_activity);
 
 
-     ahb_config.initialize( interface_activity[0], {environment_path,".ahb"}, interface_names[0]);
-     wb_config.initialize( interface_activity[1], {environment_path,".wb"}, interface_names[1]);
+
+  // Interface initialization for local agents
+     wb_config.initialize( interface_activity[0], {environment_path,".wb"}, interface_names[0]);
+     wb_config.initiator_responder = RESPONDER;
+     ahb_config.initialize( interface_activity[1], {environment_path,".ahb"}, interface_names[1]);
+     ahb_config.initiator_responder = INITIATOR;
 
 
 
+
+
+  // pragma uvmf custom initialize begin
+  // pragma uvmf custom initialize end
 
   endfunction
 

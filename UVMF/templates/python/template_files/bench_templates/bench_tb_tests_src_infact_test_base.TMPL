@@ -5,14 +5,11 @@
 {% block description %}
 //
 //----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : Base test for inFact-based tests
-// File            : infact_test_base.svh
-//----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This test extends test_top to provide a baseline
 //    for all tests that invoke inFact for stimulus 
 //
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
@@ -20,6 +17,9 @@
 class infact_test_base extends test_top;
 
   `uvm_component_utils( infact_test_base );
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
   function new(string name = "infact_test_base", uvm_component parent = null );
     super.new(name,parent);

@@ -11,11 +11,13 @@ COMP_UVMF_BASE_PKG_TGT_1 = v_comp_uvmf_base_pkg
 COMP_UVMF_BASE_PKG_TGT = $(COMP_UVMF_BASE_PKG_TGT_$(USE_VELOCE))
 
 comp_uvmf_base_pkg: $(COMP_UVMF_BASE_PKG_TGT)
-	$(HDL_COMP_CMD) $(UVMF_BASE_PKG_HDL)
 
 q_comp_uvmf_base_pkg:
+	$(HDL_COMP_CMD) $(UVM_INCDIR) $(UVMF_BASE_PKG_HDL)
 	$(HVL_COMP_CMD) $(UVM_INCDIR) $(UVMF_BASE_PKG)
 
-v_comp_uvmf_base_pkg: q_comp_uvmf_base_pkg
+v_comp_uvmf_base_pkg: 
+	$(HVL_COMP_CMD)               $(UVMF_BASE_PKG_HDL)
+	$(HVL_COMP_CMD) $(UVM_INCDIR) $(UVMF_BASE_PKG)
+	$(HDL_COMP_CMD) $(UVMF_BASE_PKG_HDL)
 	$(VELANALYZE_HVL_CMD) $(UVMF_BASE_PKG)
-

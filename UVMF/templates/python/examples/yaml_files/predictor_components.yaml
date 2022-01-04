@@ -27,22 +27,34 @@ uvmf:
           type: "pkt_transaction"
     "control_plane_predictor" :
       type: "predictor"
+      parameters:
+        - name: "ae_mem_transaction_t"
+          type: "type"
+        - name: "ap_mem_transaction_t"
+          type: "type"
       analysis_exports : 
         - name: "control_plane_in_ae"
-          type: "mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))"
+          type: "ae_mem_transaction_t"
       analysis_ports : 
         - name: "control_plane_sb_ap"
-          type: "mem_transaction #(.ADDR_WIDTH(CP_OUT_ADDR_WIDTH))"
+          type: "ap_mem_transaction_t"
     "unsecure_data_plane_predictor" :
       type: "predictor"
+      parameters:
+        - name: "control_plane_in_ae_t"
+          type: "type"
+        - name: "unsecure_data_plane_in_ae_t"
+          type: "type"
+        - name: "unsecure_data_plane_sb_ap_t"
+          type: "type"
       analysis_exports :
         - name: "control_plane_in_ae"
-          type: "mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))"
+          type: "control_plane_in_ae_t"
         - name: "unsecure_data_plane_in_ae"
-          type: "pkt_transaction #(.DATA_WIDTH(UDP_DATA_WIDTH))"
+          type: "unsecure_data_plane_in_ae_t"
       analysis_ports:
         - name: "unsecure_data_plane_sb_ap"
-          type: "pkt_transaction"
+          type: "unsecure_data_plane_sb_ap_t"
     "block_c_predictor" :
       type: predictor
       analysis_exports:
@@ -61,3 +73,11 @@ uvmf:
           type: "mvc_sequence_item_base"
         - name: "axi4_slave_ap"
           type: "mvc_sequence_item_base"
+    "block_a_coverage" :
+      type: coverage
+      analysis_exports:
+        - name: "control_plane_in_ae"
+          type: "mem_transaction"
+        - name: "secure_data_plane_in_ae"
+          type: "pkt_transaction"
+        

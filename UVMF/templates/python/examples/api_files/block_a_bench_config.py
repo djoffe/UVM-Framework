@@ -33,6 +33,11 @@ ben.addBfm('secure_data_plane_out', 'pkt',  'pclk',  'prst', 'ACTIVE',initResp =
 # Compilation of c code is needed as a dependency for using the VINFO flow
 ben.addVinfoDependency('comp_pkt_pkg_c_files')
 
+# Identify scoreboards to disable during register test
+ben.addScoreboard("environment.control_plane_sb")
+ben.addScoreboard("environment.secure_data_plane_sb")
+
+
 ## This will prompt the creation of all bench files in their specified
 ##  locations
 ## ben.inFactReady = False

@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : jcraft
-// Creation Date   : 2016 Nov 03
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb interface agent
-// Unit            : Interface HVL package
-// File            : wb_pkg.sv
 //----------------------------------------------------------------------
 //     
 // PACKAGE: This file defines all of the files contained in the
@@ -24,12 +20,12 @@
 
 //    - <wb_transaction_coverage.svh>
 //    - <wb_sequence_base.svh>
-//    - <wb_infact_sequence.svh>
+//    - <wb_random_sequence.svh>
+
 //    - <wb_responder_sequence.svh>
 //    - <wb2reg_adapter.svh>
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 package wb_pkg;
@@ -38,9 +34,19 @@ package wb_pkg;
    import uvmf_base_pkg_hdl::*;
    import uvmf_base_pkg::*;
    import wb_pkg_hdl::*;
+
    `include "uvm_macros.svh"
+
+   // pragma uvmf custom package_imports_additional begin 
+   // pragma uvmf custom package_imports_additional end
+
+   `include "src/wb_macros.svh"
    
    export wb_pkg_hdl::*;
+   
+ 
+
+   // Parameters defined as HVL parameters
 
    `include "src/wb_typedefs.svh"
    `include "src/wb_transaction.svh"
@@ -51,15 +57,23 @@ package wb_pkg;
 
    `include "src/wb_transaction_coverage.svh"
    `include "src/wb_sequence_base.svh"
-   `include "src/wb_master_access_sequence.svh"
-   `include "src/wb_infact_sequence.svh"
    `include "src/wb_random_sequence.svh"
-   `include "src/wb_memory_slave_sequence.svh"
-   `include "src/wb_slave_access_sequence.svh"
-   `include "src/wb_reset_sequence.svh"
+
+   `include "src/wb_responder_sequence.svh"
    `include "src/wb2reg_adapter.svh"
 
    `include "src/wb_agent.svh"
+
+   // pragma uvmf custom package_item_additional begin
+   `include "src/wb_master_access_sequence.svh"
+   `include "src/wb_memory_slave_sequence.svh"
+   `include "src/wb_slave_access_sequence.svh"
+
+
+
+
+
+   // pragma uvmf custom package_item_additional end
 
 endpackage
 

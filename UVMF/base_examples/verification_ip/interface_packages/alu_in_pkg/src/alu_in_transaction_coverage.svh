@@ -1,64 +1,73 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
-//   All Rights Reserved Worldwide
-//
-//   Licensed under the Apache License, Version 2.0 (the
-//   "License"); you may not use this file except in
-//   compliance with the License.  You may obtain a copy of
-//   the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in
-//   writing, software distributed under the License is
-//   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-//   CONDITIONS OF ANY KIND, either express or implied.  See
-//   the License for the specific language governing
-//   permissions and limitations under the License.
+// Created with uvmf_gen version 2019.4_1
+//----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-//                   Mentor Graphics Inc
-//----------------------------------------------------------------------
-// Project         : AHB interface agent
-// Unit            : Transaction coverage
-// File            : alu_in_transaction_coverage.svh
-//----------------------------------------------------------------------
-// Creation Date   : 05.12.2011
-//----------------------------------------------------------------------
-// Description: This class records AHB transaction information using
+//     
+// DESCRIPTION: This class records alu_in transaction information using
 //       a covergroup named alu_in_transaction_cg.  An instance of this
 //       coverage component is instantiated in the uvmf_parameterized_agent
 //       if the has_coverage flag is set.
 //
-// ****************************************************************************
-class alu_in_transaction_coverage extends uvm_subscriber#(alu_in_transaction);
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
+//
+class alu_in_transaction_coverage #(
+      int ALU_IN_OP_WIDTH = 8
+      ) extends uvm_subscriber #(.T(alu_in_transaction #(
+                                            .ALU_IN_OP_WIDTH(ALU_IN_OP_WIDTH)
+                                            )));
 
-  `uvm_component_utils( alu_in_transaction_coverage )
+  `uvm_component_param_utils( alu_in_transaction_coverage #(
+                              ALU_IN_OP_WIDTH
+                              ))
 
-  alu_in_op_t               op;
-  bit [ALU_IN_OP_WIDTH-1:0] a;
-  bit [ALU_IN_OP_WIDTH-1:0] b;
+  T coverage_trans;
 
-// ****************************************************************************
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
+  // ****************************************************************************
   covergroup alu_in_transaction_cg;
+    // pragma uvmf custom covergroup begin
      option.auto_bin_max=1024;
-     coverpoint op;
-     coverpoint a;
-     coverpoint b;
+     op: coverpoint coverage_trans.op;
+     a:  coverpoint coverage_trans.a;
+     b:  coverpoint coverage_trans.b;
      op_x_a_x_b: cross op, a, b;
+
+
+    // pragma uvmf custom covergroup end
   endgroup
 
+  // ****************************************************************************
+  // FUNCTION : new()
+  // This function is the standard SystemVerilog constructor.
+  //
   function new(string name="", uvm_component parent=null);
     super.new(name,parent);
     alu_in_transaction_cg=new;
-    alu_in_transaction_cg.set_inst_name($sformatf("alu_in_transaction_cg_%s",get_full_name()));
- endfunction
+  endfunction
 
+  // ****************************************************************************
+  // FUNCTION : build_phase()
+  // This function is the standard UVM build_phase.
+  //
+  function void build_phase(uvm_phase phase);
+    alu_in_transaction_cg.set_inst_name($sformatf("alu_in_transaction_cg_%s",get_full_name()));
+  endfunction
+
+  // ****************************************************************************
+  // FUNCTION: write (T t)
+  // This function is automatically executed when a transaction arrives on the
+  // analysis_export.  It copies values from the variables in the transaction 
+  // to local variables used to collect functional coverage.  
+  //
   virtual function void write (T t);
     `uvm_info("COV","Received transaction",UVM_HIGH);
-    op = t.op;
-    a = t.a;
-    b = t.b;
+    coverage_trans = t;
     alu_in_transaction_cg.sample();
   endfunction
 

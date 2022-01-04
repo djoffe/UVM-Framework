@@ -2,37 +2,25 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface random sequence
-// File            : {{name}}_random_sequence.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This sequences randomizes the {{name}} transaction and sends it 
 // to the UVM driver.
 //
-// ****************************************************************************
 // This sequence constructs and randomizes a {{name}}_transaction.
 // 
-class {{name}}_random_sequence {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
-{% endfor %}      )
-{% endif %}
-  extends {{name}}_sequence_base {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %};
+//----------------------------------------------------------------------
+{% endblock %}
+{% block contents %}
+class {{name}}_random_sequence {{macro.paramDeclare(paramDefs)|indent(6)}}
+  extends {{name}}_sequence_base {{macro.paramUse(paramDefs)|indent(6)}};
 
-{%if paramDefs|length > 0%}
-  `uvm_object_param_utils( {{name}}_random_sequence #(
-  {% for param in paramDefs %}                         {{param.name}}{% if not loop.last %},{% endif %}
+{{macro.objUtils([name,'_random_sequence']|join(""),paramDefs)}}
 
-  {% endfor %}                          ))
-{% else %}
-  `uvm_object_utils({{name}}_random_sequence)
-{% endif %}
-
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
   //*****************************************************************
   function new(string name = "");
     super.new(name);
@@ -46,9 +34,7 @@ class {{name}}_random_sequence {%if paramDefs|length > 0%} #(
   task body();
     begin
       // Construct the transaction
-      req={{name}}_transaction{%if paramDefs|length > 0%} #( 
-{% for param in paramDefs %}                .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}               ) {% endif %}::type_id::create("req");
+      req={{name}}_transaction{{macro.paramUse(paramDefs)|indent(16)}}::type_id::create("req");
       start_item(req);
       // Randomize the transaction
       if(!req.randomize()) `uvm_fatal("SEQ", "{{name}}_random_sequence::body()-{{name}}_transaction randomization failed")

@@ -88,7 +88,7 @@ module axi4_interconnect_NxN #(
 		output[2:0]									SAWPROT[N_SLAVES:0],
 		output[3:0]									SAWQOS[N_SLAVES:0],
 		output[3:0]									SAWREGION[N_SLAVES:0],
-		output										SAWREADY[N_SLAVES:0],
+		input										SAWREADY[N_SLAVES:0],
 		output										SAWVALID[N_SLAVES:0],
 		
 		output[(AXI4_DATA_WIDTH-1):0]				SWDATA[N_SLAVES:0],

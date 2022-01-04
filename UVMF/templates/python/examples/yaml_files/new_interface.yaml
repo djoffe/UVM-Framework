@@ -9,6 +9,8 @@ uvmf:
       clock: "clock"
       reset: "reset"
       reset_assertion_level: "True"
+      ## Set this flag to disable generation of this interface
+#      existing_library_component : "True"
 #      parameters:
 #        - name: "IF_PARAMETER"
 #          type: "parameter_type"
@@ -29,16 +31,16 @@ uvmf:
 #      hvl_typedefs:
 #        - name: "typedef_name"
 #          type: "typedef_definition"
-#      ports: 
+#      ports: # Specify the port direction from the perspective of the INITIATOR or MASTER
 #        - name: "signal_name"   
 #          width: "signal_width"        
 #          dir: "signal_direction" 
 #          reset_value: "'bz"
-#      transaction_vars:
-#        - name: "transaction_variable_name"  
-#          type: "transaction_variable_type"
-#          isrand: "False"
-#          iscompare: "True" 
+      transaction_vars:
+        - name: "transaction_variable_name"  
+          type: "transaction_variable_type"
+          isrand: "False"
+          iscompare: "True" 
 #      transaction_constraints:
 #        - name: "constraint_body_name"
 #          value: "{ constraint; }"

@@ -34,11 +34,9 @@ extends wb_sequence_base  #(
 
   task body();
     req=wb_transaction #(      .WB_ADDR_WIDTH(WB_ADDR_WIDTH),         .WB_DATA_WIDTH(WB_DATA_WIDTH)            ) ::type_id::create("req");
-    req.dummy_start = 1;
     forever begin
       start_item(req);
       finish_item(req);
-      req.dummy_start = 0;
       if (req.op == WB_READ) begin
         if (mem.exists(req.addr)) req.data = mem[req.addr];
         else req.data = ~req.addr;

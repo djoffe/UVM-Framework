@@ -1,37 +1,36 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
-//   All Rights Reserved Worldwide
+// Created with uvmf_gen version 2019.4_1
+//----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
 //
-//   Licensed under the Apache License, Version 2.0 (the
-//   "License"); you may not use this file except in
-//   compliance with the License.  You may obtain a copy of
-//   the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in
-//   writing, software distributed under the License is
-//   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-//   CONDITIONS OF ANY KIND, either express or implied.  See
-//   the License for the specific language governing
-//   permissions and limitations under the License.
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//                   Mentor Graphics Inc
-//----------------------------------------------------------------------
-// Project         : AHB to WB Simulation Bench
-// Unit            : Parameters Package
-// File            : alu_parameters_pkg.sv
-//----------------------------------------------------------------------
-// Creation Date   : 04.21.2014
-//----------------------------------------------------------------------
-// Description: This package contains all parameterss currently written for
-//     the simulation project. 
+// DESCRIPTION: This package contains test level parameters
 //
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
+//
+
+
 package alu_parameters_pkg;
 
-parameter string ALU_OUT_BFM  = "ALU_OUT_BFM";
-parameter string ALU_IN_BFM   = "ALU_IN_BFM";
+  import uvmf_base_pkg_hdl::*;
+
+  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional end
+
+  parameter int ALU_IN_OP_WIDTH = 8;
+
+  // These parameters are used to uniquely identify each interface.  The monitor_bfm and
+  // driver_bfm are placed into and retrieved from the uvm_config_db using these string 
+  // names as the field_name. The parameter is also used to enable transaction viewing 
+  // from the command line for selected interfaces using the UVM command line processing.
+  parameter string alu_in_agent_BFM  = "alu_in_agent_BFM"; /* [0] */
+  parameter string alu_out_agent_BFM  = "alu_out_agent_BFM"; /* [1] */
+
+  // pragma uvmf custom package_item_additional begin
+  // pragma uvmf custom package_item_additional end
 
 endpackage
+

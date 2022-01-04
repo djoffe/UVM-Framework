@@ -25,10 +25,14 @@ env.defineAnalysisComponent('predictor','block_a_predictor',{'control_plane_in_a
                                                              'secure_data_plane_in_ae':'pkt_transaction'},
                                                             {'control_plane_sb_ap':'mem_transaction',
                                                              'secure_data_plane_sb_ap':'pkt_transaction'})
+env.defineAnalysisComponent('coverage','block_a_coverage',{'control_plane_in_ae':'mem_transaction',
+                                                           'secure_data_plane_in_ae':'pkt_transaction'},
+                                                           {})
 
 ## Instantiate the components in this environment
 ## addAnalysisComponent(<name>,<type>)
 env.addAnalysisComponent('block_a_pred','block_a_predictor')
+env.addAnalysisComponent('block_a_cov','block_a_coverage')
 
 ## Specify the scoreboards contained in this environment
 ## addUvmfScoreboard(<scoreboard_handle_name>, <uvmf_scoreboard_type_name>, <transaction_type_name>)
@@ -54,6 +58,10 @@ env.addConnection('block_a_pred', 'secure_data_plane_sb_ap', 'secure_data_plane_
 env.addConnection('control_plane_out', 'monitored_ap', 'control_plane_sb', 'actual_analysis_export')
 ## Connection 05
 env.addConnection('secure_data_plane_out','monitored_ap',  'secure_data_plane_sb', 'actual_analysis_export')
+## Connection 06
+env.addConnection('control_plane_in', 'monitored_ap', 'block_a_cov', 'control_plane_in_ae')
+## Connection 07
+env.addConnection('secure_data_plane_in', 'monitored_ap', 'block_a_cov', 'secure_data_plane_in_ae')
 
 ## Specify configuration variables for the environment.
 ##   addConfigVar(<name>,<type>)
@@ -67,5 +75,8 @@ env.addConfigVar('block_a_cfgVar5','int',isrand=True)
 ## addConfigVarConstraint(<constraint_body_name>,<constraint_body_definition>)
 env.addConfigVarConstraint('element_range_c','{ block_a_cfgVar4>block_a_cfgVar5; }')
 env.addConfigVarConstraint('non_negative_c','{ (block_a_cfgVar1==0) -> block_a_cfgVar4==0;}')
+
+env.addConfigVariableValue('control_plane_in_config.transfer_gap','9')
+env.addConfigVariableValue('control_plane_out_config.transfer_gap','7')
 
 env.create() 

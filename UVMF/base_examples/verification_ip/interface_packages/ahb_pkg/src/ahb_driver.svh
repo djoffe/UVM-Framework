@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 15
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb interface agent
-// Unit            : Interface UVM Driver
-// File            : ahb_driver.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This class passes transactions between the sequencer
@@ -16,20 +12,33 @@
 //        passes transactions to the driver BFM through the access
 //        task.  
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
-class ahb_driver extends uvmf_driver_base #(
-                   .CONFIG_T(ahb_configuration),
-                   .BFM_BIND_T(virtual ahb_driver_bfm),
-                   .REQ(ahb_transaction),
-                   .RSP(ahb_transaction));
+class ahb_driver   extends uvmf_driver_base #(
+                   .CONFIG_T(ahb_configuration   ),
+                   .BFM_BIND_T(virtual ahb_driver_bfm   ),
+                   .REQ(ahb_transaction   ),
+                   .RSP(ahb_transaction   ));
 
   `uvm_component_utils( ahb_driver )
+//*******************************************************************
+// Macros that define structs located in ahb_macros.svh
+//*******************************************************************
+// Initiator macro used by ahb_driver and ahb_driver_bfm
+// to communicate initiator driven data to ahb_driver_bfm.           
+`ahb_INITIATOR_STRUCT
+  ahb_initiator_s ahb_initiator_struct;
+//*******************************************************************
+// Responder macro used by ahb_driver and ahb_driver_bfm
+// to communicate Responder driven data to ahb_driver_bfm.
+`ahb_RESPONDER_STRUCT
+  ahb_responder_s ahb_responder_struct;
+
+// pragma uvmf custom class_item_additional begin
+// pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
-// FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
 //
   function new( string name = "", uvm_component parent=null );
@@ -37,25 +46,44 @@ class ahb_driver extends uvmf_driver_base #(
   endfunction
 
 // ****************************************************************************
-   virtual function void configure(input CONFIG_T cfg);
-      bfm.configure(
+// This function sends configuration object variables to the driver BFM 
+// using the configuration struct.
+//
+  virtual function void configure(input CONFIG_T cfg);
+      bfm.configure( cfg.to_struct() );
+  endfunction
 
-          cfg.active_passive,
-          cfg.master_slave
-);                    
-   
-   endfunction
+// ****************************************************************************
+// This function places a handle to this class in the proxy variable in the
+// driver BFM.  This allows the driver BFM to call tasks and function within this class.
+//
+  virtual function void set_bfm_proxy_handle();
+    bfm.proxy = this;  endfunction
 
-// ****************************************************************************              
-  virtual task access( inout ahb_transaction txn );
-    bit [15:0] rd_data;
-    bfm.access(
-               txn.op,
-               txn.data,
-               txn.addr,
-               rd_data
-               );
-    if (txn.op == AHB_READ) txn.data = rd_data;
+// **************************************************************************** 
+// This task is called by the run_phase in uvmf_driver_base.              
+  virtual task access( inout REQ txn );
+// pragma uvmf custom access begin
+    if (configuration.initiator_responder==RESPONDER) begin
+      // Complete current transfer and wait for next transfer
+      bfm.respond_and_wait_for_next_transfer( 
+          ahb_initiator_struct, 
+          txn.to_responder_struct() 
+          );
+      // Unpack information about initiated transfer received by this responder
+      txn.from_initiator_struct(ahb_initiator_struct);
+    end else begin    
+      // Initiate a transfer and get response
+      bfm.initiate_and_get_response( 
+          txn.to_initiator_struct(), 
+          ahb_responder_struct 
+          );
+      // Unpack transfer response information received by this initiator
+      txn.from_responder_struct(ahb_responder_struct);
+    end
+
+
+// pragma uvmf custom access end
   endtask
 
 endclass

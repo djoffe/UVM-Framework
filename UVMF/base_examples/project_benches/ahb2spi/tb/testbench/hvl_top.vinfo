@@ -1,3 +1,2 @@
-+incdir+@vinfodir
-@use ../tests/ahb2spi_test_pkg.vinfo
+@use $UVMF_PROJECT_DIR/tb/tests/ahb2spi_tests_pkg.vinfo
 hvl_top.sv

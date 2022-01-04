@@ -1,21 +1,18 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Nov 30
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : gpio_example Simulation Bench 
-// Unit            : Test package
-// File            : example_derived_test.svh
 //----------------------------------------------------------------------
 //                                          
-// DESCRIPTION: This test extends test_top and makes the following
+// DESCRIPTION: This test extends test_top and makes 
 //    changes to test_top using the UVM factory type_override:
 //
 //    Test scenario: 
 //      This is a template test that can be used to create future tests.
 //
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 

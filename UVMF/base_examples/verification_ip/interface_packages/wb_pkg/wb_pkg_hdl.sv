@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : jcraft
-// Creation Date   : 2016 Nov 03
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb interface agent
-// Unit            : Interface HDL Package
-// File            : wb_pkg_hdl.sv
 //----------------------------------------------------------------------
 //     
 // PACKAGE: This file defines all of the files contained in the
@@ -17,15 +13,23 @@
 // CONTAINS:
 //    - <wb_typedefs_hdl>
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 package wb_pkg_hdl;
   
   import uvmf_base_pkg_hdl::*;
 
+  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional end
+
+  // Parameters defined as HDL parameters
+
   `include "src/wb_typedefs_hdl.svh"
+  `include "src/wb_macros.svh"
+
+  // pragma uvmf custom package_item_additional begin
+  // pragma uvmf custom package_item_additional end
 
 endpackage
 

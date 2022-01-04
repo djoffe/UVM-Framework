@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 15
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb interface agent
-// Unit            : Interface Monitor BFM
-// File            : ahb_monitor_bfm.sv
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This interface performs the ahb signal monitoring.
@@ -29,109 +25,154 @@
 //                   from values observed on bus activity.  This task
 //                   blocks until an operation on the ahb bus is complete.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 import uvmf_base_pkg_hdl::*;
 import ahb_pkg_hdl::*;
 
-interface ahb_monitor_bfm( ahb_if bus );
-// pragma attribute ahb_monitor_bfm partition_interface_xif                                  
-// The above pragma and additional ones in-lined below are for running this BFM on Veloce
+`include "src/ahb_macros.svh"
 
+interface ahb_monitor_bfm 
+  ( ahb_if  bus );
+  // The pragma below and additional ones in-lined further down are for running this BFM on Veloce
+  // pragma attribute ahb_monitor_bfm partition_interface_xif                                  
 
-   tri        hclk_i;
-   tri        hresetn_i;
-   tri        [31:0] haddr_i;
-   tri        [15:0] hwdata_i;
-   tri        [1:0] htrans_i;
-   tri        [2:0] hburst_i;
-   tri        [2:0] hsize_i;
-   tri         hwrite_i;
-   tri         hsel_i;
-   tri         hready_i;
-   tri        [15:0] hrdata_i;
-   tri        [1:0] hresp_i;
+  // Structure used to pass transaction data from monitor BFM to monitor class in agent.
+`ahb_MONITOR_STRUCT
+  ahb_monitor_s ahb_monitor_struct;
 
-   assign     hclk_i    =   bus.hclk;
-   assign     hresetn_i    =   bus.hresetn;
-   assign     haddr_i = bus.haddr;
-   assign     hwdata_i = bus.hwdata;
-   assign     htrans_i = bus.htrans;
-   assign     hburst_i = bus.hburst;
-   assign     hsize_i = bus.hsize;
-   assign     hwrite_i = bus.hwrite;
-   assign     hsel_i = bus.hsel;
-   assign     hready_i = bus.hready;
-   assign     hrdata_i = bus.hrdata;
-   assign     hresp_i = bus.hresp;
+  // Structure used to pass configuration data from monitor class to monitor BFM.
+ `ahb_CONFIGURATION_STRUCT
+ 
 
-   ahb_pkg::ahb_monitor proxy;
+  // Config value to determine if this is an initiator or a responder 
+  uvmf_initiator_responder_t initiator_responder;
+  // Custom configuration variables.  
+  // These are set using the configure function which is called during the UVM connect_phase
+
+  tri hclk_i;
+  tri hresetn_i;
+  tri [31:0] haddr_i;
+  tri [15:0] hwdata_i;
+  tri [1:0] htrans_i;
+  tri [2:0] hburst_i;
+  tri [2:0] hsize_i;
+  tri  hwrite_i;
+  tri  hsel_i;
+  tri  hready_i;
+  tri [15:0] hrdata_i;
+  tri [1:0] hresp_i;
+  assign hclk_i = bus.hclk;
+  assign hresetn_i = bus.hresetn;
+  assign haddr_i = bus.haddr;
+  assign hwdata_i = bus.hwdata;
+  assign htrans_i = bus.htrans;
+  assign hburst_i = bus.hburst;
+  assign hsize_i = bus.hsize;
+  assign hwrite_i = bus.hwrite;
+  assign hsel_i = bus.hsel;
+  assign hready_i = bus.hready;
+  assign hrdata_i = bus.hrdata;
+  assign hresp_i = bus.hresp;
+
+  // Proxy handle to UVM monitor
+  ahb_pkg::ahb_monitor  proxy;
   // pragma tbx oneway proxy.notify_transaction                 
 
-//******************************************************************                         
-   task wait_for_reset(); // pragma tbx xtf                                                  
-      @(posedge hclk_i) ;                                                                    
-      do_wait_for_reset();                                                                   
-   endtask                                                                                   
+  // pragma uvmf custom interface_item_additional begin
+  // pragma uvmf custom interface_item_additional end
+  
+  //******************************************************************                         
+  task wait_for_reset();// pragma tbx xtf  
+    @(posedge hclk_i) ;                                                                    
+    do_wait_for_reset();                                                                   
+  endtask                                                                                   
 
-// ****************************************************************************              
-   task do_wait_for_reset();                                                                 
-      wait ( hresetn_i == 1 ) ;                                                              
-      @(posedge hclk_i) ;                                                                    
-   endtask    
-   
-//******************************************************************                         
-   task wait_for_num_clocks( input int unsigned count); // pragma tbx xtf                           
-      @(posedge hclk_i);                                                                     
-      repeat (count-1) @(posedge hclk_i);                                                    
-   endtask      
+  // ****************************************************************************              
+  task do_wait_for_reset();                                                                 
+    wait ( hresetn_i == 1 ) ;                                                              
+    @(posedge hclk_i) ;                                                                    
+  endtask    
 
-//******************************************************************                         
+  //******************************************************************                         
+ 
+  task wait_for_num_clocks(input int unsigned count); // pragma tbx xtf 
+    @(posedge hclk_i);  
+                                                                   
+    repeat (count-1) @(posedge hclk_i);                                                    
+  endtask      
+
+  //******************************************************************                         
   event go;                                                                                 
-  function void start_monitoring(); // pragma tbx xtf      
-     -> go;                                                                                 
+  function void start_monitoring();// pragma tbx xtf    
+    -> go;
   endfunction                                                                               
   
   // ****************************************************************************              
   initial begin                                                                             
-     @go;                                                                                   
-     forever begin                                                                          
-        ahb_op_t op;
-        bit [15:0] data;
-        bit [31:0] addr;
-        @(posedge hclk_i);                                                                   
-
-        do_monitor(
-                   op,
-                   data,
-                   addr                  );
-        proxy.notify_transaction(
-                   op,
-                   data,
-                   addr                                );     
-     end                                                                                    
+    @go;                                                                                   
+    forever begin                                                                        
+      @(posedge hclk_i);  
+      do_monitor( ahb_monitor_struct );
+                                                                 
+ 
+      proxy.notify_transaction( ahb_monitor_struct );
+ 
+    end                                                                                    
   end                                                                                       
 
-//******************************************************************
-   function void configure(
-          uvmf_active_passive_t active_passive,
-          uvmf_master_slave_t   master_slave
-); // pragma tbx xtf
+  //******************************************************************
+  // The configure() function is used to pass agent configuration
+  // variables to the monitor BFM.  It is called by the monitor within
+  // the agent at the beginning of the simulation.  It may be called 
+  // during the simulation if agent configuration variables are updated
+  // and the monitor BFM needs to be aware of the new configuration 
+  // variables.
+  //
+    function void configure(ahb_configuration_s ahb_configuration_arg); // pragma tbx xtf  
+    initiator_responder = ahb_configuration_arg.initiator_responder;
+  // pragma uvmf custom configure begin
+  // pragma uvmf custom configure end
+  endfunction   
 
-   endfunction
 
-
-// ****************************************************************************              
-     task do_monitor(
-                   output ahb_op_t op,
-                   output bit [15:0] data,
-                   output bit [31:0] addr                    );
-
+  // ****************************************************************************  
+            
+  task do_monitor(output ahb_monitor_s ahb_monitor_struct);
+    // UVMF_CHANGE_ME : Implement protocol monitoring.  The commented reference code 
+    // below are examples of how to capture signal values and assign them to 
+    // structure members.  All available input signals are listed.  The 'while' 
+    // code example shows how to wait for a synchronous flow control signal.  This
+    // task should return when a complete transfer has been observed.  Once this task is
+    // exited with captured values, it is then called again to wait for and observe 
+    // the next transfer. One clock cycle is consumed between calls to do_monitor.
+    //
+    // Available struct members:
+    //     //    ahb_monitor_struct.op
+    //     //    ahb_monitor_struct.data
+    //     //    ahb_monitor_struct.addr
+    //     //
+    // Reference code;
+    //    How to wait for signal value
+    //      while (control_signal == 1'b1) @(posedge hclk_i);
+    //    
+    //    How to assign a struct member, named xyz, from a signal.   
+    //    All available input signals listed.
+    //      ahb_monitor_struct.xyz = haddr_i;  //    [31:0] 
+    //      ahb_monitor_struct.xyz = hwdata_i;  //    [15:0] 
+    //      ahb_monitor_struct.xyz = htrans_i;  //    [1:0] 
+    //      ahb_monitor_struct.xyz = hburst_i;  //    [2:0] 
+    //      ahb_monitor_struct.xyz = hsize_i;  //    [2:0] 
+    //      ahb_monitor_struct.xyz = hwrite_i;  //     
+    //      ahb_monitor_struct.xyz = hsel_i;  //     
+    //      ahb_monitor_struct.xyz = hready_i;  //     
+    //      ahb_monitor_struct.xyz = hrdata_i;  //    [15:0] 
+    //      ahb_monitor_struct.xyz = hresp_i;  //    [1:0] 
+    // pragma uvmf custom do_monitor begin
       if ( !hresetn_i ) begin
          //-start_time = $time;
-         op = AHB_RESET;
+         ahb_monitor_struct.op = AHB_RESET;
          do_wait_for_reset();
          //-end_time = $time;
       end
@@ -139,15 +180,20 @@ interface ahb_monitor_bfm( ahb_if bus );
          while ( hsel_i == 1'b0 ) @(posedge hclk_i);
          //-start_time = $time;
          // Address Phase
-         addr = haddr_i;
-         if ( hwrite_i == 1'b1 ) op = AHB_WRITE;
-         else                    op = AHB_READ;
+         ahb_monitor_struct.addr = haddr_i;
+         if ( hwrite_i == 1'b1 ) ahb_monitor_struct.op = AHB_WRITE;
+         else                    ahb_monitor_struct.op = AHB_READ;
          do @(posedge hclk_i); while ( hready_i == 1'b0 ); //wait ( hready_i == 1'b1 ); @(posedge hclk_i); 
          // Data Phase
-         if ( op == AHB_WRITE ) data = hwdata_i;
-         else                   data = hrdata_i;
+         if ( ahb_monitor_struct.op == AHB_WRITE ) ahb_monitor_struct.data = hwdata_i;
+         else                   ahb_monitor_struct.data = hrdata_i;
          //-end_time = $time;
-      end                                                                                    
-     endtask         
+      end 
+
+
+
+    // pragma uvmf custom do_monitor end
+  endtask         
   
+ 
 endinterface

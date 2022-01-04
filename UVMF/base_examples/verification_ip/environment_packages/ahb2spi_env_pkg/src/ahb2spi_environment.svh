@@ -1,36 +1,62 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 14
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb2spi Environment 
-// Unit            : ahb2spi Environment
-// File            : ahb2spi_environment.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This environment contains all agents, predictors and
 // scoreboards required for the block level design.
+//
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 
+class ahb2spi_environment #(
+  int WB_DATA_WIDTH = 16,
+  int WB_ADDR_WIDTH = 32
+  ) extends uvmf_environment_base #(
+    .CONFIG_T( ahb2spi_env_configuration #(
+                      .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                      .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                      )
+  ));
+  `uvm_component_param_utils( ahb2spi_environment #(
+                              WB_DATA_WIDTH,
+                              WB_ADDR_WIDTH
+                              ))
 
-class ahb2spi_environment #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16) extends uvmf_environment_base #(.CONFIG_T( ahb2spi_env_configuration));
+  typedef ahb2wb_environment#(
+                .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                ) ahb2wb_t;
+  ahb2wb_t ahb2wb;
+   
+  typedef wb2spi_environment#(
+                .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                ) wb2spi_t;
+  wb2spi_t wb2spi;
+   
 
-  `uvm_component_param_utils( ahb2spi_environment#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) );
 
 
-   ahb2wb_environment#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) ahb2wb_env;
-   wb2spi_environment#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) wb2spi_env;
-
-  ahb2reg_adapter    ahb2reg_adaptr;
 
 
-  // Instantiate shared WB monitor to be used by both block level environments
-  wb_monitor#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))         wb_mon;
 
 
+
+
+   // Instantiate register model adapter and predictor
+   typedef ahb2reg_adapter    reg_adapter_t;
+   reg_adapter_t    reg_adapter;
+   typedef uvm_reg_predictor #(ahb_transaction) reg_predictor_t;
+   reg_predictor_t    reg_predictor;
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
 // ****************************************************************************
 // FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
@@ -45,18 +71,19 @@ class ahb2spi_environment #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16) exten
 //
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
+    ahb2wb = ahb2wb_t::type_id::create("ahb2wb",this);
+    ahb2wb.set_config(configuration.ahb2wb_config);
+    wb2spi = wb2spi_t::type_id::create("wb2spi",this);
+    wb2spi.set_config(configuration.wb2spi_config);
+// pragma uvmf custom reg_model_build_phase begin
+  // Build register model predictor if prediction is enabled
+  if (configuration.enable_reg_prediction) begin
+    reg_predictor = reg_predictor_t::type_id::create("reg_predictor", this);
+  end
 
-    // Construct the shared monitor
-    wb_mon = wb_monitor#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("wb_mon",this);
-    wb_mon.set_config(configuration.ahb2wb_env_config.wb_config);
-    // Place the shared monitor in the uvm_config_db for access by block environments
-    uvm_config_db #( wb_monitor#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) )::set( this , "*" , UVMF_MONITORS ,  wb_mon );
-
-   ahb2wb_env = ahb2wb_environment#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("ahb2wb_env",this);
-   ahb2wb_env.set_config(configuration.ahb2wb_env_config);
-   wb2spi_env = wb2spi_environment#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("wb2spi_env",this);
-   wb2spi_env.set_config(configuration.wb2spi_env_config);
-
+// pragma uvmf custom reg_model_build_phase end
+    // pragma uvmf custom build_phase begin
+    // pragma uvmf custom build_phase end
   endfunction
 
 // ****************************************************************************
@@ -67,12 +94,35 @@ class ahb2spi_environment #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16) exten
 //
   virtual function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-
-    if (configuration.enable_reg_adaptation) begin
-      ahb2reg_adaptr = ahb2reg_adapter::type_id::create("ahb2reg_adaptr");
-      configuration.reg_model.bus_map.set_sequencer(ahb2wb_env.ahb.sequencer, ahb2reg_adaptr);
+    // pragma uvmf custom reg_model_connect_phase begin
+    // Create register model adapter if required
+    if (configuration.enable_reg_prediction ||
+        configuration.enable_reg_adaptation)
+      reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
+    // Set sequencer and adapter in register model map
+    if (configuration.enable_reg_adaptation)
+      configuration.ahb2spi_rm.bus_map.set_sequencer(ahb2wb.ahb.sequencer, reg_adapter);
+    // Set map and adapter handles within uvm predictor
+    if (configuration.enable_reg_prediction) begin
+      reg_predictor.map     = configuration.ahb2spi_rm.bus_map;
+      reg_predictor.adapter = reg_adapter;
     end
+      // The connection between the agent analysis_port and uvm_reg_predictor 
+      // analysis_export could cause problems due to a uvm register package bug,
+      // if this environment is used as a sub-environment at a higher level.
+      // The uvm register package does not construct sub-maps within register
+      // sub blocks.  While the connection below succeeds, the execution of the
+      // write method associated with the analysis_export fails.  It fails because
+      // the write method executes the get_reg_by_offset method of the register
+      // map, which is null because of the uvm register package bug.
+      // The call works when operating at block level because the uvm register 
+      // package constructs the top level register map.  The call fails when the 
+      // register map associated with this environment is a sub-map.  Construction
+      // of the sub-maps must be done manually.
+      //ahb.monitored_ap.connect(reg_predictor.bus_in);
 
+
+    // pragma uvmf custom reg_model_connect_phase end
   endfunction
 
 endclass

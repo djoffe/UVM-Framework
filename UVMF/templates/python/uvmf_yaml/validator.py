@@ -4,7 +4,7 @@ try:
   from voluptuous import Required,Optional,Any,In,Schema
   from voluptuous.humanize import humanize_error
 except ImportError:
-  print "ERROR : voluptuous package not found. See templates.README for more information"
+  print("ERROR : voluptuous package not found. See templates.README for more information")
   sys.exit(1)
 
 class BaseValidator(object):
@@ -44,7 +44,7 @@ class BaseValidator(object):
     self.parameterDefSchema = { 
       Required('name'): str, 
       Required('type'): str, 
-      Optional('value'): str 
+      Optional('value'): Any(str,None)
     }
     self.typedefSchema = { 
       Required('name'): str, 
@@ -70,6 +70,34 @@ class BaseValidator(object):
     }
     self.schema = None
 
+class RegenValidator(BaseValidator):
+
+  def __init__(self):
+    super(RegenValidator,self).__init__()
+    self.initializeSchema()
+
+  def initializeSchema(self):
+    blockSchema = {
+      Required('content'): str,
+      Optional('begin_line'): int,
+      Optional('end_line'): int,
+      Optional('extra_blanklines'): int,
+    }
+    mainSchema = { str : { str : blockSchema } }
+    self.schema = Schema(mainSchema)
+
+class GlobalValidator(BaseValidator):
+
+  def __init__(self):
+    super(GlobalValidator,self).__init__()
+    self.initializeSchema()
+
+  def initializeSchema(self):
+    mainSchema = {
+      Optional('header'): str
+    }
+    self.schema = Schema(mainSchema)
+
 class BenchValidator(BaseValidator):
 
   def __init__(self):
@@ -88,6 +116,7 @@ class BenchValidator(BaseValidator):
     mainSchema = {
       Required('top_env'): str,
       Optional('veloce_ready'): Any('True','False'),
+      Optional('existing_library_component'): Any('True','False'),
       Optional('catapult_ready'): Any('True','False'),
       Optional('infact_ready'): Any('True','False'),
       Optional('clock_half_period'): str,
@@ -101,6 +130,7 @@ class BenchValidator(BaseValidator):
       Optional('top_env_params'):  [ self.parameterUseSchema ],
       Optional('interface_params'): [ interfaceParamSchema ],
       Optional('imports'): [ self.importSchema ],
+      Optional('additional_tops'): [ str ],
     }
     self.schema = Schema(mainSchema)
 
@@ -113,12 +143,15 @@ class ComponentValidator(BaseValidator):
   def initializeSchema(self):
     analysisSchema = {
       Required('name'): str,
-      Required('type'): str
+      Required('type'): str,
     }
     mainSchema = {
-      Required('type'): Any("predictor","coverage"),
+      Required('type'): Any("predictor","coverage", "tlm2_sysc_predictor", "scoreboard"),
+      Optional('parameters'): [ self.parameterDefSchema ],
       Optional('analysis_exports'):  [ analysisSchema ],
-      Optional('analysis_ports'): [ analysisSchema ]
+      Optional('analysis_ports'): [ analysisSchema ],
+      Optional('qvip_analysis_exports'): [ analysisSchema ],
+      Optional('existing_library_component'): Any('True','False'),
     }
     self.schema = Schema(mainSchema)
 
@@ -143,6 +176,19 @@ class QVIPEnvValidator(BaseValidator):
     }
     mainSchema = {
       Required('agents'): [ agentsSchema ] 
+    }
+    self.schema = Schema(mainSchema)
+
+class QVIPLibValidator(BaseValidator):
+
+  def __init__(self):
+    super(QVIPLibValidator,self).__init__()
+    self.initializeSchema()
+
+  def initializeSchema(self):
+    mainSchema = {
+      Required('version'): str,
+      Required('date'): str,
     }
     self.schema = Schema(mainSchema)
 
@@ -206,9 +252,14 @@ class EnvironmentValidator(BaseValidator):
       Required('parameters'): [ self.parameterUseSchema ],
       Required('qvip_environment'): str
     }
+    configVariableValueSchema = {
+      Required('name'): str,
+      Required('value'): str
+    }
     mainSchema = {
       Optional('agents'): [ agentSchema ],
       Optional('non_uvmf_components'): [ nonUvmfComponentSchema ],
+      Optional('existing_library_component'): Any('True','False'),
       Optional('qvip_memory_agents'): [ qvipMemoryAgentComponentSchema ],
       Optional('analysis_components'): [ self.componentSchema ],
       Optional('scoreboards'): [ scoreboardSchema ],
@@ -222,11 +273,15 @@ class EnvironmentValidator(BaseValidator):
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('hvl_pkg_parameters'): [ self.parameterDefSchema ],
       Optional('imports'): [ self.importSchema ],
+      Optional('config_variable_values'): [ configVariableValueSchema ],
       Optional('qvip_subenvs'): [ qvipSubenvSchema ],
       Optional('imp_decls'): [ { Required('name'): str } ],
       Optional('register_model'): regModelSchema,
       Optional('dpi_define'): self.dpiDefSchema,
       Optional('typedefs'): [ self.typedefSchema ],
+      Optional('uvmc_flags'): str,
+      Optional('uvmc_files'): [ str ],
+      Optional('uvmc_link_args'): str,
     }
     self.schema = Schema(mainSchema)
 
@@ -259,6 +314,8 @@ class InterfaceValidator(BaseValidator):
       Required('reset'): str,
       Optional('reset_assertion_level'): str,
       Optional('use_dpi_link'): str,
+      Optional('existing_library_component'): Any('True','False'),
+      Optional('gen_inbound_streaming_driver'): str,
       Optional('vip_lib_env_variable'): str,
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('hvl_pkg_parameters'): [ self.parameterDefSchema ],

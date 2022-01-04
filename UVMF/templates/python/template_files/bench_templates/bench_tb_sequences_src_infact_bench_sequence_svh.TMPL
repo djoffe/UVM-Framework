@@ -3,16 +3,12 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : Sequence for infact stimulus at the bench level
-// File            : infact_bench_sequence.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This file contains the infact sequence for generating 
 //    all specified scenarios without redundancy.
 //
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
@@ -20,6 +16,9 @@
 class infact_{{name}}_bench_sequence_base extends {{name}}_bench_sequence_base;
 
   `uvm_object_utils( infact_{{name}}_bench_sequence_base );
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
   function new(string name = "infact_{{name}}_bench_sequence" );
     super.new(name);

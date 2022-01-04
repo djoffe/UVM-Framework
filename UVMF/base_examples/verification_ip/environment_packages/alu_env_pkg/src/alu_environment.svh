@@ -1,52 +1,87 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
-//   All Rights Reserved Worldwide
-//
-//   Licensed under the Apache License, Version 2.0 (the
-//   "License"); you may not use this file except in
-//   compliance with the License.  You may obtain a copy of
-//   the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in
-//   writing, software distributed under the License is
-//   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-//   CONDITIONS OF ANY KIND, either express or implied.  See
-//   the License for the specific language governing
-//   permissions and limitations under the License.
+// Created with uvmf_gen version 2019.4_1
+//----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-//                   Mentor Graphics Inc
-//----------------------------------------------------------------------
-// Project         : alu Block Level Environment
-// Unit            : Environment
-// File            : alu_environment.svh
-//----------------------------------------------------------------------
-// Creation Date   : 05.12.2011
-//----------------------------------------------------------------------
-// Description: This class defines the alu_out to alu_in environment.  It 
-//    instantiates the alu_out agent, alu_in agent, predictor and scoreboard.
+//                                          
+// DESCRIPTION: This environment contains all agents, predictors and
+// scoreboards required for the block level design.
 //
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
 //
-//  Define the predictor type
-typedef alu_predictor #(alu_in_transaction, alu_out_transaction) alu_predictor_t;
 
-//  Define the scoreboard type
-`ifdef USE_VISTA
-    // Use in_order_race in case Vista predictor is slower than the DUT
-    typedef uvmf_in_order_race_scoreboard #(alu_out_transaction) alu_scoreboard_t;
-`else
-    typedef uvmf_in_order_scoreboard #(alu_out_transaction) alu_scoreboard_t;
-`endif
+class alu_environment  extends uvmf_environment_base #(
+    .CONFIG_T( alu_env_configuration 
+  ));
+  `uvm_component_utils( alu_environment )
 
-//  Define the environment type which is instantiated by the test or a higher level environment
-typedef    uvmf_parameterized_simplex_environment #( 
-                       .CONFIG_T(alu_configuration),
-                       .INPUT_AGENT_T(alu_in_agent_t),
-                       .OUTPUT_AGENT_T(alu_out_agent_t),
-                       .PREDICTOR_T(alu_predictor_t),
-                       .SCOREBOARD_T(alu_scoreboard_t)
-                       ) alu_environment;
+
+
+
+
+  typedef alu_in_agent  alu_in_agent_agent_t;
+  alu_in_agent_agent_t alu_in_agent;
+
+  typedef alu_out_agent  alu_out_agent_agent_t;
+  alu_out_agent_agent_t alu_out_agent;
+
+
+
+
+  typedef alu_predictor #(
+                .CONFIG_T(CONFIG_T)
+                ) alu_pred_t;
+  alu_pred_t alu_pred;
+
+  typedef uvmf_in_order_scoreboard #(.T(alu_out_transaction))  alu_sb_t;
+  alu_sb_t alu_sb;
+
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
+// ****************************************************************************
+// FUNCTION : new()
+// This function is the standard SystemVerilog constructor.
+//
+  function new( string name = "", uvm_component parent = null );
+    super.new( name, parent );
+  endfunction
+
+// ****************************************************************************
+// FUNCTION: build_phase()
+// This function builds all components within this environment.
+//
+  virtual function void build_phase(uvm_phase phase);
+    super.build_phase(phase);
+    alu_in_agent = alu_in_agent_agent_t::type_id::create("alu_in_agent",this);
+    alu_in_agent.set_config(configuration.alu_in_agent_config);
+    alu_out_agent = alu_out_agent_agent_t::type_id::create("alu_out_agent",this);
+    alu_out_agent.set_config(configuration.alu_out_agent_config);
+    alu_pred = alu_pred_t::type_id::create("alu_pred",this);
+    alu_pred.configuration = configuration;
+    alu_sb = alu_sb_t::type_id::create("alu_sb",this);
+    // pragma uvmf custom build_phase begin
+    // pragma uvmf custom build_phase end
+  endfunction
+
+// ****************************************************************************
+// FUNCTION: connect_phase()
+// This function makes all connections within this environment.  Connections
+// typically inclue agent to predictor, predictor to scoreboard and scoreboard
+// to agent.
+//
+  virtual function void connect_phase(uvm_phase phase);
+    super.connect_phase(phase);
+    alu_in_agent.monitored_ap.connect(alu_pred.alu_in_agent_ae);
+    alu_pred.alu_sb_ap.connect(alu_sb.expected_analysis_export);
+    alu_out_agent.monitored_ap.connect(alu_sb.actual_analysis_export);
+    // pragma uvmf custom reg_model_connect_phase begin
+    // pragma uvmf custom reg_model_connect_phase end
+  endfunction
+
+endclass
 

@@ -1,15 +1,11 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 26
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb2spi Simulation Bench 
-// Unit            : HDL top level module
-// File            : hdl_top.sv
-//----------------------------------------------------------------------
-//                                          
+//----------------------------------------------------------------------                     
+//               
 // Description: This top level module instantiates all synthesizable
 //    static content.  This and tb_top.sv are the two top level modules
 //    of the simulation.  
@@ -21,85 +17,143 @@
 //        Monitor BFM's: BFM's that passively monitor interface signals
 //
 //----------------------------------------------------------------------
-//
+
 //----------------------------------------------------------------------
 //
 
 import ahb2spi_parameters_pkg::*;
 import uvmf_base_pkg_hdl::*;
 
-
-
 module hdl_top;
-// pragma attribute hdl_top partition_module_xrtl
-
-
-bit rst;
-bit clk;
-   // Instantiate a clk driver 
-   // tbx clkgen
-   initial begin
-      clk = 0;
-      #5ns;
-      forever #10ns clk = ~clk;
-   end
-   // Instantiate a rst driver
-   initial begin
-      repeat (10) @(posedge clk);
-      rst <= 1'b1;
-   end
+  // pragma attribute hdl_top partition_module_xrtl                                            
+// pragma uvmf custom clock_generator begin
+  bit clk;
+  // Instantiate a clk driver 
+  // tbx clkgen
+  initial begin
+    clk = 0;
+    #21ns;
+    forever begin
+      clk = ~clk;
+      #6ns;
+    end
+  end
 
 
 
-// Instantiate the signal bundle, monitor bfm and driver bfm for each interface.
-// The signal bundle, _if, contains signals to be connected to the DUT.
-// The monitor, monitor_bfm, observes the bus, _if, and captures transactions.
-// The driver, driver_bfm, drives transactions onto the bus, _if.
+// pragma uvmf custom clock_generator end
 
-ahb_if          ahb_bus(.hclk(clk), .hresetn(rst));
-
-spi_if          spi_bus();
-
-ahb_monitor_bfm ahb_mon_bfm(ahb_bus);
-spi_monitor_bfm spi_mon_bfm(spi_bus);
-
-ahb_driver_bfm  ahb_drv_bfm(ahb_bus);
-spi_driver_bfm  spi_drv_bfm(spi_bus);
+// pragma uvmf custom reset_generator begin
+  bit rst;
+  // Instantiate a rst driver
+  // tbx clkgen
+  initial begin
+    rst = 0; 
+    #250ns;
+    rst =  1; 
+  end
 
 
-// UVMF_CHANGE_ME : Add DUT and connect to signals in _bus interfaces listed above
-// Instantiate DUT here
+
+// pragma uvmf custom reset_generator end
+
+  // pragma uvmf custom module_item_additional begin
+  // pragma uvmf custom module_item_additional end
+
+  // Instantiate the signal bundle, monitor bfm and driver bfm for each interface.
+  // The signal bundle, _if, contains signals to be connected to the DUT.
+  // The monitor, monitor_bfm, observes the bus, _if, and captures transactions.
+  // The driver, driver_bfm, drives transactions onto the bus, _if.
+  wb_if #(
+        .WB_DATA_WIDTH(WB_DATA_WIDTH),
+        .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+        ) ahb2wb_wb_bus(
+     // pragma uvmf custom ahb2wb_wb_bus_connections begin
+        .clk( DUT.clk ), .rst( DUT.rst ), 
+        .inta( DUT.inta ), .cyc( DUT.cyc ), .stb( DUT.stb ), .adr( DUT.adr ), 
+        .we( DUT.we ), .din( DUT.din ), .dout( DUT.dout ), .ack( DUT.ack ),
+        .err( DUT.err ), .rty( DUT.rty ), .sel( DUT.sel ), .q( DUT.q )        
+
+
+     // pragma uvmf custom ahb2wb_wb_bus_connections end
+     );
+  ahb_if  ahb2wb_ahb_bus(
+     // pragma uvmf custom ahb2wb_ahb_bus_connections begin
+     .hclk(clk), .hresetn(rst)
+     // pragma uvmf custom ahb2wb_ahb_bus_connections end
+     );
+  wb_if #(
+        .WB_DATA_WIDTH(WB_DATA_WIDTH),
+        .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+        ) wb2spi_wb_bus(
+     // pragma uvmf custom wb2spi_wb_bus_connections begin
+        .clk( DUT.clk ), .rst( DUT.rst ), 
+        .inta( DUT.inta ), .cyc( DUT.cyc ), .stb( DUT.stb ), .adr( DUT.adr ), 
+        .we( DUT.we ), .din( DUT.din ), .dout( DUT.dout ), .ack( DUT.ack ),
+        .err( DUT.err ), .rty( DUT.rty ), .sel( DUT.sel ), .q( DUT.q )        
+
+
+     // pragma uvmf custom wb2spi_wb_bus_connections end
+     );
+  spi_if  wb2spi_spi_bus(
+     // pragma uvmf custom wb2spi_spi_bus_connections begin
+       .sck(), .rst(rst)
+     // pragma uvmf custom wb2spi_spi_bus_connections end
+     );
+  wb_monitor_bfm #(
+        .WB_DATA_WIDTH(WB_DATA_WIDTH),
+        .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+        ) ahb2wb_wb_mon_bfm(ahb2wb_wb_bus.monitor_port);
+  ahb_monitor_bfm  ahb2wb_ahb_mon_bfm(ahb2wb_ahb_bus.monitor_port);
+  wb_monitor_bfm #(
+        .WB_DATA_WIDTH(WB_DATA_WIDTH),
+        .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+        ) wb2spi_wb_mon_bfm(wb2spi_wb_bus.monitor_port);
+  spi_monitor_bfm  wb2spi_spi_mon_bfm(wb2spi_spi_bus.monitor_port);
+  ahb_driver_bfm  ahb2wb_ahb_drv_bfm(ahb2wb_ahb_bus.initiator_port);
+  spi_driver_bfm  wb2spi_spi_drv_bfm(wb2spi_spi_bus.responder_port);
+
+  // pragma uvmf custom dut_instantiation begin
+  // UVMF_CHANGE_ME : Add DUT and connect to signals in _bus interfaces listed above
+  // Instantiate your DUT here
+  // These DUT's instantiated to show verilog and vhdl instantiation
   ahb2spi    DUT  (
        // AHB connections
-       .ahb(ahb_bus),
+       .ahb(ahb2wb_ahb_bus),
       // SPI connections
-      .spi(spi_bus)
+      .spi(wb2spi_spi_bus)
   );
-
+  /* Connection for internal signals
   wb_if wb_bus (
         .clk( DUT.clk ), .rst( DUT.rst ), 
         .inta( DUT.inta ), .cyc( DUT.cyc ), .stb( DUT.stb ), .adr( DUT.adr ), 
         .we( DUT.we ), .din( DUT.din ), .dout( DUT.dout ), .ack( DUT.ack ),
         .err( DUT.err ), .rty( DUT.rty ), .sel( DUT.sel ), .q( DUT.q )
         );
+  */
 
-  wb_monitor_bfm  wb_mon_bfm(/*DUT.*/wb_bus);
 
-initial begin //tbx vif_binding_block
-  import uvm_pkg::uvm_config_db;
-  // The monitor_bfm and driver_bfm for each interface is placed into the uvm_config_db.
-  // They are placed into the uvm_config_db using the string names defined in the parameters package.
-  // The string names are passed to the agent configurations by test_top through the top level configuration.
-  // They are retrieved by the agents configuration class for use by the agent.
-  
-  uvm_config_db #( virtual ahb_monitor_bfm )::set( null , UVMF_VIRTUAL_INTERFACES , ahb_pkg_ahb_BFM , ahb_mon_bfm ); 
-  uvm_config_db #( virtual wb_monitor_bfm )::set( null , UVMF_VIRTUAL_INTERFACES , wb_pkg_wb_BFM , wb_mon_bfm ); 
-  uvm_config_db #( virtual spi_monitor_bfm )::set( null , UVMF_VIRTUAL_INTERFACES , spi_pkg_spi_BFM , spi_mon_bfm ); 
 
-  uvm_config_db #( virtual ahb_driver_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , ahb_pkg_ahb_BFM , ahb_drv_bfm  );
-  uvm_config_db #( virtual spi_driver_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , spi_pkg_spi_BFM , spi_drv_bfm  );
-  
+  // pragma uvmf custom dut_instantiation end
+
+  initial begin      // tbx vif_binding_block 
+    import uvm_pkg::uvm_config_db;
+    // The monitor_bfm and driver_bfm for each interface is placed into the uvm_config_db.
+    // They are placed into the uvm_config_db using the string names defined in the parameters package.
+    // The string names are passed to the agent configurations by test_top through the top level configuration.
+    // They are retrieved by the agents configuration class for use by the agent.
+    uvm_config_db #( virtual wb_monitor_bfm #(
+        .WB_DATA_WIDTH(WB_DATA_WIDTH),
+        .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+        ) )::set( null , UVMF_VIRTUAL_INTERFACES , ahb2wb_wb_BFM , ahb2wb_wb_mon_bfm ); 
+    uvm_config_db #( virtual ahb_monitor_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , ahb2wb_ahb_BFM , ahb2wb_ahb_mon_bfm ); 
+    uvm_config_db #( virtual wb_monitor_bfm #(
+        .WB_DATA_WIDTH(WB_DATA_WIDTH),
+        .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+        ) )::set( null , UVMF_VIRTUAL_INTERFACES , wb2spi_wb_BFM , wb2spi_wb_mon_bfm ); 
+    uvm_config_db #( virtual spi_monitor_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , wb2spi_spi_BFM , wb2spi_spi_mon_bfm ); 
+    uvm_config_db #( virtual ahb_driver_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , ahb2wb_ahb_BFM , ahb2wb_ahb_drv_bfm  );
+    uvm_config_db #( virtual spi_driver_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , wb2spi_spi_BFM , wb2spi_spi_drv_bfm  );
   end
 
 endmodule
-

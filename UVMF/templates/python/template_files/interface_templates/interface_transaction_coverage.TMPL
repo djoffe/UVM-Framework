@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface Transaction Coverage
-// File            : {{name}}_transaction_coverage.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This class records {{name}} transaction information using
@@ -14,38 +9,29 @@
 //       coverage component is instantiated in the uvmf_parameterized_agent
 //       if the has_coverage flag is set.
 //
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
-class {{name}}_transaction_coverage {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
-{% endfor %}      ) {% endif %}
-extends uvm_subscriber #(.T({{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                                            .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                                            ) {% endif %}));
+class {{name}}_transaction_coverage {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvm_subscriber #(.T({{name}}_transaction {{macro.paramUse(paramDefs)|indent(44)}}));
 
-{%if paramDefs|length > 0%}
-  `uvm_component_param_utils( {{name}}_transaction_coverage #(
-  {% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
+{{macro.compUtils([name,'_transaction_coverage']|join(""),paramDefs)}}
 
-  {% endfor %}                          ))
-{% else %}
-  `uvm_component_utils( {{name}}_transaction_coverage )
-{% endif %}
+  T coverage_trans;
 
-{%for txn in transVars %}
-  {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
-{% endfor %}
-
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
   // ****************************************************************************
-  // UVMF_CHANGE_ME : Add coverage bins, crosses, exclusions, etc. according to coverage needs.
   covergroup {{name}}_transaction_cg;
+    // pragma uvmf custom covergroup begin
+    // UVMF_CHANGE_ME : Add coverage bins, crosses, exclusions, etc. according to coverage needs.
     option.auto_bin_max=1024;
     option.per_instance=1;
 {%for txn in transVars %}
-    {%if txn.unpackedDim != "" %}// {% endif %}coverpoint {{txn.name}};
+    {{txn.name}}: coverpoint coverage_trans.{{txn.name}};
 {% endfor %}
+    // pragma uvmf custom covergroup end
   endgroup
 
   // ****************************************************************************
@@ -55,7 +41,6 @@ extends uvm_subscriber #(.T({{name}}_transaction {%if paramDefs|length > 0%} #(
   function new(string name="", uvm_component parent=null);
     super.new(name,parent);
     {{name}}_transaction_cg=new;
-    {{name}}_transaction_cg.set_inst_name($sformatf("{{name}}_transaction_cg_%s",get_full_name()));
   endfunction
 
   // ****************************************************************************
@@ -74,9 +59,7 @@ extends uvm_subscriber #(.T({{name}}_transaction {%if paramDefs|length > 0%} #(
   //
   virtual function void write (T t);
     `uvm_info("COV","Received transaction",UVM_HIGH);
-{% for txn in transVars %}
-    {{txn.name}} = t.{{txn.name}};
-{% endfor %}
+    coverage_trans = t;
     {{name}}_transaction_cg.sample();
   endfunction
 

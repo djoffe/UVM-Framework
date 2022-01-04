@@ -107,6 +107,11 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
          else 
             begin : compare_against_actual
             actual_transaction = actual_results_q.pop_front();
+            // Exit function if comparison is disabled
+            if ( disable_entry_compare ) begin : comparison_disabled_expected
+                  `uvm_warning("SCBD", "COMPARISONS DISABLED")
+                  return;
+                end : comparison_disabled_expected
             compare_entries(t, actual_transaction);
             end : compare_against_actual
          end : in_write_expected
@@ -131,6 +136,11 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
          else 
             begin : compare_against_expected
             expected_transaction = expected_results_q.pop_front();
+            // Exit function if comparison is disabled
+            if ( disable_entry_compare ) begin : comparison_disabled_actual
+                  `uvm_warning("SCBD", "COMPARISONS DISABLED")
+                  return;
+                end : comparison_disabled_actual
             compare_entries(expected_transaction, t);
             end : compare_against_expected
          end : in_write_actual

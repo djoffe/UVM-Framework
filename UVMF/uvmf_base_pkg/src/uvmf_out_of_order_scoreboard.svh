@@ -102,6 +102,11 @@ class uvmf_out_of_order_scoreboard #(type T=uvmf_transaction_base) extends uvmf_
             begin : item_exists_in_array
             expected_item=expected_hash[t.get_key()];
             expected_hash.delete(t.get_key());
+            // Exit function if comparison is disabled
+            if ( disable_entry_compare ) begin : comparison_disabled
+                  `uvm_warning("SCBD", "COMPARISONS DISABLED")
+                  return;
+                end : comparison_disabled
             // Compare actual transaction to expected transaction
             if ( t.compare(expected_item) ) 
                begin : compare_passed

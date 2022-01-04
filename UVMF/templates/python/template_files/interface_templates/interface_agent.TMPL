@@ -2,31 +2,26 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
+//----------------------------------------------------------------------
+//
+// DESCRIPTION: Protocol specific agent class definition
 //
 //----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface UVM agent
-// File            : {{name}}_agent.svh
-//----------------------------------------------------------------------
-//     
-// ****************************************************************************
-// ****************************************************************************
 {% endblock %}
 
 {% block contents %}
-class {{name}}_agent {% for param in paramDefs %}{% if loop.first %}#({% endif%} {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %} extends uvmf_parameterized_agent #(
-                    .CONFIG_T({{name}}_configuration {% for param in paramDefs %}{% if loop.first %}#({% endif%}.{{param.name}}({{param.name}}){%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %}),
-                    .DRIVER_T({{name}}_driver {% for param in paramDefs %}{% if loop.first %}#({% endif%}.{{param.name}}({{param.name}}){%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %}),
-                    .MONITOR_T({{name}}_monitor {% for param in paramDefs %}{% if loop.first %}#({% endif%}.{{param.name}}({{param.name}}){%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %}),
-                    .COVERAGE_T({{name}}_transaction_coverage {% for param in paramDefs %}{% if loop.first %}#({% endif%}.{{param.name}}({{param.name}}){%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %}),
-                    .TRANS_T({{name}}_transaction {% for param in paramDefs %}{% if loop.first %}#({% endif%}.{{param.name}}({{param.name}}){%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %})
+class {{name}}_agent {{macro.paramDeclare(paramDefs)|indent(5)}} extends uvmf_parameterized_agent #(
+                    .CONFIG_T({{name}}_configuration {{macro.paramUse(paramDefs)|indent(30)}}),
+                    .DRIVER_T({{name}}_driver {{macro.paramUse(paramDefs)|indent(30)}}),
+                    .MONITOR_T({{name}}_monitor {{macro.paramUse(paramDefs)|indent(31)}}),
+                    .COVERAGE_T({{name}}_transaction_coverage {{macro.paramUse(paramDefs)|indent(32)}}),
+                    .TRANS_T({{name}}_transaction {{macro.paramUse(paramDefs)|indent(29)}})
                     );
 
-{%if paramDefs|length > 0%}
-  `uvm_component_param_utils ({{name}}_agent {% for param in paramDefs %}{% if loop.first %}#({% endif%}{{param.name}}{%if not loop.last %},{% endif %}{% if loop.last %}){% endif %}{% endfor %} )
-{% else %}
-  `uvm_component_utils( {{name}}_agent )
-{% endif %}
+{{macro.compUtils([ name,'_agent']|join(""),paramDefs)}}
+
+// pragma uvmf custom class_item_additional begin
+// pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // FUNCTION : new()

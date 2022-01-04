@@ -11,6 +11,7 @@ uvmf:
       # Reset assertion level specified as True will make this
       # interface sensitive to an active HIGH reset
       reset_assertion_level: "True"
+      veloce_ready: "True"
       # Define parameters for this interface. All classes
       # associated with this interface will be parameterized
       # accordingly. If no 'value' entry is provided there will
@@ -49,8 +50,7 @@ uvmf:
         - name: "my_object_t"
           type: "uvm_object"
       # Specify the ports associated with this interface. The
-      # direction is from the perspective of the interface (as opposed to
-      # the DUT) if the interface is configured to run as INITIATOR
+      # direction is from the perspective of the INITIATOR or MASTER
       ports: 
         - name: "cs"   
           width: "1"        

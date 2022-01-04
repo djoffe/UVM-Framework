@@ -30,7 +30,7 @@
 //
 //----------------------------------------------------------------------
 //
-class spi_master_seq extends spi_sequence_base #(.REQ(spi_transaction),.RSP(spi_transaction));
+class spi_master_seq extends spi_sequence_base;
 
   `uvm_object_utils( spi_master_seq )
 
@@ -42,12 +42,12 @@ class spi_master_seq extends spi_sequence_base #(.REQ(spi_transaction),.RSP(spi_
      mosi_transaction=spi_transaction::type_id::create("mosi_transaction");
   endfunction
   
-  function void set_mosi(bit [(SPI_XFER_WIDTH-1):0] data);
-        mosi_transaction.spi_data = data;
+  function void set_mosi(bit [7:0] data);
+        mosi_transaction.mosi_data = data;
   endfunction
   
-  function bit [(SPI_XFER_WIDTH-1):0] get_miso();
-        return miso_transaction.spi_data;
+  function bit [7:0] get_miso();
+        return miso_transaction.miso_data;
   endfunction
   
   function string convert2string();
@@ -57,7 +57,7 @@ class spi_master_seq extends spi_sequence_base #(.REQ(spi_transaction),.RSP(spi_
   virtual task body();
      start_item(mosi_transaction);
      finish_item(mosi_transaction);
-     get_response(miso_transaction);
+     //get_response(miso_transaction);
   endtask
 
 endclass

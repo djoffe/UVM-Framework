@@ -47,11 +47,4 @@ class regmodel_test extends test_top;
     super.build_phase(phase);
   endfunction // build_phase
 
-  virtual function void connect_phase(uvm_phase phase);
-    wb2spi_regmodel_sequence top_seq;
-    super.connect_phase(phase);
-    $cast(top_seq, top_level_sequence);
-    top_seq.reg_model = configuration.reg_model;
-  endfunction : connect_phase
-
 endclass

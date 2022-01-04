@@ -1,24 +1,22 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : jcraft
-// Creation Date   : 2016 Nov 03
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb interface agent
-// Unit            : Interface HDL Typedefs
-// File            : wb_typedefs_hdl.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This file contains defines and typedefs to be compiled for use in
 // the simulation running on the emulator when using Veloce.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
                                                                                
 
 typedef enum {WB_RESET, WB_WRITE, WB_READ} wb_op_t;
+
+// pragma uvmf custom additional begin
+// pragma uvmf custom additional end
 

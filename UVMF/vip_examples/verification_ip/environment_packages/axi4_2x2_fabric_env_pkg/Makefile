@@ -1,5 +1,8 @@
 # axi4_2x2_fabric environment packages source and make target
 
+# pragma uvmf custom additional begin
+# pragma uvmf custom additional end
+
 # Include all requisite sub-environment package targets for this bench
 
 axi4_2x2_fabric_ENV_PKG =\
@@ -19,7 +22,7 @@ C_FILE_COMPILE_LIST_axi4_2x2_fabric_env_pkg	= \
 O_FILE_COMPILE_LIST_axi4_2x2_fabric_env_pkg = $(notdir $(C_FILE_COMPILE_LIST_axi4_2x2_fabric_env_pkg:.c=.o))
 
 GCC_COMP_ARGS_axi4_2x2_fabric_env_pkg	+= -I$(UVMF_VIP_LIBRARY_HOME)/environment_packages/axi4_2x2_fabric_env_pkg/dpi \
-	
+	-fPIC 
 
 GCC_LINK_ARGS_axi4_2x2_fabric_env_pkg	+= \
 	 \

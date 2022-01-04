@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface UVM Driver
-// File            : {{name}}_driver.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This class passes transactions between the sequencer
@@ -15,39 +10,36 @@
 //        passes transactions to the driver BFM through the access
 //        task.  
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
-class {{name}}_driver {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
-{% endfor %}      ) {% endif %}
-extends uvmf_driver_base #(
-                   .CONFIG_T({{name}}_configuration {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %}),
-                   .BFM_BIND_T({% if useDpiLink %}{{name}}_driver_proxy {% else %}virtual {{name}}_driver_bfm {% endif %}{%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %}),
-                   .REQ({{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %}),
-                   .RSP({{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %}));
+class {{name}}_driver  {{macro.paramDeclare(paramDefs)|indent(6)}} extends uvmf_driver_base #(
+                   .CONFIG_T({{name}}_configuration  {{macro.paramUse(paramDefs)|indent(29)}} ),
+                   .BFM_BIND_T({% if useDpiLink %}{{name}}_driver_proxy {% else %}virtual {{name}}_driver_bfm {% endif %} {{macro.paramUse(paramDefs)|indent(29)}} ),
+                   .REQ({{name}}_transaction  {{macro.paramUse(paramDefs)|indent(29)}} ),
+                   .RSP({{name}}_transaction  {{macro.paramUse(paramDefs)|indent(29)}} ));
 
-{%if paramDefs|length > 0%}
-  `uvm_component_param_utils( {{name}}_driver #(
-  {% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
-
-  {% endfor %}                          ))
-{% else %}
-  `uvm_component_utils( {{name}}_driver )
+{{macro.compUtils([ name,'_driver']|join(""),paramDefs)}}
+{% if veloceReady %}
+//*******************************************************************
+// Macros that define structs located in {{name}}_macros.svh
+//*******************************************************************
+// Initiator macro used by {{name}}_driver and {{name}}_driver_bfm
+// to communicate initiator driven data to {{name}}_driver_bfm.           
+`{{name}}_INITIATOR_STRUCT
+  {{name}}_initiator_s {{name}}_initiator_struct;
+//*******************************************************************
+// Responder macro used by {{name}}_driver and {{name}}_driver_bfm
+// to communicate Responder driven data to {{name}}_driver_bfm.
+`{{name}}_RESPONDER_STRUCT
+  {{name}}_responder_s {{name}}_responder_struct;
 {% endif %}
 
+// pragma uvmf custom class_item_additional begin
+// pragma uvmf custom class_item_additional end
+
 // ****************************************************************************
-// FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
 //
   function new( string name = "", uvm_component parent=null );
@@ -55,56 +47,55 @@ extends uvmf_driver_base #(
   endfunction
 
 // ****************************************************************************
+// This function sends configuration object variables to the driver BFM 
+// using the configuration struct.
+//
   virtual function void configure(input CONFIG_T cfg);
-    bfm.configure(
 {% if veloceReady %}
-      cfg.active_passive,
-      cfg.initiator_responder{% if configVars|length > 0 %},{% endif %}
-
-{% for config in configVars %}
-      cfg.{{config.name}}{% if not loop.last %},{% endif %}
-{% endfor %}
-);                    
+      bfm.configure( cfg.to_struct() );
 {% else %}
-      cfg);
+      bfm.configure( cfg );
 {% endif %}
   endfunction
 
 // ****************************************************************************
+// This function places a handle to this class in the proxy variable in the
+// driver BFM.  This allows the driver BFM to call tasks and function within this class.
+//
   virtual function void set_bfm_proxy_handle();
     {%if not useDpiLink %}bfm.proxy = this;{% endif %}
   endfunction
 
-// ****************************************************************************              
+// **************************************************************************** 
+// This task is called by the run_phase in uvmf_driver_base.              
   virtual task access( inout REQ txn );
+// pragma uvmf custom access begin
     if (configuration.initiator_responder==RESPONDER) begin
-      if ({{responseOperation}}) begin
-        bfm.do_response_ready(
-{% for trans in responseList %}          txn.{{trans.name}}{% if not loop.last %},
-{% endif %}
-{% endfor %}
-        );
-      end
-      bfm.response(
+      // Complete current transfer and wait for next transfer
 {% if veloceReady %}
-{% for trans in transVars %}        txn.{{trans.name}}{% if not loop.last %},
-{% endif %}
-{% endfor %}
+      bfm.respond_and_wait_for_next_transfer( 
+          {{name}}_initiator_struct, 
+          txn.to_responder_struct() 
+          );
+      // Unpack information about initiated transfer received by this responder
+      txn.from_initiator_struct({{name}}_initiator_struct);
 {% else %}
-        txn 
-{% endif %}        
-      );
+      bfm.respond_and_wait_for_next_transfer( txn );
+{% endif %}
     end else begin    
-      bfm.access(
+      // Initiate a transfer and get response
 {% if veloceReady %}
-{% for trans in transVars %}        txn.{{trans.name}}{% if not loop.last %},
-{% endif %}
-{% endfor %}
+      bfm.initiate_and_get_response( 
+          txn.to_initiator_struct(), 
+          {{name}}_responder_struct 
+          );
+      // Unpack transfer response information received by this initiator
+      txn.from_responder_struct({{name}}_responder_struct);
 {% else %}
-      txn 
+      bfm.initiate_and_get_response( txn );
 {% endif %}
-    );
     end
+// pragma uvmf custom access end
   endtask
 
 endclass
