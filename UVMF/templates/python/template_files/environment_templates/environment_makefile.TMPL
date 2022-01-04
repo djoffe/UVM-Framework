@@ -26,15 +26,19 @@ else
   GCC_COMP_ARCH = -m32
 endif
 
+export {{name}}_ENV_DPI_SRC ?= $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/dpi
+
 C_FILE_COMPILE_LIST_{{name}}_env_pkg	= \
 {% for cFile in DPIFiles %}
-	$(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/dpi/{{cFile}} \
+	$({{name}}_ENV_DPI_SRC)/{{cFile}} \
 {% endfor %}
 
 O_FILE_COMPILE_LIST_{{name}}_env_pkg = $(notdir $(C_FILE_COMPILE_LIST_{{name}}_env_pkg:.c=.o))
 
-GCC_COMP_ARGS_{{name}}_env_pkg	+= -I$(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{name}}_env_pkg/dpi \
+GCC_COMP_ARGS_{{name}}_env_pkg	+= -I$({{name}}_ENV_DPI_SRC) \
 	-fPIC {{DPICompArgs}}
+
+GCC_COMP_ARGS_{{name}}_env_pkg	+= $({{name}}_ENV_GCC_COMP_ARGUMENTS)
 
 GCC_LINK_ARGS_{{name}}_env_pkg	+= \
 	{{DPILinkArgs}} \

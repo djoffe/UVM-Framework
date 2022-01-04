@@ -1,5 +1,5 @@
 {% set fname = "project_benches/{{name}}/tb/sequences/{{name}}_infact_sequences_pkg.sv" %}
-{% set conditional = "infact_ready" %}
+{% set conditional = "infact_enabled" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -46,14 +46,14 @@ package {{name}}_infact_sequences_pkg;
 
 {% if inFactQSO %}
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
   `include "infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
 {% endif %}   
 {% endfor %}
 {% else %}
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
-  `include "infact_proj_dir/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
+  `include "infact_genfiles/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.svh"
 {% endif %}
 {% endfor %}
 {% endif %}

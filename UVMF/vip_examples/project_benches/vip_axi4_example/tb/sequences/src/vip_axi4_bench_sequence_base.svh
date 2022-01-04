@@ -38,7 +38,7 @@ class vip_axi4_bench_sequence_base #(int AXI4_ADDRESS_WIDTH = 32, int AXI4_RDATA
   `uvm_object_param_utils( vip_axi4_bench_sequence_base #(AXI4_ADDRESS_WIDTH, AXI4_RDATA_WIDTH,AXI4_WDATA_WIDTH,AXI4_ID_WIDTH,AXI4_USER_WIDTH,AXI4_REGION_MAP_SIZE));
 
 
-    typedef axi4_out_of_order_sequence #(AXI4_ADDRESS_WIDTH, AXI4_RDATA_WIDTH,AXI4_WDATA_WIDTH,AXI4_ID_WIDTH,AXI4_USER_WIDTH,AXI4_REGION_MAP_SIZE) test_sequence_t;
+    typedef axi4_incr_wr_seq #(AXI4_ADDRESS_WIDTH, AXI4_RDATA_WIDTH,AXI4_WDATA_WIDTH,AXI4_ID_WIDTH,AXI4_USER_WIDTH,AXI4_REGION_MAP_SIZE) test_sequence_t;
     test_sequence_t master_seq; 
 							  
     typedef axi4_slave_sequence #(AXI4_ADDRESS_WIDTH, AXI4_RDATA_WIDTH, AXI4_WDATA_WIDTH, AXI4_ID_WIDTH, AXI4_USER_WIDTH, AXI4_REGION_MAP_SIZE ) slave_responder_sequence_t;

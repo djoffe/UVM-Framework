@@ -1,0 +1,11 @@
+{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/{{name}}_environment_mtlb_prep.sh" %}
+{% set conditional = "mtlbReady" %}
+#----------------------------------------------------------------------
+#     
+# DESCRIPTION: This script replaces base files with mtlb flow files
+#
+#----------------------------------------------------------------------
+{% for acName in acTypes %}
+cp -f src/{{acName}}_mtlb.svh src/{{acName}}.svh
+{% endfor %}
+cp -f {{name}}_env_pkg_mtlb.sv {{name}}_env_pkg.sv

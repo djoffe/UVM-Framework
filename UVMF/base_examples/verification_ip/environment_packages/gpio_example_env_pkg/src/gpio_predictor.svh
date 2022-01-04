@@ -49,6 +49,8 @@ class gpio_predictor #(
 
 
   // pragma uvmf custom class_item_additional begin
+  bit [31:0] a2b_value;
+  bit [15:0] b2a_value;
   // pragma uvmf custom class_item_additional end
 
   // FUNCTION: new
@@ -68,13 +70,12 @@ class gpio_predictor #(
   // This function performs prediction of DUT output values based on DUT input, configuration and state
   virtual function void write_gpio_b_ae(gpio_transaction#(.WRITE_PORT_WIDTH(16),.READ_PORT_WIDTH(32)) t);
     // pragma uvmf custom gpio_b_ae_predictor begin
-    `uvm_info("PRED", "Transaction Received through gpio_b_ae", UVM_MEDIUM)
-    `uvm_info("PRED", {"            Data: ",t.convert2string()}, UVM_MEDIUM)
-    //  UVMF_CHANGE_ME: Implement predictor model here.  
-    `uvm_info("UNIMPLEMENTED_PREDICTOR_MODEL", "******************************************************************************************************",UVM_NONE)
-    `uvm_info("UNIMPLEMENTED_PREDICTOR_MODEL", "UVMF_CHANGE_ME: The gpio_predictor::write_gpio_b_ae function needs to be completed with DUT prediction model",UVM_NONE)
-    `uvm_info("UNIMPLEMENTED_PREDICTOR_MODEL", "******************************************************************************************************",UVM_NONE)
- 
+    `uvm_info("PRED", {"Data: ",t.convert2string()}, UVM_NONE)
+    if ( t.read_port != a2b_value ) 
+      `uvm_fatal("PRED", "Value on gpio_b read port does not match value on gpio_a write port.")
+    else 
+      `uvm_info("PRED", "MATCH on gpio_a write to gpio_b read", UVM_NONE)
+    b2a_value = t.write_port;
     // pragma uvmf custom gpio_b_ae_predictor end
   endfunction
 
@@ -83,13 +84,12 @@ class gpio_predictor #(
   // This function performs prediction of DUT output values based on DUT input, configuration and state
   virtual function void write_gpio_a_ae(gpio_transaction#(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16)) t);
     // pragma uvmf custom gpio_a_ae_predictor begin
-    `uvm_info("PRED", "Transaction Received through gpio_a_ae", UVM_MEDIUM)
-    `uvm_info("PRED", {"            Data: ",t.convert2string()}, UVM_MEDIUM)
-    //  UVMF_CHANGE_ME: Implement predictor model here.  
-    `uvm_info("UNIMPLEMENTED_PREDICTOR_MODEL", "******************************************************************************************************",UVM_NONE)
-    `uvm_info("UNIMPLEMENTED_PREDICTOR_MODEL", "UVMF_CHANGE_ME: The gpio_predictor::write_gpio_a_ae function needs to be completed with DUT prediction model",UVM_NONE)
-    `uvm_info("UNIMPLEMENTED_PREDICTOR_MODEL", "******************************************************************************************************",UVM_NONE)
- 
+    `uvm_info("PRED", {"Data: ",t.convert2string()}, UVM_NONE)
+    if ( t.read_port != b2a_value ) 
+      `uvm_fatal("PRED", "Value on gpio_a read port does not match value on gpio_b write port.")
+    else 
+      `uvm_info("PRED", "MATCH on gpio_b write to gpio_a read", UVM_NONE)
+    a2b_value = t.write_port;
     // pragma uvmf custom gpio_a_ae_predictor end
   endfunction
 

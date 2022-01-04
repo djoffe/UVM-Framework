@@ -45,7 +45,7 @@ package qvip_axi4_bench_sequences_pkg;
 
    import mvc_pkg::*;
    import mgc_axi4_v1_0_pkg::*;
-
+   import mgc_axi4_seq_pkg::*;
    import qvip_axi4_bench_parameters_pkg::*;
   
    `include "uvm_macros.svh"

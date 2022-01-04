@@ -132,11 +132,13 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   virtual function bit do_compare (uvm_object rhs, uvm_comparer comparer);
     {{name}}_transaction {{macro.paramUse(paramDefs)|indent(8)}} RHS;
     if (!$cast(RHS,rhs)) return 0;
+    // pragma uvmf custom do_compare begin
     // UVMF_CHANGE_ME : Eliminate comparison of variables not to be used for compare
     return (super.do_compare(rhs,comparer)
 {% for txn in transVars %}{% if txn.iscompare %}
             &&(this.{{txn.name}} == RHS.{{txn.name}})
 {% endif %}{% endfor %}            );
+    // pragma uvmf custom do_compare end
   endfunction
 
   //*******************************************************************
@@ -147,10 +149,12 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   virtual function void do_copy (uvm_object rhs);
     {{name}}_transaction {{macro.paramUse(paramDefs)|indent(8)}} RHS;
     assert($cast(RHS,rhs));
+    // pragma uvmf custom do_copy begin
     super.do_copy(rhs);
 {% for txn in transVars %}
     this.{{txn.name}} = RHS.{{txn.name}};
 {% endfor %}
+    // pragma uvmf custom do_copy end
   endfunction
 
   // ****************************************************************************

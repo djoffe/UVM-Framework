@@ -76,7 +76,6 @@ proc vrmSetupDefaults {} {
   setIniVar exclusionfile "" 1
   setIniVar pre_run_dofile {""} 1
   setIniVar pre_vsim_dofile {""} 1
-  setIniVar build_exec "" 1
   setIniVar run_exec "" 1
   setIniVar use_test_dofile 0 1
   setIniVar use_job_mgmt_run 0 1

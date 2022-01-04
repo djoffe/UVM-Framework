@@ -1,5 +1,5 @@
 {% set fname = "project_benches/{{name}}/tb/sequences/src/infact_{{name}}_bench_sequence_base.svh" %}
-{% set conditional = "infact_ready" %}
+{% set conditional = "infact_enabled" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -25,33 +25,33 @@ class infact_{{name}}_bench_sequence_base extends {{name}}_bench_sequence_base;
   endfunction
 
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
   infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen {{bfm.name}}_gen;
 {% endif %}{% endfor %}
   bit seq_cov_active[string];
 
   virtual task pre_body();
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
     {{bfm.name}}_gen = new({get_full_name(), "_{{bfm.name}}_gen"});
 {% endif %}{% endfor %}
   endtask
 
   virtual task body();
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
     seq_cov_active["{{bfm.name}}"] = 1;
 {% endif %}{% endfor %}
     fork
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
       {{bfm.name}}_gen_traffic();
 {% endif %}{% endfor %}
     join
   endtask
 
 {% for bfm in bfms %}
-{% if bfm.activity == 'ACTIVE' %}
+{% if bfm.activity == 'ACTIVE' and bfm.inFactReady == 'True' %}
   virtual task {{bfm.name}}_gen_traffic();
     // First, run to coverage
     while (1) begin

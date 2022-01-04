@@ -6,4 +6,4 @@ uvmf:
       reset_assertion_level: 'False'
       reset_duration: 200ns
       top_env: abcd
-      infact_ready: 'True'
+      infact_enabled: 'True'

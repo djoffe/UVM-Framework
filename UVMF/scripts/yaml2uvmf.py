@@ -45,6 +45,7 @@ import copy
 import pprint
 from optparse import OptionParser, SUPPRESS_HELP
 from fnmatch import fnmatch
+import shutil
 
 # Determine addition to sys.path automatically based on script location
 # This means user does not have to explicitly set PYTHONPATH in order for this
@@ -69,6 +70,31 @@ except ImportError:
   print("ERROR : yaml package not found.  See templates.README for more information")
   sys.exit(1)
 
+def merge_summary(merge,verbose=False):
+  block_count = sum(len(l) for l in merge.found_blocks.itervalues())
+  new_block_count = sum(len(l) for l in merge.new_blocks.itervalues())
+  if verbose:
+    print("============================== Merge Details ==============================")
+  print("  Parsed {0} original files finding a total of {1} \"pragma uvmf custom\" blocks".format(len(merge.rd), block_count))
+  if verbose and (len(merge.found_blocks)>0):
+    for f in merge.found_blocks:
+      print("    File: {0}".format(f))
+      for l in merge.found_blocks[f]:
+        print("      \"{0}\"".format(l['name']))
+  print("  Copied {0} new files from generated source".format(len(merge.copied_files)))
+  if verbose and (len(merge.copied_files)>0):
+    print("    Files found in new output but not in merged source. List of copied file destinations:")
+    for f in merge.copied_files:
+      print("     {0}".format(f))
+  print("  Found {0} new \"pragma uvmf custom\" blocks in generated source".format(new_block_count))
+  if verbose and (len(merge.new_blocks)>0):
+    print("   Blocks found in new output but not in merged source. List of new blocks and their associated source file locations:")
+    for f in merge.new_blocks:
+      print("     File: {0}".format(f))
+      for l in merge.new_blocks[f]:
+        print("       \"{0}\"".format(l))
+  if verbose:  
+    print("===========================================================================")
 
 class ConfigFileReader:
   """Reads in a .f file and builds up array of files to parse"""
@@ -314,6 +340,8 @@ class DataClass:
         except KeyError:
           veloce_ready = True
           pass
+        infact_ready = ('infact_ready' in self.data['interfaces'][a['type']].keys() and self.data['interfaces'][a['type']]['infact_ready'])
+
         alist = alist + [{ 'bfm_name': a['name'], 
                            'bfm_type': a['type'], 
                            'parent_type': env_type, 
@@ -321,7 +349,8 @@ class DataClass:
                            'lib_env_var_name':env_var_name, 
                            'is_qvip': 0, 
                            'initiator_responder':init_resp ,
-                           'veloce_ready':veloce_ready }]
+                           'veloce_ready':veloce_ready,
+                           'infact_ready':infact_ready }]
     except KeyError: pass
     return alist
 
@@ -625,7 +654,11 @@ class DataClass:
         except KeyError:
           parameters = []
           pass
-        env.defineAnalysisComponent(ac_type_type,ac_type,exports,ports,qvip_exports,parameters)
+        try:
+          ac_mtlb_ready = definition['mtlb_ready']==True
+        except KeyError:
+          ac_mtlb_ready = False
+        env.defineAnalysisComponent(ac_type_type,ac_type,exports,ports,qvip_exports,parameters,mtlbReady=ac_mtlb_ready)
         defined_ac_items = defined_ac_items + [ac_type]
         if ac_type not in self.used_ac_items:
           self.used_ac_items = self.used_ac_items + [ac_type]
@@ -874,6 +907,10 @@ class DataClass:
         env.addUVMCfile(f)
     except KeyError: pass
     try:
+      env.mtlbReady = (struct['mtlb_ready']=="True")
+    except KeyError:
+      pass
+    try:
       existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
       existing_component = False
@@ -935,9 +972,8 @@ class DataClass:
       ben.resetDuration = struct['reset_duration']
     except KeyError: pass
     ## Check for inFact ready flag
-    try:
-      ben.inFactReady = (struct['infact_ready']=='True')
-    except KeyError: pass
+    ben.inFactEnabled = ('infact_enabled' in struct.keys() and struct['infact_enabled']=='True')
+
     ## Use co-emulation clk/rst generator
     try:
       ben.useCoEmuClkRstGen = (struct['use_co_emu_clk_rst_gen']=='True')
@@ -1049,7 +1085,12 @@ class DataClass:
         except KeyError:
           aParams = {}
           pass
-        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'],initResp=a['initiator_responder'])
+        infact_ready = ('infact_ready' in a.keys() and a['infact_ready'])
+        try:
+          port_list = agentDef['ports']
+        except KeyError:
+          port_list = []
+        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'],initResp=a['initiator_responder'],inFactReady=infact_ready,portList=port_list)
     ## Check that all keys in the ifp_dict and ap_dict match something in the valid_bfm_names list that 
     ## was based on the actual UVM component hierarchy elements. If not, it probably means we have a typo somewhere in the bench YAML
     for k in ifp_dict.keys():
@@ -1103,6 +1144,10 @@ class DataClass:
       for t in struct['additional_tops']:
         ben.addTopLevel(t)
     except KeyError: pass
+    try:
+      ben.mtlbReady = (struct['mtlb_ready']=="True")
+    except KeyError:
+      pass
     try:
       existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
@@ -1253,6 +1298,11 @@ class DataClass:
           intf.addDPIExport(exp)
       except KeyError: pass
     except KeyError: pass
+    intf.inFactReady = ('infact_ready' in struct.keys() and struct['infact_ready'])
+    try:
+      intf.mtlbReady = (struct['mtlb_ready']=="True")
+    except KeyError:
+      pass
     try:
       intf.veloceReady = (struct['veloce_ready'] == "True")
     except KeyError: 
@@ -1323,10 +1373,13 @@ if __name__ == '__main__':
   uvmf_parser.parser.add_option("-g","--generate",dest="gen_name",action="append",help="Specify which elements to generate (default is everything")
   uvmf_parser.parser.add_option("--pdb",dest="enable_pdb",action="store_true",help=SUPPRESS_HELP,default=False)
   uvmf_parser.parser.add_option("-m","--merge_source",dest="merge_source",action="store",help="Enable auto-merge flow, pulling from the specified source directory")
-  uvmf_parser.parser.add_option("-e","--merge_output",dest="merge_output",action="store",help="Specify output directory for auto-merge. Default is \"uvmf_template_merged\".",default="uvmf_template_merged")
-  uvmf_parser.parser.add_option("-s","--merge_skip_missing_blocks",dest="merge_skip_missing",action="store_true",help="Continue merge if unable to locate a labeled block that was defined in old source, producing a report at the end. Default behavior is to raise an error",default=False)
+  uvmf_parser.parser.add_option("-s","--merge_skip_missing_blocks",dest="merge_skip_missing",action="store_true",help="Continue merge if unable to locate a custom block that was defined in old source, producing a report at the end. Default behavior is to raise an error",default=False)
   uvmf_parser.parser.add_option("--merge_export_yaml",dest="merge_export_yaml",action="store",help=SUPPRESS_HELP,default=None)
   uvmf_parser.parser.add_option("--merge_import_yaml",dest="merge_import_yaml",action="store",help=SUPPRESS_HELP,default=None)
+  uvmf_parser.parser.add_option("--merge_import_yaml_output",dest="merge_import_yaml_output",action="store",help=SUPPRESS_HELP,default="uvmf_template_merged")
+  uvmf_parser.parser.add_option("--merge_no_backup",dest="merge_no_backup",action="store_true",help="Do not back up original merge source",default=False)
+  uvmf_parser.parser.add_option("--merge_debug",dest="merge_debug",action="store_true",help="Provide intermediate unmerged output directory for debug purposes. Debug directory can be specified by --dest_dir switch.",default=False)
+  uvmf_parser.parser.add_option("--merge_verbose",dest="merge_verbose",action="store_true",help="Output more verbose messages during the merge operation for debug purposes.",default=False)
   (options,args) = uvmf_parser.parser.parse_args()
   if options.enable_pdb == True:
     import pdb
@@ -1355,38 +1408,60 @@ if __name__ == '__main__':
   dataObj.buildElements(options.gen_name)
   if options.merge_source or options.merge_import_yaml:
     if not options.merge_import_yaml:
+      if not (options.merge_no_backup or options.merge_export_yaml):
+        ## Create a backup of the original source.
+        backup_copy = backup(options.merge_source)
+        if not options.quiet:
+          print("Backed up original source to {0}".format(backup_copy))
       if not options.quiet:
         print("Parsing customizations from {0} ...".format(options.merge_source))
+      # Parse old source for pragma blocks. Resulting object will contain data structure of this activity
       parse = Parse(quiet=options.quiet,cleanup=options.merge_import_yaml,root=os.path.abspath(os.path.normpath(options.merge_source)))
       parse.traverse_dir(options.merge_source)
+      old_root = parse.root
       if options.merge_export_yaml:
         if not options.quiet:
           print("  Exporting merge data to {0}".format(options.merge_export_yaml))
           parse.dump(options.merge_export_yaml)
           sys.exit(0)
+      else:
+        if not options.quiet:
+          print("Merging custom code in {0} with new output ...".format(options.merge_source))
     else:
       if not options.quiet:
-        print("Merging customizations from imported YAML {0}".format(options.merge_import_yaml))
-    merge = Merge(outdir=options.merge_output,skip_missing_blocks=options.merge_skip_missing,root=os.path.abspath(os.path.normpath(options.dest_dir)),quiet=options.quiet)
+        print("Pulling in customizations from imported YAML file {0}".format(options.merge_import_yaml))
+      old_root = os.path.abspath(os.path.normpath(options.merge_import_yaml_output))
+    merge = Merge(outdir=old_root,skip_missing_blocks=options.merge_skip_missing,new_root=os.path.abspath(os.path.normpath(options.dest_dir)),old_root=old_root,quiet=options.quiet)
     if options.merge_import_yaml:
       merge.load_yaml(options.merge_import_yaml)
+      # If we're importing the data, copy newly generated source over to desired final location. This will be what we treat as the "original" output directory
+      from shutil import copytree
+      try:
+        copytree(options.dest_dir,options.merge_import_yaml_output)
+      except:
+        pass
     else:
       merge.load_data(parse.data)
-      merge.old_root = parse.root
-    merge.traverse_dir(options.dest_dir,overwrite=options.overwrite)
-    merge.copy_old_files(options.dest_dir,overwrite=options.overwrite)
+    merge.traverse_dir(options.dest_dir)
+    if (not options.merge_debug):
+      # Remove the intermediate directory unless asked otherwise
+      if not options.quiet:
+        print("Deleting intermediate directory {0} after merging data...".format(options.dest_dir))
+      try:
+        shutil.rmtree(options.dest_dir)
+      except:
+        raise UserError("Unable to remove intermediate output directory {0}. Permissions issue?".format(options.dest_dir))
     if not options.quiet:
-      print("  Parsed {0} files finding a total of {1} custom blocks".format(len(merge.rd), merge.found_blocks))
-      print("  Copied {0} new files from {1}".format(merge.copied_files, merge.root))
-      if (options.merge_source):
-        print("  Copied {0} old files from {1}".format(merge.copied_old_files, merge.old_root))
-      else:
-        print("  Copied {0} old files pointed to by {1}".format(merge.copied_old_files, options.merge_import_yaml))
-      print("  Ignored {0} new labels found in {1}".format(merge.ignored_blocks, merge.root))
-      print("  Wrote results to {0}".format(os.path.abspath(options.merge_output)))
+      print("Merge complete!")
+      if options.merge_verbose:
+        merge_summary(merge,verbose=True)
+      merge_summary(merge)
     if len(merge.missing_blocks)>0:
-      print("WARNING: Found labeled blocks in old source that could not be mapped to new. These require hand-edits:")
+      print("WARNING: Found \"pragma uvmf custom\" blocks in original source that could not be mapped to new output. These require hand-edits:")
       for f in merge.missing_blocks:
         print ("  File: {0}".format(f))
         for l in merge.missing_blocks[f]:
-          print("    Label: {0} (start line {1})".format(l,merge.rd[f][l]['begin_line']))
+          print("    \"{0}\"".format(l))
+      print("  Use backup or revision control source to recover the original content of these blocks")
+
+

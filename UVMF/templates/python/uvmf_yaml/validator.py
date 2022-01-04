@@ -118,7 +118,8 @@ class BenchValidator(BaseValidator):
       Optional('veloce_ready'): Any('True','False'),
       Optional('existing_library_component'): Any('True','False'),
       Optional('catapult_ready'): Any('True','False'),
-      Optional('infact_ready'): Any('True','False'),
+      Optional('infact_enabled'): Any('True','False'),
+      Optional('mtlb_ready'): Any('True','False'),
       Optional('clock_half_period'): str,
       Optional('use_coemu_clk_rst_gen'): Any('True','False'),
       Optional('clock_phase_offset'): str,
@@ -146,10 +147,11 @@ class ComponentValidator(BaseValidator):
       Required('type'): str,
     }
     mainSchema = {
-      Required('type'): Any("predictor","coverage", "tlm2_sysc_predictor", "scoreboard"),
+      Required('type'): Any("predictor","coverage", "tlm2_sysc_predictor", "scoreboard", "predictor_mtlb"),
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('analysis_exports'):  [ analysisSchema ],
       Optional('analysis_ports'): [ analysisSchema ],
+      Optional('mtlb_ready'): Any('True','False'),
       Optional('qvip_analysis_exports'): [ analysisSchema ],
       Optional('existing_library_component'): Any('True','False'),
     }
@@ -260,6 +262,7 @@ class EnvironmentValidator(BaseValidator):
       Optional('agents'): [ agentSchema ],
       Optional('non_uvmf_components'): [ nonUvmfComponentSchema ],
       Optional('existing_library_component'): Any('True','False'),
+      Optional('mtlb_ready'): Any('True','False'),
       Optional('qvip_memory_agents'): [ qvipMemoryAgentComponentSchema ],
       Optional('analysis_components'): [ self.componentSchema ],
       Optional('scoreboards'): [ scoreboardSchema ],
@@ -315,6 +318,7 @@ class InterfaceValidator(BaseValidator):
       Optional('reset_assertion_level'): str,
       Optional('use_dpi_link'): str,
       Optional('existing_library_component'): Any('True','False'),
+      Optional('mtlb_ready'): Any('True','False'),
       Optional('gen_inbound_streaming_driver'): str,
       Optional('vip_lib_env_variable'): str,
       Optional('parameters'): [ self.parameterDefSchema ],

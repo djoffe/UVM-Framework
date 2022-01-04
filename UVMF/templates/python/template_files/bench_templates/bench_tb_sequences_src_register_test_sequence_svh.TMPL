@@ -36,10 +36,19 @@ class register_test_sequence extends {{name}}_bench_sequence_base;
 
     // Reset the DUT
     fork
+      // pragma uvmf custom register_test_reset begin
+      // UVMF_CHANGE_ME 
+      // Select the desired wait_for_reset or provide custom mechanism.
+      // fork-join for this code block may be unnecessary based on your situation.
 {% for bfm in bfms %}
       {{bfm.name}}_config.wait_for_reset();
 {% endfor %}
+      // pragma uvmf custom register_test_reset end
     join
+
+      // pragma uvmf custom register_test_setup begin
+      // UVMF_CHANGE_ME perform potentially necessary operations before running the sequence.
+      // pragma uvmf custom register_test_setup end
 
 {% if topEnvHasRegisterModel %}
     // Reset the register model
@@ -62,7 +71,9 @@ class register_test_sequence extends {{name}}_bench_sequence_base;
 
     uvm_register_test_seq.start(null);
 {% else %}
-    // Perform your register test
+    // pragma uvmf custom register_test_operation begin
+    // UVMF_CHANGE_ME Perform your custom register test
+    // pragma uvmf custom register_test_operation end
 {% endif %}
 
   endtask

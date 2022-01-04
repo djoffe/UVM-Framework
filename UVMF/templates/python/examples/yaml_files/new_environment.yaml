@@ -10,9 +10,16 @@ uvmf:
 #      analysis_exports :
 #        - name: "analysis_export_name"
 #          type: "transaction_type_including_any_parameters"
+#      qvip_analysis_exports :
+#        - name: "analysis_export_name"
+#          type: "transaction_type_including_any_parameters"
 #      analysis_ports : 
 #        - name: "analysis_port_name"
 #          type: "transaction_type_including_any_parameters"
+#      parameters:
+#        - name: "ENV_PARAMETER"
+#          type: "int"
+#          value: "120"
   environments:
     "environment_name" :
       ## Set this flag to disable generation of this environment

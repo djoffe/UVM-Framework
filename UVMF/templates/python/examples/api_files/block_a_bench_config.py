@@ -40,6 +40,6 @@ ben.addScoreboard("environment.secure_data_plane_sb")
 
 ## This will prompt the creation of all bench files in their specified
 ##  locations
-## ben.inFactReady = False
+## ben.inFactEnabled = False
 ben.create()
 

@@ -57,11 +57,14 @@ class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   exten
   // TASK : pre_body()
   // This task is called automatically when start is called with call_pre_post set to 1 (default).
   // By calling get_responses() within pre_body() any derived sequences are automatically 
-  // processing response transactions.
+  // processing response transactions. Only un-comment this call to get_responses() if you
+  // have configured the interface driver to utilize the response transaction path by setting
+  // the configuration variable "return_transaction_response" to 1. Otherwise it is possible
+  // to impact runtime performance and memory utilization.
   //
   virtual task pre_body();
     // pragma uvmf custom pre_body begin
-    get_responses();
+//    get_responses();
 {% if DPIImports|length > 0 %}
     // Example use of C functions using DPI-C
 {% for DPIImport in DPIImports %}

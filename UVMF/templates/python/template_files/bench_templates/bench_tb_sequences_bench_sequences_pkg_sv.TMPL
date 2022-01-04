@@ -47,7 +47,7 @@ package {{name}}_sequences_pkg;
   // pragma uvmf custom package_imports_additional begin
   // pragma uvmf custom package_imports_additional end
 
-{% if inFactReady %}
+{% if inFactEnabled %}
   `include "src/infact_{{name}}_bench_transactions.svh"
 {% endif %}
   `include "src/{{name}}_bench_sequence_base.svh"
