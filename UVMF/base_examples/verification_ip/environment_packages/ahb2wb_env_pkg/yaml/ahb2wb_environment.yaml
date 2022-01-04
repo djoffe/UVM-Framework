@@ -32,7 +32,6 @@ uvmf:
       analysis_ports: []
       config_constraints: []
       config_vars: []
-      existing_library_component: 'True'
       hvl_pkg_parameters: []
       non_uvmf_components: []
       parameters:

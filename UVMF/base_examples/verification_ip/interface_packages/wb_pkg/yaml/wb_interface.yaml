@@ -4,7 +4,6 @@ uvmf:
       clock: clk
       config_constraints: []
       config_vars: []
-      existing_library_component: 'True'
       gen_inbound_streaming_driver: 'False'
       hdl_pkg_parameters: []
       hdl_typedefs:

@@ -40,7 +40,7 @@ package {{name}}_sequences_pkg;
   import reset_pkg::*;
 {% endif %}
 {% if topEnvHasRegisterModel %}
-  import {{env_name}}_reg_pkg::*;
+  import {{regModelPkg}}::*;
 {% endif %}
   `include "uvm_macros.svh"
 
@@ -63,7 +63,7 @@ package {{name}}_sequences_pkg;
 
 endpackage
 
-
-
+// pragma uvmf custom external begin
+// pragma uvmf custom external end
 
 {% endblock %}

@@ -156,12 +156,16 @@ class EnvironmentDumper:
       if rm.sequencer == None:
         data['register_model'] = { 'use_adapter': str(rm.useAdapter),
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
+                                   'reg_model_package': str(rm.regModelPkg),
+                                   'reg_block_class': str(rm.regBlockClass)
                                  }
       else:
         match = re.match(r"(.*)",rm.sequencer)
         ifname = match.group(1)
         data['register_model'] = { 'use_adapter': str(rm.useAdapter),
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
+                                   'reg_model_package': str(rm.regModelPkg),
+                                   'reg_block_class': str(rm.regBlockClass),
                                    'maps': [ { 'name': rm.busMap, 'interface': ifname, 'qvip_agent': str(rm.qvipAgent)} ]
                                   }
     if self.obj.soName!="":

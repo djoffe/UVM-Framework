@@ -1,5 +1,7 @@
 //----------------------------------------------------------------------
-//   Copyright 2017 Mentor Graphics Corporation
+//   Copyright 2013-2021 Siemens Corporation
+//   Digital Industries Software
+//   Siemens EDA
 //   All Rights Reserved Worldwide
 //
 //   Licensed under the Apache License, Version 2.0 (the
@@ -30,9 +32,9 @@
 // revision number and notes.
 //
 // Define the major and minor UVMF release number
-`define UVMF_MAJOR_VERSION 2020
-`define UVMF_MINOR_VERSION 3
-`define UVMF_PATCH_VERSION "_1"
+`define UVMF_MAJOR_VERSION 2021
+`define UVMF_MINOR_VERSION 1
+`define UVMF_PATCH_VERSION ""
 
 class uvmf_version;
   static bit b = print_version();
@@ -46,7 +48,9 @@ class uvmf_version;
     $display("----------------------------------------------------------------");
     $display("//  UVM Framework ");
     $display("//  Version %0d.%0d%s" , `UVMF_MAJOR_VERSION , `UVMF_MINOR_VERSION, `UVMF_PATCH_VERSION);
-    $display("//  (C) 2020 Mentor Graphics Corporation");
+    $display("//  (C) 2013-2021 Siemens Corporation");
+    $display("//  Digital Industries Software");
+    $display("//  Siemens EDA");
     $display("//  All Rights Reserved.");
     $display("----------------------------------------------------------------");
     $display("\n");

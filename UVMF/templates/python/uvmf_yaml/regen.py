@@ -11,23 +11,8 @@ from voluptuous.humanize import humanize_error
 
 from shutil import copyfile
 
-class Merge:
-
-  def __init__(self,outdir,skip_missing_blocks,new_root,old_root,quiet=False):
-    self.regen = Regen()
-    self.copied_files = []
-    self.new_root = new_root
-    self.old_root = old_root
-    self.copied_old_files = []
-    self.found_blocks = {}
-    self.new_blocks = {}
-    self.outdir = os.path.abspath(os.path.normpath(outdir))
-    self.missing_blocks = {}
-    self.skip_missing_blocks = skip_missing_blocks
-    self.quiet = quiet
-    self.new_directories = []
-    self.yaml_imported = False
-
+class Base:
+  
   # Replace the base directory structure with something new, maintaining the top-most path
   def replace_basedir(self, p, old_basedir, new_basedir):
     # Unfortunately we can't use a nice simple regex here safely due to OS differences (windows os.sep backslashes cause problems)
@@ -48,6 +33,24 @@ class Merge:
       p_begin = p_split[0]
      # At this point we can concatenate new_basedir and p_end to produce the new full path
     return os.path.normpath(os.path.join(new_basedir,p_end))
+
+class Merge(Base):
+
+  def __init__(self,outdir,skip_missing_blocks,new_root,old_root,quiet=False):
+    self.regen = Regen()
+    self.copied_files = []
+    self.new_root = new_root
+    self.old_root = old_root
+    self.copied_old_files = []
+    self.found_blocks = {}
+    self.new_blocks = {}
+    self.outdir = os.path.abspath(os.path.normpath(outdir))
+    self.missing_blocks = {}
+    self.skip_missing_blocks = skip_missing_blocks
+    self.quiet = quiet
+    self.new_directories = []
+    self.yaml_imported = False
+
 
   def load_yaml(self,fname):
     self.yaml_imported = True
@@ -182,7 +185,7 @@ class Merge:
   def traverse_dir(self,fname):
     self.regen.traverse_dir(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,block_outside_fn=self.block_outside,post_open_fn=self.file_end)
 
-class Parse:
+class Parse(Base):
 
   def __init__(self,root,quiet=False,cleanup=False):
     self.data = {}
@@ -191,6 +194,8 @@ class Parse:
     self.quiet = quiet
     self.regen = Regen()
     self.cleanup = cleanup
+    self.new_dirs = []
+    self.old_dirs = []
 
   def str_presenter(self, dumper, data):
     if len(data.splitlines()) > 1:
@@ -216,7 +221,7 @@ class Parse:
     self.regen.parse_file(fname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside)
 
   def traverse_dir(self,dname):
-    self.regen.traverse_dir(dname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside)
+    self.regen.traverse_dir(dname,pre_open_fn=self.file_begin,block_begin_fn=self.block_begin,block_end_fn=self.block_end,block_inside_fn=self.block_inside,filter_dirs=self.old_dirs)
 
   def file_begin(self,fname):
     self.data[fname] = {}
@@ -231,6 +236,15 @@ class Parse:
   def block_inside(self,fname,label_name,content,lnum):
     self.data[fname][label_name]['content'] += content
 
+  def collect_directories(self,new_root_dir,old_root_dir):
+    nrd = os.path.abspath(os.path.normpath(new_root_dir))
+    ord = os.path.abspath(os.path.normpath(old_root_dir))
+    for root,dirs,files in os.walk(nrd):
+      for dir in dirs:
+        self.new_dirs.append(root+os.sep+dir)
+        self.old_dirs.append(self.replace_basedir(p=root+os.sep+dir,old_basedir=nrd,new_basedir=ord))
+    pass
+
 class Regen:
 
   # This class is designed to traverse a given starting directory and walk through all underlying hierarchy, parsing
@@ -242,13 +256,14 @@ class Regen:
   # - For each line of the file while outside of a labeled block
   # - When finished parsing the given file
 
-  def traverse_dir(self,dname,pre_open_fn=None,block_begin_fn=None,block_end_fn=None,block_inside_fn=None,post_open_fn=None,block_outside_fn=None):
+  def traverse_dir(self,dname,pre_open_fn=None,block_begin_fn=None,block_end_fn=None,block_inside_fn=None,post_open_fn=None,block_outside_fn=None,filter_dirs=None):
     dname = os.path.normpath(dname)
     if not os.path.exists(dname):
       raise UserError("Input directory {0} does not exist".format(dname))
     for root,dirs,files in os.walk(dname):
       for file in files:
-        self.parse_file(os.path.abspath(root+os.sep+file),pre_open_fn,block_begin_fn,block_end_fn,block_inside_fn,block_outside_fn,post_open_fn)
+        if (not filter_dirs) or (os.path.abspath(root) in filter_dirs):
+          self.parse_file(os.path.abspath(root+os.sep+file),pre_open_fn,block_begin_fn,block_end_fn,block_inside_fn,block_outside_fn,post_open_fn)
 
   def parse_file(self,fname,pre_open_fn=None,block_begin_fn=None,block_end_fn=None,block_inside_fn=None,block_outside_fn=None,post_open_fn=None):
     fname = os.path.normpath(fname)

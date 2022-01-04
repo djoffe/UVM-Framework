@@ -32,7 +32,7 @@ q_comp_{{name}}_pkg:
 v_comp_{{name}}_pkg:
 	$(HVL_COMP_CMD) $({{name}}_PKG_HDL)
 	$(HVL_COMP_CMD) $({{name}}_PKG)
-	$(VELANALYZE_HVL_CMD) $({{name}}_PKG_HDL) 
+	$(VELANALYZE_CMD) $({{name}}_PKG_HDL) 
 	$(VELANALYZE_HVL_CMD) $({{name}}_PKG) 
 	$(HDL_COMP_CMD) $({{name}}_PKG_XRTL)
 

@@ -6,6 +6,7 @@ uvmf:
   benches:
     "block_c":
       top_env: "block_c"
+      #use_bcr: "True"
       clock_half_period: "6ns"
       clock_phase_offset: "21ns"
       reset_assertion_level: "True"

@@ -64,6 +64,10 @@ else
   MFLIST = make_filelist.py
 endif
 
+{% if useBCR %}
+VRUN_BCR ?= 1
+{% endif %}
+
 # Set test case specific Variables
 {% if inFactEnabled %}
 TEST_NAME_DEFAULT_0 = test_top
@@ -173,6 +177,9 @@ DEBUG_VOPT_ARGS       += $(INFACT_VOPT_ARGS)
 BATCH_VSIM_ARGS       += #-uvmcontrol=none
 DEBUG_VSIM_ARGS       += 
 EXTRA_VSIM_TOPS       += 
+
+# pragma uvmf custom additional_args begin
+# pragma uvmf custom additional_args end
 
 {% if vmaps|length > 0 %}
 create_{{name}}_vmaps: 
@@ -345,7 +352,8 @@ clean::
 	@-rm -rvf infact_genfiles *.d
 	@-rm -rvf inFact.err auxstat.txt
 {% endif %}
-
+# pragma uvmf custom additional_targets begin
+# pragma uvmf custom additional_targets end
 {% endblock %}
 
 

@@ -1,5 +1,7 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
+//   Copyright 2013-2021 Siemens Corporation
+//   Digital Industries Software
+//   Siemens EDA
 //   All Rights Reserved Worldwide
 //
 //   Licensed under the Apache License, Version 2.0 (the
@@ -49,7 +51,7 @@ class uvmf_out_of_order_scoreboard #(type T=uvmf_transaction_base) extends uvmf_
 
    // Associative array of exptected transactions keyed with the integer accessed using
    // the transactions get_key() interface.
-   T expected_hash[integer];
+   T expected_hash[int unsigned];
 
    // FUNCTION: new
    function new(string name, uvm_component parent );

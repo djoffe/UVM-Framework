@@ -8,3 +8,4 @@
 ./yaml_files/block_b_bench_cfg.yaml
 ./yaml_files/chip_env_cfg.yaml
 ./yaml_files/chip_bench_cfg.yaml
+./yaml_files/chip_bench_bcr_cfg.yaml

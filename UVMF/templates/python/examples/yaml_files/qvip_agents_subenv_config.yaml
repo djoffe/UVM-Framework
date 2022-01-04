@@ -1,19 +1,30 @@
-# Generated with gen_qvip_yaml.py version 0.9
-# Generated on 2017-09-21 19:13:37.592388
-# Command line: "/work/framework/scripts/gen_qvip_yaml.py qvip_agents_dir"
-#
-# Use the following YAML snippet in the higher level environment YAML definition
-# to instantiate this QVIP environment as a sub-environment
-#
-# qvip_subenvs:
-#   - { name: "qvip_agents_inst", type: "qvip_agents" }
-#
+## To instantiate this subenv in a higher level, use this structure:
+##  qvip_subenvs :
+##    - { name: "<instance_name_of_subenv>", type: "qvip_agents" }
 uvmf:
+  qvip_library:
+    version: '2019.2'
+    date: '04/17/2019:09:33'
   qvip_environments:
-    qvip_agents:
-      agents:
-      - name: pcie_ep
-      - name: axi4_master_0
-      - name: axi4_master_1
-      - name: axi4_slave
-      - name: apb3_config_master
+     "qvip_agents":
+        agents:
+          - name: 'pcie_ep'
+            imports:
+              - "mvc_pkg"
+              - "mgc_pcie_v2_0_pkg"
+          - name: 'axi4_master_0'
+            imports:
+              - "mvc_pkg"
+              - "mgc_axi4_v1_0_pkg"
+          - name: 'axi4_master_1'
+            imports:
+              - "mvc_pkg"
+              - "mgc_axi4_v1_0_pkg"
+          - name: 'axi4_slave'
+            imports:
+              - "mvc_pkg"
+              - "mgc_axi4_v1_0_pkg"
+          - name: 'apb3_config_master'
+            imports:
+              - "mvc_pkg"
+              - "mgc_apb3_v1_0_pkg"

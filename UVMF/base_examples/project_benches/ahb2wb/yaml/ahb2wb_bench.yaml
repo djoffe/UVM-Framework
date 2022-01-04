@@ -8,7 +8,6 @@ uvmf:
         value: ACTIVE
       clock_half_period: 5ns
       clock_phase_offset: 9ns
-      existing_library_component: 'True'
       interface_params: []
       parameters:
       - name: WB_DATA_WIDTH

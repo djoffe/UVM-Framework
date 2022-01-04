@@ -122,7 +122,7 @@ $(UVMF_PROJECT_DIR)/tb/tests/ahb2spi_tests_pkg.sv
 ahb2spi_VERILOG_DUT =\
 $(UVMF_PROJECT_DIR)/../ahb2wb/rtl/verilog/ahb2wb.v \
 $(UVMF_PROJECT_DIR)/../wb2spi/rtl/verilog/wb2spi.v \
-$(UVMF_PROJECT_DIR)/rtl/verilog/ahb2spi.v
+$(UVMF_PROJECT_DIR)/rtl/verilog/ahb2spi.sv
 
 # UVMF_CHANGE_ME : Reference VHDL DUT source.
 ahb2spi_VHDL_DUT =\
