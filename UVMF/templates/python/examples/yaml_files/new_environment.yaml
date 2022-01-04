@@ -125,6 +125,8 @@ uvmf:
 #      register_model:
 #        use_adapter: "True"
 #        use_explicit_prediction: "True"
+#        reg_model_package: "register_package_name"
+#        reg_block_class: "class_name_of_top_register_block"
 #        maps:
 #          - name: "bus_map"
 #            interface: "control_plane_in"

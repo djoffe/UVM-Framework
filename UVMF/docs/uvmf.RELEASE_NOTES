@@ -2,6 +2,16 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
+2021.3    07/01/2021  General Updates:
+                        - General bug fixes and documentation updates
+
+                      Generator Updates:
+                        - Added C data types for Mathworks® integration flow
+
+                      Resolved enhancement and service request Jira items:
+                        UVM-1509, UVM-1508, UVM-1505, UVM-1502, UVM-1500, UVM-1499, UVM-1498, 
+                        UVM-1494, UVM-1442
+
 2021.1    02/01/2021  General Updates:
                         - Added two new tutorials under docs/generator_tutorials
                           - ALU that uses QVIP and UVM register model

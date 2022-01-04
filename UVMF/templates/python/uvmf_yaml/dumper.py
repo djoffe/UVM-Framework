@@ -42,7 +42,10 @@ class BenchDumper:
     if (len(self.obj.paramDefs)):
       data['parameters'] = []
       for i in self.obj.paramDefs:
-        data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+        if (i.value):
+          data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+        else:
+          data['parameters'].append({'name':i.name,'type':i.type})         
     if (len(self.obj.envParamDefs)):
       data['top_env_params'] = []
       for i in self.obj.envParamDefs:
@@ -63,7 +66,7 @@ class BenchDumper:
       for i in self.obj.external_imports:
         data['imports'].append({'name':i})
     if (self.obj.useCoEmuClkRstGen == True):
-      data['use_co_emu_clk_rst_gen'] = 'True'
+      data['use_coemu_clk_rst_gen'] = 'True'
     if (self.obj.veloceReady == False):
       data['veloce_ready'] = "False"
     if (len(self.obj.additionalTops)):
@@ -140,10 +143,16 @@ class EnvironmentDumper:
       data['config_constraints'].append({'name':i.name,'value':i.type,'comment':i.comment})
     data['parameters'] = []
     for i in self.obj.paramDefs:
-      data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      if (i.value):
+        data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      else:
+        data['parameters'].append({'name':i.name,'type':i.type})        
     data['hvl_pkg_parameters'] = []
     for i in self.obj.hvlPkgParamDefs:
-      data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      if (i.value):
+        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      else:
+        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type})        
     data['tlm_connections'] = []
     for i in self.obj.connections:
       driverHier = i.name;
@@ -242,7 +251,10 @@ class ComponentDumper:
     if len(self.obj.parameters):
       data['parameters'] = []
       for i in self.obj.parameters:
-        data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+        if (i.value):
+          data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+        else:
+          data['parameters'].append({'name':i.name,'type':i.type})
     return data
      
 
@@ -269,13 +281,22 @@ class InterfaceDumper:
       data['hvl_typedefs'].append({'name':str(i.name),'type':str(i.type)})
     data['parameters'] = []
     for i in self.obj.paramDefs:
-      data['parameters'].append({'name':str(i.name),'type':str(i.type),'value':str(i.value)})
+      if (i.value):
+        data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      else:
+        data['parameters'].append({'name':i.name,'type':i.type})        
     data['hdl_pkg_parameters'] = []
     for i in self.obj.hdlPkgParamDefs:
-      data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      if (i.value):
+        data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      else:
+        data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type})        
     data['hvl_pkg_parameters'] = []
     for i in self.obj.hvlPkgParamDefs:
-      data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      if (i.value):
+        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+      else:
+        data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type})        
     data['ports'] = []
     for i in self.obj.ports:
       data['ports'].append({'name':str(i.name),'width':str(i.width),'dir':str(i.dir),'reset_value':str(i.rstValue)})

@@ -1063,7 +1063,7 @@ class DataClass:
 
     ## Use co-emulation clk/rst generator
     try:
-      ben.useCoEmuClkRstGen = (struct['use_co_emu_clk_rst_gen']=='True')
+      ben.useCoEmuClkRstGen = (struct['use_coemu_clk_rst_gen']=='True')
     except KeyError: pass
     ## Set the veloceReady flag for the bench
     try:
