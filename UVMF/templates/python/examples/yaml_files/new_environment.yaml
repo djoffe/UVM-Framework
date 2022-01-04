@@ -59,7 +59,7 @@ uvmf:
 #              value: "COMP_PARAMETER"
 #      qvip_memory_agents :
 #        - name: "component_instance_name" 
-#          type: "component_type"
+#          type: "qvip_memory_agent"
 #          qvip_environment: "environment_instance_name"
 #          parameters:
 #            - name: "COMP_PARAMETER"
@@ -89,13 +89,19 @@ uvmf:
 #        - name: "environment_analysis_export_instance_name"
 #          trans_type: "transaction_type_including_any_parameters"
 #          connected_to: "omponent_insance_name.component_analysis_export"
+#      Note regarding TLM connections:
+#          When connecting to UVMF agents, driver analysis_port_name is monitored_ap
+#          When connecting to expected side of UVMF scoreboards, receiver analysis_export_name is expected_analysis_export
+#          When connecting to actual side of UVMF scoreboards, receiver analysis_export_name is actual_analysis_export
 #      tlm_connections :
 #        - driver:   "component_instance_name.anlaysis_port_name"
 #          receiver: "component_instance_name.analysis_export_name"
+#          validate: "True_or_False"
 #      qvip_connections:
 #        - ap_key:   "associative_array_key"
 #          driver:   "envName_agentName"
 #          receiver: "component_instance_name.analysis_export_name"
+#          validate: "True_or_False"
 #      ## Environment-level configuration variables. Each entry is keyed with a 
 #      ## unique name and is assigned a 'type' and 'isrand' value.
 #      config_vars :

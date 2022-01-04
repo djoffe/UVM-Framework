@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/src/{{name}}_configuration.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_configuration.svh" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -19,6 +19,8 @@ class {{name}}_configuration {{macro.paramDeclare(paramDefs)|indent(6)}} extends
 {{macro.objUtils([ name,'_configuration']|join(""),paramDefs)}}
 
 {% for config in configVars %}
+{% if config.comment|length > 0 %}  // {{config.comment}}
+{% endif %}
   {% if config.isrand %}rand {% endif %}{{config.type}} {{config.name}}{% if config.value != '' %} = {{config.value}}{% endif %};
 {% endfor %}
 
@@ -27,6 +29,8 @@ class {{name}}_configuration {{macro.paramDeclare(paramDefs)|indent(6)}} extends
 
   //Constraints for the configuration variables:
 {% for cnstr in configVarsConstraints %}
+{% if cnstr.comment|length > 0 %}  // {{cnstr.comment}}
+{% endif %}
   constraint {{cnstr.name}} {{cnstr.type}}
 {% endfor %}
 

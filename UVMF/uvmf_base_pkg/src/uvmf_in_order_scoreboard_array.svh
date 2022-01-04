@@ -25,9 +25,6 @@
 // Creation Date   : 05.12.2011
 //----------------------------------------------------------------------
 
-import uvm_pkg::*;
-`include "uvm_macros.svh"
-
 // CLASS: uvmf_in_order_scoreboard_array
 // This class defines a scoreboard that can be used where multiple logical channels of data are sent through a single
 // physical channel.  Each channel will use one fifo within the array of fifo's.  The number of logical channels, and
@@ -75,9 +72,9 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
    virtual function void remove_entry(int unsigned key=0);
       T flushed_transaction;
       if ( key >= ARRAY_DEPTH ) 
-         begin : invalid_key
+         begin : key_check
          `uvm_error("SCBD", $sformatf("Invalid key %d out of valid range between 0 and %d", key, ARRAY_DEPTH))
-         end : invalid_key
+         end : key_check
       else 
          begin : remove_entry
          flushed_transaction = expected_results_q[key].pop_front();
@@ -90,6 +87,10 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
    function void write_expected( input T t);
       if (scoreboard_enabled) 
          begin : in_write_expected
+         if ( t.get_key() >= ARRAY_DEPTH ) 
+            begin : expected_key_check
+            `uvm_error("SCBD", $sformatf("Invalid key %d out of valid range between 0 and %d", t.get_key(), ARRAY_DEPTH))
+            end : expected_key_check
          super.write_expected(t);
          expected_results_q[t.get_key()].push_back(t);
          end : in_write_expected
@@ -104,6 +105,10 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
       if (scoreboard_enabled) 
          begin : in_write_actual
          super.write_actual(t);
+         if ( t.get_key() >= ARRAY_DEPTH ) 
+            begin : actual_key_check
+            `uvm_error("SCBD", $sformatf("Invalid key %d out of valid range between 0 and %d", t.get_key(), ARRAY_DEPTH))
+            end : actual_key_check
    
          // Get next entry from analysis fifo.  Error if none exists
          if ( expected_results_q[t.get_key()].size() == 0 ) 

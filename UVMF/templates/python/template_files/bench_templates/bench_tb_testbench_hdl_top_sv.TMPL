@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/testbench/hdl_top.sv" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/testbench/hdl_top.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -20,13 +20,14 @@
 
 {% block contents %}
 
+module hdl_top;
+
 import {{name}}_parameters_pkg::*;
 {% for agent in qvip_bfm_pkgs %}
 import {{agent}}_params_pkg::*;
 {% endfor %}
 import uvmf_base_pkg_hdl::*;
 
-module hdl_top;
 {% if veloceReady %}
   // pragma attribute hdl_top partition_module_xrtl                                            
 {% endif %}
@@ -34,7 +35,7 @@ module hdl_top;
   hdl_{{qvip_hdl.envPkg}} 
       #(
 {% for agent_name in qvip_hdl.agent_names %}
-        .{{agent_name}}_ACTIVE(1),
+        .{{agent_name}}_ACTIVE({% if qvip_hdl.agent_activities[agent_name]=='ACTIVE' %}1{% else %}0{% endif %}),
 {% endfor %}
         .UNIQUE_ID("{{qvip_hdl.unique_id}}")
         /*.EXT_CLK_RESET(0)*/ 

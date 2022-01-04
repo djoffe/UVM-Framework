@@ -60,8 +60,6 @@ extern "C" {
         svSetScope(svGetScopeFromName(path));
         wait_for_num_clocks(bit_vec);
      }
-
-
 }
 
 

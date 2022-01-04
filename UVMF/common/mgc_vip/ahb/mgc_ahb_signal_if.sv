@@ -84,7 +84,8 @@ interface mgc_ahb_signal_if #(int NUM_MASTERS = 16, int NUM_MASTER_BITS = 4, int
     wire master_HWRITE[NUM_MASTERS];
     wire [2:0] master_HSIZE[NUM_MASTERS];
     wire [2:0] master_HBURST[NUM_MASTERS];
-    wire [5:0]/*[3:0]*/ master_HPROT[NUM_MASTERS]; // HANS: Smaller width for VTL BFM compared to QVIP
+//    wire [5:0]/*[3:0]*/ master_HPROT[NUM_MASTERS]; // HANS: Smaller width for VTL BFM compared to QVIP
+    wire [6:0]/*[3:0]*/ master_HPROT[NUM_MASTERS]; // HANS: Smaller width for VTL BFM compared to QVIP
     wire [WDATA_WIDTH - 1:0]  master_HWDATA[NUM_MASTERS];
     wire [RDATA_WIDTH - 1:0]  master_HRDATA[NUM_MASTERS];
     wire [2:0]/*[1:0]*/ master_HRESP[NUM_MASTERS]; // HANS: Smaller width for VTL BFM compared to QVIP

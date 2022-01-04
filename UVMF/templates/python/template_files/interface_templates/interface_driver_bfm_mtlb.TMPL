@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/src/{{name}}_driver_bfm_mtlb.sv" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_driver_bfm_mtlb.sv" %}
 {% set conditional = "mtlbReady" %}
 {% extends "base_template.TMPL" %}
 
@@ -59,10 +59,10 @@
 import uvmf_base_pkg_hdl::*;
 import {{name}}_pkg_hdl::*;
 {% if veloceReady %}
+`include "{{src_dir}}{{name}}_macros.svh"
 {% else %}
 import {{name}}_pkg::*;
 {% endif %}
-`include "src/{{name}}_macros.svh"
 
 {%if useDpiLink %}module{% else %}interface{% endif %} {{name}}_driver_bfm {{macro.paramDeclare(paramDefs)|indent(2)}}
   ({{name}}_if bus);

@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/{{name}}_mtlb.mk" %}
+{% set fname = "{{bench_location}}/{{name}}/sim/{{name}}_mtlb.mk" %}
 {% set conditional = "mtlbReady" %}
 {% block description %}
 #
@@ -22,13 +22,13 @@
 mtlb_conversion:
 {% for bfm in bfm_pkg_env_variables %}
 	# Execute the shell for the {{bfm.ifPkg}} interface package.
-	cd ../../verification_ip/interface_packages/{{bfm.ifPkg}}_pkg; chmod a+x {{bfm.ifPkg}}_interface_mtlb_prep.sh; ./{{bfm.ifPkg}}_interface_mtlb_prep.sh; cd ../../../project_benches/{{name}};
+	cd {{relative_vip_from_sim}}/{{interface_location}}/{{bfm.ifPkg}}_pkg; ./{{bfm.ifPkg}}_interface_mtlb_prep.sh; cd -;
 	#
 {% endfor %}
 	# Execute the shell for the {{env_name}} environment package
-	cd ../../verification_ip/environment_packages/{{env_name}}_env_pkg; chmod a+x {{env_name}}_environment_mtlb_prep.sh; ./{{env_name}}_environment_mtlb_prep.sh; cd ../../../project_benches/{{name}};
+	cd {{relative_vip_from_sim}}/{{environment_location}}/{{env_name}}_env_pkg; ./{{env_name}}_environment_mtlb_prep.sh; cd -
 	#
 	# Execute the shell for the {{name}} bench
-	chmod a+x {{name}}_bench_mtlb_prep.sh; ./{{name}}_bench_mtlb_prep.sh;
+	./{{name}}_bench_mtlb_prep.sh;
 
 {% endblock %}

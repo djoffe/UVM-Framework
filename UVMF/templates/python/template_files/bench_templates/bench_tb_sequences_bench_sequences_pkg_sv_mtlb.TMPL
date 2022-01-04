@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/sequences/{{name}}_sequences_pkg_mtlb.sv" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/sequences/{{name}}_sequences_pkg_mtlb.sv" %}
 {% set conditional = "mtlbReady" %}
 {% extends "base_template.TMPL" %}
 
@@ -52,13 +52,13 @@ package {{name}}_sequences_pkg;
   // pragma uvmf custom package_imports_additional end
 
 {% if inFactEnabled %}
-  `include "src/infact_{{name}}_bench_transactions.svh"
+  `include "{{src_dir}}infact_{{name}}_bench_transactions.svh"
 {% endif %}
-  `include "src/{{name}}_bench_sequence_base.svh"
-  `include "src/register_test_sequence.svh"
-  `include "src/DPI_stimgen_sequence.svh"
-  `include "src/read_from_file_sequence.svh"
-  `include "src/example_derived_test_sequence.svh"
+  `include "{{src_dir}}{{name}}_bench_sequence_base.svh"
+  `include "{{src_dir}}register_test_sequence.svh"
+  `include "{{src_dir}}DPI_stimgen_sequence.svh"
+  `include "{{src_dir}}read_from_file_sequence.svh"
+  `include "{{src_dir}}example_derived_test_sequence.svh"
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new sequences to the src directory

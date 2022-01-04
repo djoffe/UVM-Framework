@@ -12,5 +12,5 @@ q_comp_fli_pkg:
 	$(HVL_COMP_CMD) $(FLI_PKG)
 
 v_comp_fli_pkg: q_comp_fli_pkg
-	$(VELANALYZE_HVL_CMD) $(FLI_PKG)
+#	$(VELANALYZE_HVL_CMD) $(FLI_PKG)
 

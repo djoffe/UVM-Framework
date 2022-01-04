@@ -187,7 +187,8 @@ interface ahb_driver_bfm
           hsel_o <= 1'b1;
 
       // Data Phase
-      do @(posedge hclk_i) ; while ( hready_i == 1'b0 );
+      do @(posedge hclk_i) ;
+      while ( hready_i == 1'b0 );
           haddr_o <= 'bx;
           hwdata_o <= 'bx;
           htrans_o <= 2'b00;

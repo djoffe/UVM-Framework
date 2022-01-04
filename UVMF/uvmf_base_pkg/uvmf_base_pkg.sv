@@ -66,6 +66,9 @@ package uvmf_base_pkg;
    import uvmf_base_pkg_hdl::*;
    `include "uvm_macros.svh"
 
+   `uvm_analysis_imp_decl(_expected)
+   `uvm_analysis_imp_decl(_actual)
+
    //export uvmf_base_pkg_hdl::*;
    export uvmf_base_pkg_hdl::uvmf_sim_level_t;
    export uvmf_base_pkg_hdl::NA;

@@ -90,6 +90,6 @@ comp_axi4_modules:
 
 build_mvc: comp_qvip_infrastructure comp_qvip_axi4_protocol comp_axi4_modules
 
-build: comp_uvm_pkg build_mvc comp_fli_pkg comp_uvmf_base_pkg  comp_vip_axi4_env_pkg comp_qvip_axi4_bench_parameters_pkg comp_qvip_axi4_bench_sequence_pkg comp_qvip_axi4_bench_test_pkg comp_test_bench
+build: comp_uvm_pkg build_mvc comp_uvmf_base_pkg  comp_vip_axi4_env_pkg comp_qvip_axi4_bench_parameters_pkg comp_qvip_axi4_bench_sequence_pkg comp_qvip_axi4_bench_test_pkg comp_test_bench
 
 

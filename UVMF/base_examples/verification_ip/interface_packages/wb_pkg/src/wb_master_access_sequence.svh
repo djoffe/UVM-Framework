@@ -14,7 +14,9 @@ class wb_master_access_sequence #(int WB_ADDR_WIDTH = 32, int WB_DATA_WIDTH = 16
   endfunction
 
   task read(input bit [WB_ADDR_WIDTH-1:0] addr, output bit [WB_DATA_WIDTH-1:0] read_data,
-            input uvm_sequencer #(wb_transaction#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))) seqr, input uvm_sequence_base parent = null);
+            input uvm_sequencer #(wb_trans_t) seqr,
+         // input uvm_sequencer #(wb_transaction #(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))) seqr,
+            input uvm_sequence_base parent = null);
     this.req_addr = addr;
     this.req_op = WB_READ;
     this.start(seqr,parent);
@@ -22,7 +24,9 @@ class wb_master_access_sequence #(int WB_ADDR_WIDTH = 32, int WB_DATA_WIDTH = 16
   endtask
 
   task write(input bit [WB_ADDR_WIDTH-1:0] addr, input bit [WB_DATA_WIDTH-1:0] write_data,
-             input uvm_sequencer #(wb_transaction#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))) seqr, input uvm_sequence_base parent = null);
+             input uvm_sequencer #(wb_trans_t) seqr,
+         //  input uvm_sequencer #(wb_transaction #(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))) seqr,
+             input uvm_sequence_base parent = null);
     this.req_addr = addr;
     this.req_op = WB_WRITE;
     this.req_data = write_data;

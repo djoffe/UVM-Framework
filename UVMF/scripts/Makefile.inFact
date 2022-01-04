@@ -20,7 +20,7 @@ ungen_infact:
 	rm -rf $(UVMF_VIP_LIBRARY_HOME)/interface_packages/$(PROTOCOL)_infact_proj/$(PROTOCOL)_infact_sequence/$(PROTOCOL)_infact_sequence.svh
 	touch $(UVMF_VIP_LIBRARY_HOME)/interface_packages/$(PROTOCOL)_infact_proj/$(PROTOCOL)_infact_sequence/$(PROTOCOL)_infact_sequence.svh
 
-build_infact: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg comp_$(PROTOCOL)_pkg gen_infact
+build_infact: comp_uvm_pkg comp_uvmf_base_pkg comp_$(PROTOCOL)_pkg gen_infact
 
 build_all_infact:
 	for PROT in $(PROTOCOLS); \

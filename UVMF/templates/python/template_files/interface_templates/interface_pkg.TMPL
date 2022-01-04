@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/{{name}}_pkg.sv" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{name}}_pkg.sv" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -45,9 +45,10 @@ package {{name}}_pkg;
 
    // pragma uvmf custom package_imports_additional begin 
    // pragma uvmf custom package_imports_additional end
+{% if veloceReady %}
+   `include "{{src_dir}}{{name}}_macros.svh"
+{% endif %}
 
-   `include "src/{{name}}_macros.svh"
-   
    export {{name}}_pkg_hdl::*;
    
 {% for ext_import in external_imports %}
@@ -62,28 +63,28 @@ package {{name}}_pkg;
    parameter {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %};
 {% endfor %}
 
-   `include "src/{{name}}_typedefs.svh"
-   `include "src/{{name}}_transaction.svh"
+   `include "{{src_dir}}{{name}}_typedefs.svh"
+   `include "{{src_dir}}{{name}}_transaction.svh"
 
 {% if useDpiLink %} 
-   `include "src/{{name}}_driver_proxy.svh"
-   `include "src/{{name}}_monitor_proxy.svh"
+   `include "{{src_dir}}{{name}}_driver_proxy.svh"
+   `include "{{src_dir}}{{name}}_monitor_proxy.svh"
 {% endif %}
-   `include "src/{{name}}_configuration.svh"
-   `include "src/{{name}}_driver.svh"
+   `include "{{src_dir}}{{name}}_configuration.svh"
+   `include "{{src_dir}}{{name}}_driver.svh"
 {%if genInBoundStreamingDriver %}
-   `include "src/{{name}}_ibs_driver.svh"
+   `include "{{src_dir}}{{name}}_ibs_driver.svh"
 {% endif %}
-   `include "src/{{name}}_monitor.svh"
+   `include "{{src_dir}}{{name}}_monitor.svh"
 
-   `include "src/{{name}}_transaction_coverage.svh"
-   `include "src/{{name}}_sequence_base.svh"
-   `include "src/{{name}}_random_sequence.svh"
+   `include "{{src_dir}}{{name}}_transaction_coverage.svh"
+   `include "{{src_dir}}{{name}}_sequence_base.svh"
+   `include "{{src_dir}}{{name}}_random_sequence.svh"
 
-   `include "src/{{name}}_responder_sequence.svh"
-   `include "src/{{name}}2reg_adapter.svh"
+   `include "{{src_dir}}{{name}}_responder_sequence.svh"
+   `include "{{src_dir}}{{name}}2reg_adapter.svh"
 
-   `include "src/{{name}}_agent.svh"
+   `include "{{src_dir}}{{name}}_agent.svh"
 {% if useDpiLink %} 
    export "DPI-C" function {{name}}_pkg_notify_transaction;
    function void {{name}}_pkg_notify_transaction(string xrtl_path, c_bit_array_t bit_vec_in);

@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/interface_packages/{{name}}_pkg/src/{{name}}_transaction.svh" %}
+{% set fname = "{{vip_location}}/{{interface_location}}/{{name}}_pkg/{{src_dir}}{{name}}_transaction.svh" %}
 {% extends "base_template.TMPL" %}
 
 {% block description %}
@@ -18,11 +18,15 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
 {{macro.objUtils([name,'_transaction']|join(""),paramDefs)}}
 
 {% for txn in transVars %}
+{% if txn.comment|length > 0 %}  // {{txn.comment}}
+{% endif %}
   {% if txn.isrand %}rand {% endif %}{{txn.type}} {{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
 
   //Constraints for the transaction variables:
 {% for cnstr in transVarsConstraints %}
+{% if cnstr.comment|length > 0 %}  // {{cnstr.comment}}
+{% endif %}
   constraint {{cnstr.name}} {{cnstr.type}}
 {% endfor %}
 

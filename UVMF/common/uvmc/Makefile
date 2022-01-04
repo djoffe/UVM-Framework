@@ -6,9 +6,10 @@ else
   MACHINE_ARCH ?= -32
 endif
 
-UVMC_VER           ?= 2.3.2
-UVM_VER            ?= 1.1d
-COMMON_VSIM_ARGS   += -t ns
+UVMC_VER              ?= 2.3.2
+UVM_VER               ?= 1.1d
+EXTRA_SCCOM_ARGS      ?= -Wall -g
+EXTRA_SCCOM_LINK_ARGS ?= -g -O0
 
 XINCDIRS  = +incdir+$(QUESTA_HOME)/verilog_src/uvm-$(UVM_VER)/src
 XINCDIRS += +incdir+$(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sv
@@ -21,6 +22,6 @@ compile_uvmc:
 	-@echo "Compiling UVMConnect library for platform $(MACHINE_ARCH)"
 	vlib work
 	vlog   -incr $(XINCDIRS) $(UVMCONNECT_VLOG)
-	sccom $(MACHINE_ARCH) -work work -Wall -g $(DINCDIRS) $(UVMCONNECT_CPP)
-	sccom $(MACHINE_ARCH) -g -O0 $(DINCDIRS) -lib work -DSC_INCLUDE_DYNAMIC_PROCESSES -linkshared
+	sccom $(MACHINE_ARCH) -work work $(DINCDIRS) $(EXTRA_SCCOM_ARGS) $(UVMCONNECT_CPP)
+	sccom $(MACHINE_ARCH) $(DINCDIRS) -lib work -DSC_INCLUDE_DYNAMIC_PROCESSES $(EXTRA_SCCOM_LINK_ARGS) -linkshared
 

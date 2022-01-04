@@ -87,6 +87,14 @@ module mgc_ahb_master_hdl #(
   // Register QVIP interface with UVM config DB using given UVM context and name:
   //
   initial begin
+
+	$display("NUM_MASTERS = %0d", NUM_MASTERS);
+	$display("NUM_MASTER_BITS = %0d", NUM_MASTER_BITS);
+	$display("NUM_SLAVES = %0d", NUM_SLAVES);
+	$display("ADDRESS_WIDTH = %0d", ADDRESS_WIDTH);
+	$display("WDATA_WIDTH = %0d", WDATA_WIDTH);
+	$display("RDATA_WIDTH = %0d", RDATA_WIDTH);
+
     uvm_pkg::uvm_config_db #(virtual mgc_ahb #(NUM_MASTERS, NUM_MASTER_BITS, NUM_SLAVES, ADDRESS_WIDTH, WDATA_WIDTH, RDATA_WIDTH))::
        set(null, VIP_IF_UVM_CONTEXT, VIP_IF_UVM_NAME, vip_if);
   end
@@ -98,29 +106,39 @@ module mgc_ahb_master_hdl #(
   //
 
   // Master driven slave inputs
-  assign pin_if.master_HBUSREQ    = vip_if.master_HBUSREQ;
-  assign pin_if.master_HLOCK      = vip_if.master_HLOCK;
-  //assign pin_if.HGRANT            = vip_if.HGRANT; // Driven internally by QVIP
-  assign pin_if.master_HADDR      = vip_if.master_HADDR;
-  assign pin_if.master_HTRANS     = vip_if.master_HTRANS;
-  assign pin_if.master_HWRITE     = vip_if.master_HWRITE;
-  assign pin_if.master_HSIZE      = vip_if.master_HSIZE;
-  assign pin_if.master_HBURST     = vip_if.master_HBURST;
-  assign pin_if.master_HPROT      = vip_if.master_HPROT;
-  assign pin_if.master_HWDATA     = vip_if.master_HWDATA;
-  assign pin_if.user_HDATA        = vip_if.user_HDATA;
-  assign pin_if.user_HADDR        = vip_if.user_HADDR;
+   for (genvar i = 0; i < NUM_MASTERS; i++) begin
+  	assign pin_if.master_HBUSREQ[i]    = vip_if.master_HBUSREQ[i];
+  	assign pin_if.master_HLOCK[i]      = vip_if.master_HLOCK[i];
+  	//assign pin_if.HGRANT            = vip_if.HGRANT; // Driven internally by QVIP
+  	assign pin_if.master_HADDR[i]      = vip_if.master_HADDR[i];
+ 	  assign pin_if.master_HTRANS[i]     = vip_if.master_HTRANS[i];
+  	assign pin_if.master_HWRITE[i]     = vip_if.master_HWRITE[i];
+  	assign pin_if.master_HSIZE[i]      = vip_if.master_HSIZE[i];
+  	assign pin_if.master_HBURST[i]     = vip_if.master_HBURST[i];
+  	assign pin_if.master_HPROT[i]      = vip_if.master_HPROT[i];
+  	assign pin_if.master_HWDATA[i]     = vip_if.master_HWDATA[i];
+  	assign pin_if.user_HDATA[i]        = vip_if.user_HDATA[i];
+  	assign pin_if.user_HADDR[i]        = vip_if.user_HADDR[i];
+
+   end
+
+
 
   // Slave driven master inputs
-  assign vip_if.slave_HRDATA      = pin_if.slave_HRDATA;
-  assign vip_if.slave_HREADY      = pin_if.slave_HREADY;
-  assign vip_if.slave_HRESP       = pin_if.slave_HRESP;
-  assign vip_if.slave_HSPLIT      = pin_if.slave_HSPLIT;
+  for (genvar i = 0; i < NUM_SLAVES; i++) begin
+  	assign vip_if.slave_HRDATA[i]      = pin_if.slave_HRDATA[i];
+  	assign vip_if.slave_HREADY[i]      = pin_if.slave_HREADY[i];
+  	assign vip_if.slave_HRESP[i]       = pin_if.slave_HRESP[i];
+  	assign vip_if.slave_HSPLIT[i]      = pin_if.slave_HSPLIT[i];
+  	assign vip_if.slave_HMASTER[i]     = pin_if.slave_HMASTER[i];
+//  	assign vip_if.decoder_HSEL[i]      = pin_if.decoder_HSEL[i];
+  	assign pin_if.decoder_HSEL[i]      = vip_if.slave_HSEL[i];
+  end
 
   // Arbiter driven master inputs
   assign vip_if.arbiter_HGRANT    = pin_if.arbiter_HGRANT;
   assign vip_if.HMASTER           = pin_if.HMASTER;
-  assign vip_if.slave_HMASTER     = pin_if.slave_HMASTER;
+  //////assign vip_if.slave_HMASTER     = pin_if.slave_HMASTER;
   assign vip_if.arbiter_HMASTLOCK = pin_if.arbiter_HMASTLOCK;
 
   // Master driven arbiter inputs
@@ -136,7 +154,7 @@ module mgc_ahb_master_hdl #(
   //assign pin_if.HMASTLOCK         = vip_if.HMASTLOCK; // Driven internally by QVIP
 
   // Master driven decoder inputs
-  assign vip_if.decoder_HSEL      = pin_if.decoder_HSEL;
+  //////assign vip_if.decoder_HSEL      = pin_if.decoder_HSEL;
   //assign vip_if.decoder_HADDR     = pin_if.decoder_HADDR; // Driven internally by QVIP
 
   // These signals are used only in ARM11 AHB and ignored here (for now):
@@ -145,7 +163,7 @@ module mgc_ahb_master_hdl #(
   //slave_HBSTROBE
   //slave_HUNALIGN
   //slave_HDOMAIN
-  //HDOMAIN
+  //HDOMAIN*/
 
 `endif
 

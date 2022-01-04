@@ -1,4 +1,4 @@
-{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/{{name}}_env_pkg_mtlb.sv" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{name}}_env_pkg_mtlb.sv" %}
 {% set conditional = "mtlbReady" %}
 {% extends "base_template.TMPL" %}
 
@@ -62,13 +62,13 @@ package {{name}}_env_pkg;
   parameter {{param.type}} {{param.name}} = {{param.value}};
 {% endfor %}
 
-  `include "src/{{name}}_env_typedefs.svh"
-  `include "src/{{name}}_env_configuration.svh"
+  `include "{{src_dir}}{{name}}_env_typedefs.svh"
+  `include "{{src_dir}}{{name}}_env_configuration.svh"
 {% for acName in acTypes %}
-  `include "src/{{acName}}.svh"
+  `include "{{src_dir}}{{acName}}.svh"
 {% endfor %}
-  `include "src/{{name}}_environment.svh"
-  `include "src/{{name}}_env_sequence_base.svh"
+  `include "{{src_dir}}{{name}}_environment.svh"
+  `include "{{src_dir}}{{name}}_env_sequence_base.svh"
 
   // pragma uvmf custom package_item_additional begin
   // UVMF_CHANGE_ME : When adding new environment level sequences to the src directory

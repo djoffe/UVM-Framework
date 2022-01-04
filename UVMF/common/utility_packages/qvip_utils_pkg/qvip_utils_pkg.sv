@@ -42,5 +42,6 @@ import uvmf_base_pkg::*;
 
    `include "src/qvip_agent_adapter.svh"
    `include "src/qvip_memory_agent.svh"
+   `include "src/qvip_report_catcher.svh"
 
 endpackage

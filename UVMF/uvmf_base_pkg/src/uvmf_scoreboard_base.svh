@@ -25,13 +25,6 @@
 // Creation Date   : 05.12.2011
 //----------------------------------------------------------------------
 
-import uvm_pkg::*;
-`include "uvm_macros.svh"
-
-`uvm_analysis_imp_decl(_expected)
-`uvm_analysis_imp_decl(_actual)
-
-
 // CLASS: uvmf_scoreboard_base
 // This class defines a base class for scoreboards which require separate analysis
 // exports for actual and expected transactions.  It creates two analysis export
@@ -47,6 +40,8 @@ import uvm_pkg::*;
 //       Must be derived from uvmf_transaction_base.
 
 class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scoreboard;
+
+  `uvm_component_param_utils( uvmf_scoreboard_base #(T))
 
   uvm_analysis_imp_expected#(T, uvmf_scoreboard_base #(T)) expected_analysis_export;
   uvm_analysis_imp_actual#(T, uvmf_scoreboard_base #(T)) actual_analysis_export;
@@ -243,7 +238,7 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
   // Builds the report_phase message printed for scoreboards derived from this base 
   // Provides for customization of output formatting
   virtual function string report_message(string header, int variables [] );
-        return {$sformatf("%s PREDICTED_TRANSACTIONS=%.0d MATCHES=%.0d MISMATCHES=%.0d", header, variables[0], variables[1], variables[2])}; 
+        return {$sformatf("%s PREDICTED_TRANSACTIONS=%0d MATCHES=%0d MISMATCHES=%0d", header, variables[0], variables[1], variables[2])}; 
   endfunction
 
   // FUNCTION: report_phase

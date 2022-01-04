@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/.project" %}
+{% set fname = "{{bench_location}}/{{name}}/.project" %}
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
 	<name>{{name}}</name>
@@ -23,7 +23,7 @@
 	</natures>
 	<linkedResources>
 		<link>
-			<name>verification_ip</name>
+			<name>{{vip_location}}</name>
 			<type>2</type>
 			<locationURI>UVMF_VIP_LIBRARY_HOME</locationURI>
 		</link>
@@ -31,7 +31,7 @@
 	<variableList>
 		<variable>
 			<name>UVMF_VIP_LIBRARY_HOME</name>
-			<value>$%7BPARENT-2-PROJECT_LOC%7D/verification_ip</value>
+			<value>$%7BPARENT-2-PROJECT_LOC%7D/{{vip_location}}</value>
 		</variable>
 	</variableList>
 </projectDescription>
