@@ -4,14 +4,14 @@ uvmf:
       type: "predictor"
       analysis_exports :
         - name: "control_plane_in_ae"
-          type: "mem_transaction #()"
+          type: "mem_transaction"
         - name: "secure_data_plane_in_ae"
-          type: "pkt_transaction #()"
+          type: "pkt_transaction"
       analysis_ports : 
         - name: "control_plane_sb_ap"
-          type: "mem_transaction #()"
+          type: "mem_transaction"
         - name: "secure_data_plane_sb_ap"
-          type: "pkt_transaction #()"
+          type: "pkt_transaction"
     "control_plane_predictor" :
       type: "predictor"
       analysis_exports : 
@@ -29,21 +29,21 @@ uvmf:
           type: "pkt_transaction #(.DATA_WIDTH(UDP_DATA_WIDTH))"
       analysis_ports:
         - name: "unsecure_data_plane_sb_ap"
-          type: "pkt_transaction #()"
+          type: "pkt_transaction"
     "block_c_predictor" :
       type: predictor
       analysis_exports:
         - name: "mem_in_ae"
-          type: "mem_transaction #()"
+          type: "mem_transaction"
         - name: "axi4_master_1_ae"
           type: "mvc_sequence_item_base"
         - name: "axi4_master_0_ae"
           type: "mvc_sequence_item_base"
       analysis_ports:
         - name: "pkt_sb_ap"
-          type: "pkt_transaction #()"
+          type: "pkt_transaction"
         - name: "mem_sb_ap"
-          type: "mem_transaction #()"
+          type: "mem_transaction"
         - name: "apb3_config_master_ap"
           type: "mvc_sequence_item_base"
         - name: "axi4_slave_ap"

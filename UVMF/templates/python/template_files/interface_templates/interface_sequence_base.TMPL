@@ -36,12 +36,14 @@ extends uvmf_sequence_base #(
 {% endif %}
 
   // variables
-  {{name}}_transaction {%if paramDefs|length > 0%} #(
+  typedef {{name}}_transaction {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                     ) {% endif %} req;
-  {{name}}_transaction {%if paramDefs|length > 0%} #(
+{% endfor %}                     ) {% endif %} {{name}}_transaction_req_t;
+{{name}}_transaction_req_t req;
+  typedef {{name}}_transaction {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                     ) {% endif %} rsp;
+{% endfor %}                     ) {% endif %} {{name}}_transaction_rsp_t;
+{{name}}_transaction_rsp_t rsp;
 
 // Event for identifying when a response was received from the sequencer
 event new_rsp;
@@ -73,11 +75,24 @@ virtual task pre_body();
 endtask
 
 // ****************************************************************************
+// TASK : body()
+// This task is called automatically when start is called.  This sequence sends
+// a req sequence item to the sequencer identified as an argument in the call
+// to start.
+//
+virtual task body();
+	start_item(req);
+	finish_item(req);
+endtask
+
+// ****************************************************************************
 // FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
 //
   function new( string name ="");
     super.new( name );
+    req = {{name}}_transaction_req_t::type_id::create("req");
+    rsp = {{name}}_transaction_rsp_t::type_id::create("rsp");
   endfunction
 
 endclass

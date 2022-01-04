@@ -12,7 +12,7 @@
 #include <stdio.h>
 
 {% for DPIImport in DPIImports %}
-{{DPIImport.type}} {{DPIImport.name}} {{DPIImport.cArgs}}
+{{DPIImport.cType}} {{DPIImport.name}} {{DPIImport.cArgs}}
 {
         printf("Inside {{DPIImport.name}}\n");
 }

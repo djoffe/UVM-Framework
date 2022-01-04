@@ -64,13 +64,28 @@ class uvmf_out_of_order_scoreboard #(type T=uvmf_transaction_base) extends uvmf_
    function void build_phase(uvm_phase phase);
       super.build_phase(phase);
    endfunction
+ 
+   // FUNCTION: 
+   // Used to flush all entries in the scoreboard
+   virtual function void flush_scoreboard();
+      expected_hash.delete;
+   endfunction
+
+   // FUNCTION: 
+   // Used to remove an entry from the scoareboard
+   virtual function void remove_entry(int unsigned key=0);
+      expected_hash.delete(key);
+   endfunction
 
    // FUNCTION: write_expected
    // Transactions arrive through this interface from one or more predictors.
    // Transactions are placed in the expected_hash for retrieval when the actual transaction arrives
    virtual function void write_expected (input T t);
+      if (scoreboard_enabled) 
+         begin : in_write_expected
          super.write_expected(t);
          expected_hash[t.get_key()]=t;
+         end : in_write_expected
    endfunction
 
    // FUNCTION: write_actual
@@ -79,29 +94,32 @@ class uvmf_out_of_order_scoreboard #(type T=uvmf_transaction_base) extends uvmf_
    // item in the associative array with a matching key
    virtual function void write_actual (input T t);
       T expected_item;
-      super.write_actual(t);
-      // Test if matching item exists in expected hash
-      if ( expected_hash.exists(t.get_key()) ) 
-         begin : item_exists_in_array
-         expected_item=expected_hash[t.get_key()];
-         expected_hash.delete(t.get_key());
-         // Compare actual transaction to expected transaction
-         if ( t.compare(expected_item) ) 
-            begin : compare_passed
-            match_count++;
-            `uvm_info("SCBD",compare_message("MATCH! - ",expected_item,t),UVM_MEDIUM)
-            end : compare_passed
+      if (scoreboard_enabled) 
+         begin : in_write_actual
+         super.write_actual(t);
+         // Test if matching item exists in expected hash
+         if ( expected_hash.exists(t.get_key()) ) 
+            begin : item_exists_in_array
+            expected_item=expected_hash[t.get_key()];
+            expected_hash.delete(t.get_key());
+            // Compare actual transaction to expected transaction
+            if ( t.compare(expected_item) ) 
+               begin : compare_passed
+               match_count++;
+               `uvm_info("SCBD",compare_message("MATCH! - ",expected_item,t),UVM_MEDIUM)
+               end : compare_passed
+            else 
+               begin : compare_failed
+               mismatch_count++;
+               `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_item,t))
+               end : compare_failed
+            end : item_exists_in_array
          else 
-            begin : compare_failed
-            mismatch_count++;
-            `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_item,t))
-            end : compare_failed
-         end : item_exists_in_array
-      else 
-         begin : no_item_exists_in_array
-         nothing_to_compare_against_count++;
-         `uvm_error("SCBD",$sformatf("NO PREDICTED ENTRY TO COMPARE AGAINST:%s",t.convert2string()))
-         end : no_item_exists_in_array
+            begin : no_item_exists_in_array
+            nothing_to_compare_against_count++;
+            `uvm_error("SCBD",$sformatf("NO PREDICTED ENTRY TO COMPARE AGAINST:%s",t.convert2string()))
+            end : no_item_exists_in_array
+         end : in_write_actual
    endfunction : write_actual
 
   // TASK: wait_for_scoreboard_drain

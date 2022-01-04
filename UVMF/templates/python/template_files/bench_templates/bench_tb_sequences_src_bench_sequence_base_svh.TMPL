@@ -28,6 +28,9 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
   // Instantiate sequences here
 {% for bfm in bfms %}
 {% if bfm.initResp == 'INITIATOR' %}
+{% if inFactReady == True %}
+typedef {{bfm.ifPkg}}_sequence_base {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_base_seq_t;
+{% endif %}
 typedef {{bfm.ifPkg}}_random_sequence {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_random_seq_t;
 {{bfm.name}}_random_seq_t {{bfm.name}}_random_seq;
 {% else %}
@@ -46,8 +49,13 @@ uvm_sequencer #({{bfm.name}}_transaction_t)  {{bfm.name}}_sequencer;
 
 // Sequencer handles for each QVIP interface
 {% for agent in qvip_bfms %}
-mvc_sequencer {{agent.name}}_sqr;
+mvc_sequencer {{agent.unique_id}}{{agent.name}}_sqr;
 {% endfor %}
+
+// Top level environment configuration handle
+typedef {{env_name}}_env_configuration {% if envParamDefs|length > 0 %}#({% endif %}{% for param in envParamDefs %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if envParamDefs|length > 0 %}) {% endif %}{{env_name}}_env_configuration_t;
+{{env_name}}_env_configuration_t top_configuration;
+
 
 // Configuration handles to access interface BFM's
 {% for bfm in bfms %}
@@ -79,34 +87,41 @@ mvc_sequencer {{agent.name}}_sqr;
      super.new( name );
 
   // Retrieve the configuration handles from the uvm_config_db
+
+  // Retrieve top level configuration handle
+  if ( !uvm_config_db#({{env_name}}_env_configuration_t)::get(null,UVMF_CONFIGURATIONS, "TOP_ENV_CONFIG",top_configuration) ) begin
+    `uvm_fatal("CFG", "uvm_config_db#({{env_name}}_env_configuration_t)::get cannot find resource TOP_ENV_CONFIG");
+  end
+
+  // Retrieve config handles for all agents
 {% for bfm in bfms %}
-if( !uvm_config_db #( {{bfm.ifPkg}}_configuration {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %})::get( null , UVMF_CONFIGURATIONS , {{bfm.ifPkg}}_pkg_{{bfm.name}}_BFM , {{bfm.name}}_config ) ) 
-`uvm_error("CFG" , "uvm_config_db #( {{bfm.ifPkg}}_configuration )::get cannot find resource {{bfm.ifPkg}}_pkg_{{bfm.name}}_BFM" )
+if( !uvm_config_db #( {{bfm.ifPkg}}_configuration {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %})::get( null , UVMF_CONFIGURATIONS , {{bfm.name}}_BFM , {{bfm.name}}_config ) ) 
+`uvm_fatal("CFG" , "uvm_config_db #( {{bfm.ifPkg}}_configuration )::get cannot find resource {{bfm.name}}_BFM" )
 {% endfor %}
 
   // Retrieve the sequencer handles from the uvm_config_db
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
-if( !uvm_config_db #( uvm_sequencer #({{bfm.name}}_transaction_t) )::get( null , UVMF_SEQUENCERS , {{bfm.ifPkg}}_pkg_{{bfm.name}}_BFM , {{bfm.name}}_sequencer ) ) 
-`uvm_error("CFG" , "uvm_config_db #( uvm_sequencer #({{bfm.ifPkg}}_transaction) )::get cannot find resource {{bfm.ifPkg}}_pkg_{{bfm.name}}_BFM" ) 
+if( !uvm_config_db #( uvm_sequencer #({{bfm.name}}_transaction_t) )::get( null , UVMF_SEQUENCERS , {{bfm.name}}_BFM , {{bfm.name}}_sequencer ) ) 
+`uvm_fatal("CFG" , "uvm_config_db #( uvm_sequencer #({{bfm.ifPkg}}_transaction) )::get cannot find resource {{bfm.name}}_BFM" ) 
 {% endif %}
 {% endfor %}
 
   // Retrieve QVIP sequencer handles from the uvm_config_db
 {% for agent in qvip_bfms %}
 {% if  agent.activity == 'ACTIVE' %}
-if( !uvm_config_db #(mvc_sequencer)::get( null,UVMF_SEQUENCERS,"{{agent.name}}", {{agent.name}}_sqr) ) 
-`uvm_error("CFG" , "uvm_config_db #( mvc_sequencer )::get cannot find resource {{agent.name}}" ) 
+if( !uvm_config_db #(mvc_sequencer)::get( null,UVMF_SEQUENCERS,"{{agent.unique_id}}{{agent.name}}", {{agent.unique_id}}{{agent.name}}_sqr) ) 
+`uvm_fatal("CFG" , "uvm_config_db #( mvc_sequencer )::get cannot find resource {{agent.name}}" ) 
 {% endif %}
 {% endfor %}
 
 {% if useCoEmuClkRstGen %}
       if ( !uvm_config_db #( clock_ctrl_base )::get(null,UVMF_CLOCK_APIS, CLOCK_CONTROLLER, clk_ctrl) ) begin
-         `uvm_error("CFG" , "uvm_config_db #( clock_ctrl )::get cannot find resource CLOCK_CONTROLLER" )
+         `uvm_fatal("CFG" , "uvm_config_db #( clock_ctrl )::get cannot find resource CLOCK_CONTROLLER" )
       end
 
       if ( !uvm_config_db #(reset_ctrl_base )::get(null, UVMF_RESET_APIS, RESET_CONTROLLER, reset_ctrl) ) begin
-         `uvm_error("CFG" , "uvm_config_db #( sync_reset_ctrl )::get cannot find resource RESET_CONTROLLER" )
+         `uvm_fatal("CFG" , "uvm_config_db #( sync_reset_ctrl )::get cannot find resource RESET_CONTROLLER" )
       end
 {% endif %}
 

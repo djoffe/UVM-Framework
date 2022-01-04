@@ -1,0 +1,7 @@
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+wb_pkg.sv
+@use wb_pkg_hdl.vinfo
+./src/wb_if.sv
+./src/wb_monitor_bfm.sv
+./src/wb_driver_bfm.sv

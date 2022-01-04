@@ -34,6 +34,7 @@ class BenchDumper:
     data['clock_half_period'] = self.obj.clockHalfPeriod
     data['clock_phase_offset'] = self.obj.clockPhaseOffset
     data['reset_assertion_level'] = str(self.obj.resetAssertionLevel)
+    data['use_dpi_link'] = str(self.obj.useDpiLink)
     data['reset_duration'] = self.obj.resetDuration
     if (len(self.obj.paramDefs)):
       data['parameters'] = []
@@ -58,6 +59,8 @@ class BenchDumper:
       data['imports'] = []
       for i in self.obj.external_imports:
         data['imports'].append({'name':i})
+    if (self.obj.useCoEmuClkRstGen == True):
+      data['use_co_emu_clk_rst_gen'] = 'True'
     return data
 
 class EnvironmentDumper:
@@ -74,9 +77,9 @@ class EnvironmentDumper:
         params = []
         for p in i.parameters:
           params.append({'name':p.name,'value':p.value})
-        data['agents'].append({'name':i.name,'type':i.ifPkg,'parameters':params})
+        data['agents'].append({'name':i.name,'type':i.ifPkg,'parameters':params,'initiator_responder':i.initResp})
       else:
-        data['agents'].append({'name':i.name,'type':i.ifPkg})        
+        data['agents'].append({'name':i.name,'type':i.ifPkg,'initiator_responder':i.initResp}) 
     data['subenvs'] = []
     for i in self.obj.subEnvironments:
       params = []
@@ -118,7 +121,7 @@ class EnvironmentDumper:
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
                                  }
       else:
-        match = re.match(r"(.*)\.sequencer",rm.sequencer)
+        match = re.match(r"(.*)",rm.sequencer)
         ifname = match.group(1)
         data['register_model'] = { 'use_adapter': str(rm.useAdapter),
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
@@ -139,11 +142,10 @@ class EnvironmentDumper:
           for i in self.obj.DPIImports:
             v = {}
             v['name'] = i.name
-            v['return_type'] = i.type
+            v['c_return_type'] = i.cType
+            v['sv_return_type'] = i.svType
             v['c_args'] = i.cArgs
-            v['sv_args'] = []
-            for a in i.arguments:
-              v['sv_args'] = v['sv_args'] + [ {'name':a.name,'type':a.type} ]
+            v['sv_args'] = i.arguments
             data['dpi_define']['imports'].append(v)
     if len(self.obj.qvipSubEnvironments):
       data['qvip_subenvs'] = []
@@ -157,6 +159,10 @@ class EnvironmentDumper:
       data['imports'] = []
       for i in self.obj.external_imports:
         data['imports'].append({'name':i})
+    if (len(self.obj.typedefs)):
+      data['typedefs'] = []
+      for i in self.obj.typedefs:
+        data['typedefs'].append({'name':i.name,'type':i.type})
     return data
 
 class ComponentDumper:
@@ -187,6 +193,7 @@ class InterfaceDumper:
     data['clock'] = str(self.obj.clock)
     data['reset'] = str(self.obj.reset)
     data['reset_assertion_level'] = str(self.obj.resetAssertionLevel)
+    data['use_dpi_link'] = str(self.obj.useDpiLink)
     data['hdl_typedefs'] = []
     for i in self.obj.hdlTypedefs:
       data['hdl_typedefs'].append({'name':str(i.name),'type':str(i.type)})
@@ -201,7 +208,7 @@ class InterfaceDumper:
       data['ports'].append({'name':str(i.name),'width':str(i.width),'dir':str(i.dir)})
     data['transaction_vars'] = []
     for i in self.obj.transVars:
-      data['transaction_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'iscompare':str(i.iscompare)})
+      data['transaction_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'iscompare':str(i.iscompare),'unpacked_dimension':i.unpackedDim})
     data['transaction_constraints'] = []
     for i in self.obj.transVarsConstraints:
       data['transaction_constraints'].append({'name':i.name,'value':i.type})
@@ -215,7 +222,7 @@ class InterfaceDumper:
     data['response_info']['operation'] = self.obj.responseOperation
     data['response_info']['data'] = []
     for i in self.obj.responseList:
-      data['response_info']['data'].append(i)
+      data['response_info']['data'].append(i['name'])
     if self.obj.soName != "":
       data['dpi_define'] = {}
       data['dpi_define']['name'] = self.obj.soName
@@ -231,11 +238,10 @@ class InterfaceDumper:
         for i in self.obj.DPIImports:
           v = {}
           v['name'] = i.name
-          v['return_type'] = i.type
+          v['sv_return_type'] = i.svType
+          v['c_return_type'] = i.cType
           v['c_args'] = i.cArgs
-          v['sv_args'] = []
-          for a in i.arguments:
-            v['sv_args'] = v['sv_args'] + [ {'name':a.name,'type':a.type} ]
+          v['sv_args'] = i.arguments
           data['dpi_define']['imports'].append(v)
     if (len(self.obj.external_imports)):
       data['imports'] = []

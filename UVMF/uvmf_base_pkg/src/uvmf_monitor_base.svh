@@ -50,7 +50,7 @@ class uvmf_monitor_base #(
    type TRANS_T
 ) extends uvm_monitor;
 
-  typedef uvmf_monitor_base #(CONFIG_T, BFM_BIND_T, TRANS_T) this_t;
+  typedef uvmf_monitor_base #(CONFIG_T, BFM_BIND_T, TRANS_T) uvmf_monitor_base_t;
 
   // Analysis_port used to broadcast monitored transactions
   uvm_analysis_port #(TRANS_T) monitored_ap;
@@ -67,7 +67,7 @@ class uvmf_monitor_base #(
   // Static associative array of back-references to instances derived from
   // this UVMF monitor class, from corresponding monitor HDL BFM instances 
   // as referenced by the 'bfm' field
-  static this_t bfm_proxy_map[BFM_BIND_T];
+  static uvmf_monitor_base_t bfm_proxy_map[BFM_BIND_T];
 
   // Convenience variable for storing timestamps.
   // (For instance for tracking previous transaction end_times for 'push' approach ...).

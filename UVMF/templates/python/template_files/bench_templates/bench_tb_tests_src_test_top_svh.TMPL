@@ -36,20 +36,22 @@ class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration
   // Must be extended clock_ctrl object and not clock_ctrl_base because
   // bfm is set here.  Usage elsewhere in testbench can just use a
   // clock_ctrl_base handle.
-  clock_ctrl #(CLK_PHASE_OFFSET_IN_PS) clk_ctrl;
+  clock_ctrl #(CLK_PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD) clk_ctrl;
   
   //variable: reset_ctrl
   //Reset Proxy Object used to control Reset
   // Must be extended reset_ctrl object and not reset_ctrl_base because bfm
   // is set here.  Usage elsewhere in testbench can just use a reset_ctrl_base
   // handle
-  sync_reset_ctrl #(RST_POLARITY) reset_ctrl;
+  sync_reset_ctrl #(RST_POLARITY,
+                    INITIAL_IDLE_CYCLES,
+                    RESET_ACTIVE_CYCLES) reset_ctrl;
 
 {% endif %}
 
 string interface_names[] = {
 {% for agent in resource_parameter_names %}
-    {{agent.ifPkg}}{{agent.name}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %}, 
+    {{agent.unique_id}}{{agent.name}} /* {{agent.agent_name}}     [{{loop.index-1}}] */ {% if not loop.last %}, 
 {% endif %}
 {% endfor %}
 
@@ -79,13 +81,17 @@ uvmf_active_passive_t interface_activities[] = {
 // 
 //
   function void setup_clock_reset_controllers();
-      virtual clock_bfm #(CLK_PHASE_OFFSET_IN_PS) clk_bfm;
-      virtual sync_reset_bfm #(RST_POLARITY) sync_rst_bfm;
+      virtual clock_bfm #(CLK_PHASE_OFFSET_IN_PS,
+                          INIT_CLOCK_HALF_PERIOD) clk_bfm;
+      virtual sync_reset_bfm #(RST_POLARITY,
+                               INITIAL_IDLE_CYCLES,
+                               RESET_ACTIVE_CYCLES) sync_rst_bfm;
 
       // Construct the clock controller proxy
-      clk_ctrl = clock_ctrl #(CLK_PHASE_OFFSET_IN_PS)::type_id::create("clk_ctrl");
+      clk_ctrl = clock_ctrl #(CLK_PHASE_OFFSET_IN_PS,
+                              INIT_CLOCK_HALF_PERIOD)::type_id::create("clk_ctrl");
       //Set the bfm handle in the clk_ctrl
-      if (!uvm_config_db#(virtual clock_bfm #(CLK_PHASE_OFFSET_IN_PS) )::get(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_bfm)) begin
+      if (!uvm_config_db#(virtual clock_bfm #(CLK_PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD) )::get(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_bfm)) begin
         `uvm_fatal("CFG", "Could not get the Clock BFM Interface")
       end
       clk_ctrl.set_bfm(clk_bfm);
@@ -93,9 +99,9 @@ uvmf_active_passive_t interface_activities[] = {
       uvm_config_db #( clock_ctrl_base )::set(null, UVMF_CLOCK_APIS, CLOCK_CONTROLLER, clk_ctrl);
 
       // Construct the reset controller proxy
-      reset_ctrl = sync_reset_ctrl #(RST_POLARITY)::type_id::create("reset_ctrl");
+      reset_ctrl = sync_reset_ctrl #(RST_POLARITY, INITIAL_IDLE_CYCLES, RESET_ACTIVE_CYCLES)::type_id::create("reset_ctrl");
       //Set the bfm handle in the reset_ctrl
-      if (!uvm_config_db#(virtual sync_reset_bfm #(RST_POLARITY))::get(null, UVMF_VIRTUAL_INTERFACES, RESET_CONTROLLER, sync_rst_bfm)) begin
+      if (!uvm_config_db#(virtual sync_reset_bfm #(RST_POLARITY, INITIAL_IDLE_CYCLES, RESET_ACTIVE_CYCLES))::get(null, UVMF_VIRTUAL_INTERFACES, RESET_CONTROLLER, sync_rst_bfm)) begin
         `uvm_fatal("CFG", "Could not get the Reset BFM Interface")
       end
       reset_ctrl.set_bfm(sync_rst_bfm);

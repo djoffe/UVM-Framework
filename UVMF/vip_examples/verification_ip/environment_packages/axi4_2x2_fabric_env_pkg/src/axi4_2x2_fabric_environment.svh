@@ -1,7 +1,8 @@
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Created by      : daerne
-// Creation Date   : 2016 Oct 16
+// Creation Date   : 2017 Nov 02
+// Created with uvmf_gen version 3.6g
 //----------------------------------------------------------------------
 //
 //----------------------------------------------------------------------
@@ -50,15 +51,16 @@ extends uvmf_environment_base #(.CONFIG_T( axi4_2x2_fabric_env_configuration
                             ))
 
 
-   axi4_2x2_fabric_qvip_environment  qvip_env;
-
-   uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_m0_ap [string];
-   uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_m1_ap [string];
-   uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_s0_ap [string];
-   uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_s1_ap [string];
+  axi4_2x2_fabric_qvip_environment  qvip_env;
 
 
-typedef master_axi4_txn_adapter  #(
+  uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_m0_ap [string];
+  uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_m1_ap [string];
+  uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_s0_ap [string];
+  uvm_analysis_port #( mvc_sequence_item_base ) qvip_env_mgc_axi4_s1_ap [string];
+
+
+  typedef axi4_master_predictor  #(
                              .AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH),                                
                              .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH),                                
                              .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH),                                
@@ -66,10 +68,9 @@ typedef master_axi4_txn_adapter  #(
                              .AXI4_SLAVE_ID_WIDTH(AXI4_SLAVE_ID_WIDTH),                                
                              .AXI4_USER_WIDTH(AXI4_USER_WIDTH),                                
                              .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)                                
-                             )  m0_axi4_txn_pred_t;
-m0_axi4_txn_pred_t m0_axi4_txn_pred;
-
-typedef master_axi4_txn_adapter  #(
+                             )  axi4_m0_pred_t;
+  axi4_m0_pred_t axi4_m0_pred;
+  typedef axi4_master_predictor  #(
                              .AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH),                                
                              .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH),                                
                              .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH),                                
@@ -77,10 +78,9 @@ typedef master_axi4_txn_adapter  #(
                              .AXI4_SLAVE_ID_WIDTH(AXI4_SLAVE_ID_WIDTH),                                
                              .AXI4_USER_WIDTH(AXI4_USER_WIDTH),                                
                              .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)                                
-                             )  m1_axi4_txn_pred_t;
-m1_axi4_txn_pred_t m1_axi4_txn_pred;
-
-typedef slave_axi4_txn_predictor  #(
+                             )  axi4_m1_pred_t;
+  axi4_m1_pred_t axi4_m1_pred;
+  typedef axi4_slave_predictor  #(
                              .AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH),                                
                              .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH),                                
                              .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH),                                
@@ -88,10 +88,9 @@ typedef slave_axi4_txn_predictor  #(
                              .AXI4_SLAVE_ID_WIDTH(AXI4_SLAVE_ID_WIDTH),                                
                              .AXI4_USER_WIDTH(AXI4_USER_WIDTH),                                
                              .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)                                
-                             )  slave_axi4_txn_pred_t;
-slave_axi4_txn_pred_t slave_axi4_txn_pred;
-
-typedef axi4_rw_adapter  #(
+                             )  axi4_slave_pred_t;
+  axi4_slave_pred_t axi4_slave_pred;
+  typedef axi4_master_rw_adapter  #(
                              .AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH),                                
                              .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH),                                
                              .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH),                                
@@ -100,10 +99,9 @@ typedef axi4_rw_adapter  #(
                              .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH),                                
                              .AXI4_USER_WIDTH(AXI4_USER_WIDTH),                                
                              .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)                                
-                             )  m0_rw_txn_pred_t;
-m0_rw_txn_pred_t m0_rw_txn_pred;
-
-typedef axi4_rw_adapter  #(
+                             )  axi4_m0_rw_pred_t;
+  axi4_m0_rw_pred_t axi4_m0_rw_pred;
+  typedef axi4_master_rw_adapter  #(
                              .AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH),                                
                              .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH),                                
                              .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH),                                
@@ -112,10 +110,9 @@ typedef axi4_rw_adapter  #(
                              .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH),                                
                              .AXI4_USER_WIDTH(AXI4_USER_WIDTH),                                
                              .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)                                
-                             )  m1_rw_txn_pred_t;
-m1_rw_txn_pred_t m1_rw_txn_pred;
-
-typedef slave_axi4_rw_adapter  #(
+                             )  axi4_m1_rw_pred_t;
+  axi4_m1_rw_pred_t axi4_m1_rw_pred;
+  typedef axi4_slave_rw_adapter  #(
                              .AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH),                                
                              .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH),                                
                              .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH),                                
@@ -124,21 +121,17 @@ typedef slave_axi4_rw_adapter  #(
                              .AXI4_ID_WIDTH(AXI4_SLAVE_ID_WIDTH),                                
                              .AXI4_USER_WIDTH(AXI4_USER_WIDTH),                                
                              .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)                                
-                             )  slave_rw_txn_pred_t;
-slave_rw_txn_pred_t slave_rw_txn_pred;
+                             )  axi4_slave_rw_pred_t;
+  axi4_slave_rw_pred_t axi4_slave_rw_pred;
 
-
-   typedef uvmf_in_order_race_scoreboard #(axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)))  axi4_txn_m0_sb_t;
-   axi4_txn_m0_sb_t axi4_txn_m0_sb;
-
-   typedef uvmf_in_order_race_scoreboard #(axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)))  axi4_txn_m1_sb_t;
-   axi4_txn_m1_sb_t axi4_txn_m1_sb;
-
-   typedef uvmf_in_order_race_scoreboard #(rw_txn)  rw_txn_m0_sb_t;
-   rw_txn_m0_sb_t rw_txn_m0_sb;
-
-   typedef uvmf_in_order_race_scoreboard #(rw_txn)  rw_txn_m1_sb_t;
-   rw_txn_m1_sb_t rw_txn_m1_sb;
+  typedef uvmf_in_order_race_scoreboard #(axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)))  axi4_m0_sb_t;
+  axi4_m0_sb_t axi4_m0_sb;
+  typedef uvmf_in_order_race_scoreboard #(axi4_master_rw_transaction #(.AXI4_ADDRESS_WIDTH(AXI4_ADDRESS_WIDTH), .AXI4_RDATA_WIDTH(AXI4_RDATA_WIDTH), .AXI4_WDATA_WIDTH(AXI4_WDATA_WIDTH), .AXI4_ID_WIDTH(AXI4_MASTER_ID_WIDTH), .AXI4_USER_WIDTH(AXI4_USER_WIDTH), .AXI4_REGION_MAP_SIZE(AXI4_REGION_MAP_SIZE)))  axi4_m1_sb_t;
+  axi4_m1_sb_t axi4_m1_sb;
+  typedef uvmf_in_order_race_scoreboard #(rw_txn)  axi4_m0_rw_sb_t;
+  axi4_m0_rw_sb_t axi4_m0_rw_sb;
+  typedef uvmf_in_order_race_scoreboard #(rw_txn)  axi4_m1_rw_sb_t;
+  axi4_m1_rw_sb_t axi4_m1_rw_sb;
 
 
 
@@ -156,42 +149,24 @@ slave_rw_txn_pred_t slave_rw_txn_pred;
 //
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-
-
-
-   qvip_env = axi4_2x2_fabric_qvip_environment::type_id::create("qvip_env",this);
-   qvip_env.set_config(configuration.qvip_env_config);
-
-
-  m0_axi4_txn_pred = m0_axi4_txn_pred_t::type_id::create("m0_axi4_txn_pred",this);
-  m0_axi4_txn_pred.configuration = configuration;
-
-  m1_axi4_txn_pred = m1_axi4_txn_pred_t::type_id::create("m1_axi4_txn_pred",this);
-  m1_axi4_txn_pred.configuration = configuration;
-
-  slave_axi4_txn_pred = slave_axi4_txn_pred_t::type_id::create("slave_axi4_txn_pred",this);
-  slave_axi4_txn_pred.configuration = configuration;
-
-  m0_rw_txn_pred = m0_rw_txn_pred_t::type_id::create("m0_rw_txn_pred",this);
-  // the following assignment was automatically (and erronously) created as part of the python script output. 
-  // It will not be generated in future version thus for now comment it out...
-  // m0_rw_txn_pred.configuration = configuration;
-
-  m1_rw_txn_pred = m1_rw_txn_pred_t::type_id::create("m1_rw_txn_pred",this);
-  // the following assignment was automatically (and erronously) created as part of the python script output. 
-  // It will not be generated in future version thus for now comment it out...
-  // m1_rw_txn_pred.configuration = configuration;
-
-  slave_rw_txn_pred = slave_rw_txn_pred_t::type_id::create("slave_rw_txn_pred",this);
-  // the following assignment was automatically (and erronously) created as part of the python script output. 
-  // It will not be generated in future version thus for now comment it out...
-  // slave_rw_txn_pred.configuration = configuration;
-
-
-  axi4_txn_m0_sb = axi4_txn_m0_sb_t::type_id::create("axi4_txn_m0_sb",this);
-  axi4_txn_m1_sb = axi4_txn_m1_sb_t::type_id::create("axi4_txn_m1_sb",this);
-  rw_txn_m0_sb = rw_txn_m0_sb_t::type_id::create("rw_txn_m0_sb",this);
-  rw_txn_m1_sb = rw_txn_m1_sb_t::type_id::create("rw_txn_m1_sb",this);
+    qvip_env = axi4_2x2_fabric_qvip_environment::type_id::create("qvip_env",this);
+    qvip_env.set_config(configuration.qvip_env_config);
+    axi4_m0_pred = axi4_m0_pred_t::type_id::create("axi4_m0_pred",this);
+    axi4_m0_pred.configuration = configuration;
+    axi4_m1_pred = axi4_m1_pred_t::type_id::create("axi4_m1_pred",this);
+    axi4_m1_pred.configuration = configuration;
+    axi4_slave_pred = axi4_slave_pred_t::type_id::create("axi4_slave_pred",this);
+    axi4_slave_pred.configuration = configuration;
+    axi4_m0_rw_pred = axi4_m0_rw_pred_t::type_id::create("axi4_m0_rw_pred",this);
+    // axi4_m0_rw_pred.configuration = configuration;
+    axi4_m1_rw_pred = axi4_m1_rw_pred_t::type_id::create("axi4_m1_rw_pred",this);
+    // axi4_m1_rw_pred.configuration = configuration;
+    axi4_slave_rw_pred = axi4_slave_rw_pred_t::type_id::create("axi4_slave_rw_pred",this);
+    // axi4_slave_rw_pred.configuration = configuration;
+    axi4_m0_sb = axi4_m0_sb_t::type_id::create("axi4_m0_sb",this);
+    axi4_m1_sb = axi4_m1_sb_t::type_id::create("axi4_m1_sb",this);
+    axi4_m0_rw_sb = axi4_m0_rw_sb_t::type_id::create("axi4_m0_rw_sb",this);
+    axi4_m1_rw_sb = axi4_m1_rw_sb_t::type_id::create("axi4_m1_rw_sb",this);
 
 
   endfunction
@@ -204,29 +179,27 @@ slave_rw_txn_pred_t slave_rw_txn_pred;
 //
   virtual function void connect_phase(uvm_phase phase);
     super.connect_phase(phase);
-
-   m0_axi4_txn_pred.master_axi4_txn_ap.connect(axi4_txn_m0_sb.expected_analysis_export);
-   m1_axi4_txn_pred.master_axi4_txn_ap.connect(axi4_txn_m1_sb.expected_analysis_export);
-   slave_axi4_txn_pred.slave_axi4_txn_m0_ap.connect(axi4_txn_m0_sb.actual_analysis_export);
-   slave_axi4_txn_pred.slave_axi4_txn_m1_ap.connect(axi4_txn_m1_sb.actual_analysis_export);
-   m0_rw_txn_pred.port_rw.connect(rw_txn_m0_sb.expected_analysis_export);
-   m1_rw_txn_pred.port_rw.connect(rw_txn_m1_sb.expected_analysis_export);
-   slave_rw_txn_pred.port_rw_m0.connect(rw_txn_m0_sb.actual_analysis_export);
-   slave_rw_txn_pred.port_rw_m1.connect(rw_txn_m1_sb.actual_analysis_export);
-
+    axi4_m0_pred.axi4_ap.connect(axi4_m0_sb.expected_analysis_export);
+    axi4_m1_pred.axi4_ap.connect(axi4_m1_sb.expected_analysis_export);
+    axi4_slave_pred.axi4_m0_ap.connect(axi4_m0_sb.actual_analysis_export);
+    axi4_slave_pred.axi4_m1_ap.connect(axi4_m1_sb.actual_analysis_export);
+    axi4_m0_rw_pred.port_rw.connect(axi4_m0_rw_sb.expected_analysis_export);
+    axi4_m1_rw_pred.port_rw.connect(axi4_m1_rw_sb.expected_analysis_export);
+    axi4_slave_rw_pred.port_rw_m0.connect(axi4_m0_rw_sb.actual_analysis_export);
+    axi4_slave_rw_pred.port_rw_m1.connect(axi4_m1_rw_sb.actual_analysis_export);
     qvip_env_mgc_axi4_m0_ap = qvip_env.mgc_axi4_m0.ap; 
     qvip_env_mgc_axi4_m1_ap = qvip_env.mgc_axi4_m1.ap; 
     qvip_env_mgc_axi4_s0_ap = qvip_env.mgc_axi4_s0.ap; 
     qvip_env_mgc_axi4_s1_ap = qvip_env.mgc_axi4_s1.ap; 
+    qvip_env_mgc_axi4_m0_ap["trans_ap"].connect(axi4_m0_pred.axi4_master_ae);
+    qvip_env_mgc_axi4_m1_ap["trans_ap"].connect(axi4_m1_pred.axi4_master_ae);
+    qvip_env_mgc_axi4_s0_ap["trans_ap"].connect(axi4_slave_pred.axi4_slave_ae);
+    qvip_env_mgc_axi4_s1_ap["trans_ap"].connect(axi4_slave_pred.axi4_slave_ae);
+    qvip_env_mgc_axi4_m0_ap["trans_ap"].connect(axi4_m0_rw_pred.analysis_export);
+    qvip_env_mgc_axi4_m1_ap["trans_ap"].connect(axi4_m1_rw_pred.analysis_export);
+    qvip_env_mgc_axi4_s0_ap["trans_ap"].connect(axi4_slave_rw_pred.analysis_export);
+    qvip_env_mgc_axi4_s1_ap["trans_ap"].connect(axi4_slave_rw_pred.analysis_export);
 
-    qvip_env_mgc_axi4_m0_ap["trans_ap"].connect(m0_axi4_txn_pred.master_axi4_txn_ae);
-    qvip_env_mgc_axi4_m1_ap["trans_ap"].connect(m1_axi4_txn_pred.master_axi4_txn_ae);
-    qvip_env_mgc_axi4_s0_ap["trans_ap"].connect(slave_axi4_txn_pred.slave_axi4_txn_ae);
-    qvip_env_mgc_axi4_s1_ap["trans_ap"].connect(slave_axi4_txn_pred.slave_axi4_txn_ae);
-    qvip_env_mgc_axi4_m0_ap["trans_ap"].connect(m0_rw_txn_pred.analysis_export);
-    qvip_env_mgc_axi4_m1_ap["trans_ap"].connect(m1_rw_txn_pred.analysis_export);
-    qvip_env_mgc_axi4_s0_ap["trans_ap"].connect(slave_rw_txn_pred.analysis_export);
-    qvip_env_mgc_axi4_s1_ap["trans_ap"].connect(slave_rw_txn_pred.analysis_export);
 
   endfunction
 

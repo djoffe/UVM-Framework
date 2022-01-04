@@ -84,7 +84,7 @@ class uvmf_transaction_base extends uvm_sequence_item;
   // FUNCTION: new
   function new(string name="");
      super.new(name);
-     report_id = get_full_name();
+     report_id = name;
      unique_transaction_id = global_transaction_count++;
   endfunction
 

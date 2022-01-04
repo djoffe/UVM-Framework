@@ -19,6 +19,12 @@ class {{name}}_env_sequence_base extends uvmf_sequence_base #(uvm_sequence_item)
 
   `uvm_object_utils( {{name}}_env_sequence_base );
 
+  {% for regModel in regModels %}
+// Handle to the environments register model
+// This handle needs to be set before use.
+  {{name}}_reg_model  reg_model;
+{% endfor %}
+
   function new(string name = "" );
     super.new(name);
   endfunction

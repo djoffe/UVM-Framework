@@ -12,10 +12,13 @@ class BaseValidator(object):
   def __init__(self):
     self.dpiArgumentSchema = {
       Required('name'): str,
-      Required('type'): str
+      Required('type'): str,
+      Optional('unpacked_dimension'): str,
+      Required('dir'): Any('input','output','inout','')
     }
     self.dpiImportSchema = {
-      Required('return_type'): str,
+      Required('sv_return_type'): str,
+      Required('c_return_type'): str,
       Required('name'): str,
       Required('c_args'): str,
       Required('sv_args'): [ self.dpiArgumentSchema ]
@@ -87,14 +90,16 @@ class BenchValidator(BaseValidator):
       Optional('catapult_ready'): Any('True','False'),
       Optional('infact_ready'): Any('True','False'),
       Optional('clock_half_period'): str,
+      Optional('use_coemu_clk_rst_gen'): Any('True','False'),
       Optional('clock_phase_offset'): str,
       Optional('reset_assertion_level'): str,
+      Optional('use_dpi_link'): str,
       Optional('reset_duration'): str,
       Optional('active_passive'): [ activePassiveSchema ],
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('top_env_params'):  [ self.parameterUseSchema ],
       Optional('interface_params'): [ interfaceParamSchema ],
-      Optional('imports'): [ self.importSchema ]
+      Optional('imports'): [ self.importSchema ],
     }
     self.schema = Schema(mainSchema)
 
@@ -110,7 +115,7 @@ class ComponentValidator(BaseValidator):
       Required('type'): str
     }
     mainSchema = {
-      Required('type'): In("predictor"),
+      Required('type'): Any("predictor","coverage"),
       Optional('analysis_exports'):  [ analysisSchema ],
       Optional('analysis_ports'): [ analysisSchema ]
     }
@@ -132,10 +137,10 @@ class QVIPEnvValidator(BaseValidator):
       Required('name'): str,
       Optional('active_passive'): Any("ACTIVE","PASSIVE"),
       Optional('initial_sequence'): str,
+      Optional('imports'): [ str ],
       Optional('ap_info'): [ apInfoSchema ]
     }
     mainSchema = {
-      Optional('imports'): [ self.importSchema ],
       Required('agents'): [ agentsSchema ] 
     }
     self.schema = Schema(mainSchema)
@@ -181,8 +186,15 @@ class EnvironmentValidator(BaseValidator):
       Required('name'): str,
       Required('type'): str
     }
+    agentSchema = {
+      Required('name'): str,
+      Required('type'): str,
+      Optional('extdef'): Any('True','False'),
+      Optional('parameters'): [ self.parameterUseSchema ],
+      Optional('initiator_responder'): Any('INITIATOR','RESPONDER')
+    }
     mainSchema = {
-      Optional('agents'): [ self.componentSchema ],
+      Optional('agents'): [ agentSchema ],
       Optional('analysis_components'): [ self.componentSchema ],
       Optional('scoreboards'): [ scoreboardSchema ],
       Optional('subenvs'): [ subenvSchema ],
@@ -198,6 +210,7 @@ class EnvironmentValidator(BaseValidator):
       Optional('imp_decls'): [ { Required('name'): str } ],
       Optional('register_model'): regModelSchema,
       Optional('dpi_define'): self.dpiDefSchema,
+      Optional('typedefs'): [ self.typedefSchema ],
     }
     self.schema = Schema(mainSchema)
 
@@ -217,7 +230,8 @@ class InterfaceValidator(BaseValidator):
       Required('name'): str, 
       Required('type'): str, 
       Optional('isrand'): Any("True","False"),
-      Optional('iscompare'): Any("True","False")
+      Optional('iscompare'): Any("True","False"),
+      Optional('unpacked_dimension'): str
     }
     responseSchema = {
       Required('operation'): str,
@@ -227,6 +241,8 @@ class InterfaceValidator(BaseValidator):
       Required('clock'): str,
       Required('reset'): str,
       Optional('reset_assertion_level'): str,
+      Optional('use_dpi_link'): str,
+      Optional('vip_lib_env_variable'): str,
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('hdl_typedefs'): [ self.typedefSchema ],
       Optional('hvl_typedefs'): [ self.typedefSchema ],

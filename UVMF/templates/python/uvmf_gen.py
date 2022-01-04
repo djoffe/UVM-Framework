@@ -43,6 +43,7 @@ import inspect
 import sys
 from optparse import (OptionParser,BadOptionError,AmbiguousOptionError)
 from fnmatch import fnmatch
+from shutil import copyfile
 __version__ = '3.6g'
 
 try:
@@ -110,11 +111,14 @@ class BaseElementClass(object):
     self.paramDefs = []
     self.DPIExports = []
     self.DPIImports = []
+    self.DPITransDecl = []
     self.DPIFiles = []
     self.DPICompArgs = ""
     self.DPILinkArgs = ""
     self.soName = ""
     self.svLibNames = []
+    self.vipLibEnvVariable = 'UVMF_VIP_LIBRARY_HOME'
+    self.vipLibEnvVariableNames = []
 
   def addParamDef(self,name,type,value):
     """Add a parameter to the package"""
@@ -138,10 +142,10 @@ class BaseElementClass(object):
       raise UserError("No DPI shared object name specified for "+self.name+", must call setDPISOName() before calling addDPIExport() or any other DPI routines")
     self.DPIExports.append(name)
 
-  def addDPIImport(self,returnType, name, cArgs,argumentsDict):
+  def addDPIImport(self,cReturnType,svReturnType, name, cArgs,argumentsList):
     if self.soName == "":
       raise UserError("No DPI shared object name specified for "+self.name+", must call setDPISOName() before calling addDPIImport() or any other DPI routines")
-    self.DPIImports.append(DpiImportClass(name, returnType, cArgs,argumentsDict))
+    self.DPIImports.append(DpiImportClass(name, cReturnType,svReturnType, cArgs,argumentsList))
 
 ## Base class for all 'interface' type classes (port, config, transaction, etc.)
 class BaseElementInterfaceClass(BaseElementClass):
@@ -180,6 +184,7 @@ class BaseGeneratorClass(BaseElementClass):
   def __init__(self,name,gen_type):
     super(BaseGeneratorClass,self).__init__(name)
     self.gen_type = gen_type
+    self.conditional_array = []
 
   def runTemplate(self,template_str,desired_conditional="",ExtraTemplateVars={}):
     """Generate a particular template.  Return early without doing anything if desired_conditional
@@ -205,14 +210,31 @@ class BaseGeneratorClass(BaseElementClass):
         # that the regexp parser. So far, I'm aware of "\g"
         if (key != 'root_dir'):
           fname = re.sub('\{\{'+key+'\}\}',templateVars[key],fname)
+    ## Conditional template consideration. Two possible ways to control things. The 'desired_conditional'
+    ## function input is used as an explicit mechanism to produce a particular template file output from
+    ## a higher level. The 'conditional_array' class variable is more general and can be used to turn certain groups of
+    ## template outputs on or off in a wider sense. Both are compared against a 'conditional' entry in 
+    ## the given template file.  If the 'conditional' entry is empty then the output will be produced. 
+    ## Otherwise, the entry is compared against both the 'desired_conditional' input as well as any entries
+    ## in the 'conditional_array' list. If 'desired_conditional' is set here then there *must* be a match
+    ## against the field in the TMPL file in order to generate output. If 'conditional_array' entries exist
+    ## then it is possible for the output to be produced only if the 'conditional' field in the TMPL file is
+    ## non-existent or if it matches an entry in the 'conditional_array' list.
     try:
       conditional = template.module.conditional
+    except:
+      conditional = ""
+      pass
+    if (desired_conditional != ""):
+      ## We've been given a desired_conditional which means that the TMPL *must* have a matching conditional
+      ## in order to proceed
       if (conditional != desired_conditional):
         return
-    except:
-      if (desired_conditional != ""):
+    elif (conditional != ""):
+      ## TMPL contains a conditional, try to match against a conditional_array entry
+      if (conditional not in self.conditional_array):
         return
-      pass
+    ## If we got here it means that we will be producing output
     full = os.path.abspath(os.path.join(self.root,fname))
     dirpath = os.path.dirname(full)
     try:
@@ -243,7 +265,12 @@ class BaseGeneratorClass(BaseElementClass):
           # the risks.
           if (os.path.exists(full)):
             os.remove(full)
-          os.symlink(symlink,full)
+          if (os.name == 'nt'):
+            ## On Windows, symbolic links are difficult to create in all scenarios,
+            ## just copy over the file instead
+            copyfile(symlink,full)
+          else:  
+            os.symlink(symlink,full)
       return
     except AttributeError:
      isSymlink = False
@@ -405,9 +432,10 @@ class ParamDef(BaseElementClass):
     self.value = value 
 
 class TransClass(BaseElementInterfaceClass):
-  def __init__(self,name,type,isrand=False,iscompare=True):
+  def __init__(self,name,type,isrand=False,iscompare=True,unpackedDim=""):
     super(TransClass,self).__init__(name,type,isrand)
     self.iscompare = iscompare
+    self.unpackedDim = unpackedDim
 
 class ConstraintsClass(BaseElementConstraintsClass):
   def __init__(self,name,type):
@@ -418,19 +446,13 @@ class ParameterValueClass(BaseElementClass):
     super(ParameterValueClass,self).__init__(name)
     self.value = value
 
-class DpiImportArgumentClass(BaseElementClass):
-  def __init__(self,name, type):
-    super(DpiImportArgumentClass,self).__init__(name)
-    self.type = type
-
 class DpiImportClass(BaseElementClass):
-  def __init__(self, name, type, cArgs,argumentsDict):
+  def __init__(self, name, cType,svType, cArgs,argumentsList):
     super(DpiImportClass,self).__init__(name)
-    self.type = type
+    self.cType = cType
+    self.svType = svType
     self.cArgs = cArgs
-    self.arguments = []
-    for argumentName in argumentsDict:
-      self.arguments.append(DpiImportArgumentClass(argumentName,argumentsDict[argumentName]))
+    self.arguments = argumentsList
 
 class AgentClass(BaseElementClass):
   def __init__(self,name,ifPkg,clk,rst,agentIndex,parametersDict,initResp='INITIATOR'):
@@ -466,7 +488,7 @@ class analysisComponentClass(BaseElementClass):
       self.analysisPorts.append(AnalysisPortClass(apName,apDict[apName]))
 
 class BfmClass(BaseElementClass):
-  def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp):
+  def __init__(self,name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName):
     super(BfmClass,self).__init__(name)
     self.ifPkg = ifPkg
     self.clk = clk
@@ -474,23 +496,32 @@ class BfmClass(BaseElementClass):
     self.activity = activity
     self.sub_env_path = sub_env_path
     self.initResp = initResp
+    self.agent_inst_name = agentInstName
     self.parameters = []
     for parameterName in parametersDict:
       self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
+class BfmPkgClass(BaseElementClass):
+  def __init__(self,name,ifPkg,vipLibEnvVariable):
+    super(BfmPkgClass,self).__init__(name)
+    self.ifPkg = ifPkg
+    self.vipLibEnvVariable = vipLibEnvVariable
+
 class QvipAgentClass(BaseElementClass):
-  def __init__(self,name,ifPkg,activity):
+  def __init__(self,name,ifPkg,activity,unique_id):
     super(QvipAgentClass,self).__init__(name)
     self.ifPkg = ifPkg
     self.activity = activity
+    self.unique_id = unique_id
 
 class StringInterfaceNamesClass(BaseElementClass):
-  def __init__(self,name,value,agent_name,ifPkg,activity):
+  def __init__(self,name,value,agent_name,ifPkg,activity,unique_id):
     super(StringInterfaceNamesClass,self).__init__(name)
     self.value =value
     self.agent_name = agent_name
     self.ifPkg = ifPkg
     self.activity = activity
+    self.unique_id = unique_id
 
 class SubEnvironmentClass(BaseElementClass):
   def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regSubBlock):
@@ -515,6 +546,12 @@ class QvipSubEnvironmentClass(BaseElementClass):
     for element in agentList:
       self.qvip_if_name.append(element)
 
+class QvipHdlModuleClass(BaseElementClass):
+  def __init__(self,name,envPkg,unique_id):
+    super(QvipHdlModuleClass,self).__init__(name)
+    self.envPkg = envPkg
+    self.unique_id = unique_id
+
 class QvipConnectionClass(object):
   def __init__(self, output_component, output_port_name, input_component, input_component_export_name):
     self.output_component = output_component
@@ -526,6 +563,11 @@ class QvipAPClass(BaseElementClass):
   def __init__(self,name,agent):
     super(QvipAPClass,self).__init__(name)
     self.agent = agent
+
+class VmapClass(BaseElementClass):
+  def __init__(self,name,dirName):
+    super(VmapClass,self).__init__(name)
+    self.dirName = dirName
 
 class AnalysisExportClass(BaseElementClass):
   def __init__(self,name,tType,connection=""):
@@ -567,6 +609,7 @@ class InterfaceClass(BaseGeneratorClass):
     self.clock = 'defaultClk'
     self.reset = 'defaultRst'
     self.resetAssertionLevel = False
+    self.useDpiLink = False
     self.hdlTypedefs = []
     self.external_imports = []
     self.hvlTypedefs = []
@@ -574,7 +617,6 @@ class InterfaceClass(BaseGeneratorClass):
     self.transVarsConstraints = []
     self.configVarsConstraints = []
     self.veloceReady = True
-    self.inFactReady = False
     self.configVars = []
     self.responseOperation = '1\'b1'
     self.responseList = []
@@ -583,12 +625,12 @@ class InterfaceClass(BaseGeneratorClass):
     template['sigs'] = self.ports
     template['clock'] = self.clock
     template['resetAssertionLevel'] = self.resetAssertionLevel
+    template['useDpiLink'] = self.useDpiLink
     template['reset'] = self.reset
     template['inputPorts'] = self.getInputPorts()
     template['outputPorts'] = self.getOutputPorts()
     template['inoutPorts'] = self.getInoutPorts()
     template['veloceReady'] = self.veloceReady
-    template['inFactReady'] = self.inFactReady
     template['configVars'] = self.configVars
     template['hdlTypedefs'] = self.hdlTypedefs
     template['paramDefs'] = self.paramDefs
@@ -599,6 +641,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['configVarsConstraints'] = self.configVarsConstraints
     template['responseOperation'] = self.responseOperation
     template['responseList'] = self.responseList
+    template['DPITransDecl'] = self.DPITransDecl
     template['DPIExports'] = self.DPIExports
     template['DPIImports'] = self.DPIImports
     template['DPIFiles'] = self.DPIFiles
@@ -606,6 +649,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['DPILinkArgs'] = self.DPILinkArgs
     template['soName'] = self.soName
     template['svLibNames'] = self.svLibNames
+    template['vipLibEnvVariable'] = self.vipLibEnvVariable
     return template
 
   def addPort(self,name,width,dir,type='tri'):
@@ -624,9 +668,9 @@ class InterfaceClass(BaseGeneratorClass):
     """Add an import to the interface package declaration  """
     self.external_imports.append(name)
 
-  def addTransVar(self,name,type,isrand=False,iscompare=True):
+  def addTransVar(self,name,type,isrand=False,iscompare=True,unpackedDim=""):
     """Add a variable to the interface class's sequence item definition"""
-    self.transVars.append(TransClass(name,type,isrand,iscompare))
+    self.transVars.append(TransClass(name,type,isrand,iscompare,unpackedDim))
 
   def addTransVarConstraint(self,name,type):
     """Add a constraint to the interface class's Constraint item definition"""
@@ -649,7 +693,7 @@ class InterfaceClass(BaseGeneratorClass):
       found = 0
       for trans in self.transVars:
         if trans.name == entry:
-          self.responseList.append(trans.name);
+          self.responseList.append({'name':trans.name,'type':trans.type,'unpacked_dimensions':trans.unpackedDim});
           found = 1
           break
       if (found==0):
@@ -671,12 +715,40 @@ class InterfaceClass(BaseGeneratorClass):
   def getInoutPorts(self):
     return self.getPorts('inout')
 
-  ## Overload of the create function - add some extra loops on the end for inFact components
+  ## Overload of the create function - add some extra loops on the end for conditional components
   def create(self,desired_template='all',parser=None):
-    """Interface class specific create function - allows for the production of multiple inFact component files"""
+    """Interface class specific create function - allows for the production of conditional files"""
+    ## We need to generate a list of DPI arguments that are *not* part of the
+    ## existing transVars list - this way we can reliably produce a comprehensive
+    ## but non-repeating set of variable declarations
+    tnames = []
+    for t in self.transVars:
+      tnames.append(t.name)
+    for d in self.DPIImports:
+      for a in d.arguments:
+        if a['name'] not in tnames:
+          try:
+            ud = a['unpacked_dimension']
+          except KeyError:
+            ud = ""
+            pass
+          self.DPITransDecl.append(TransClass(a['name'],a['type'],False,False,ud))
     super(InterfaceClass,self).create(desired_template,parser)
-    if (self.inFactReady):
-      self.runTemplate("interface_infact_sequence.TMPL","inFact")
+    # Generation of DPI link files
+    if ( self.useDpiLink ):
+      self.runTemplate("interface_driver_proxy.TMPL",'dpi_link',{ "name":self.name,
+                                                                  "paramDefs":self.paramDefs,
+                                                                  "transVars":self.transVars,
+                                                                  "configVars":self.configVars,
+                                                                  "responseList":self.responseList
+                                                                  })
+      self.runTemplate("interface_monitor_proxy.TMPL",'dpi_link',{ "name":self.name,
+                                                                  "paramDefs":self.paramDefs,
+                                                                  "transVars":self.transVars,
+                                                                  "configVars":self.configVars
+                                                                  })
+      self.runTemplate("interface_tc_cpp.TMPL",'dpi_link',{ "name":self.name})
+    # Generation of C DPI files
     first = 0
     for DPIFile in self.DPIFiles:
       if (first==0):
@@ -909,20 +981,27 @@ class BenchClass(BaseGeneratorClass):
     super(BenchClass,self).__init__(name,'bench')
     self.env_name = env_name
     self.template_ext_dir = 'bench_templates'
+    self.vinfoDependencies = []
     self.bfms = []
     self.bfm_packages = []
+    self.bfm_pkg_env_variables = []
+    self.vipLibEnvVariableNames
     self.qvip_bfms = []
     self.qvip_bfm_packages = []
+    self.qvip_hdl_modules = []
+    self.qvip_hdl_module_list = []
     self.qvip_pkg_env_variables = []
     self.resource_parameter_names = []
-    self.veloceReady = False
+    self.veloceReady = True
     self.useCoEmuClkRstGen = False
-    self.inFactReady = True
+    self.inFactReady = False
     self.clockHalfPeriod = '5ns'
     self.clockPhaseOffset = '9ns'
     self.resetAssertionLevel = False
+    self.useDpiLink = False
     self.resetDuration = '200ns'
     self.external_imports = []
+    self.vmaps = []
     self.envParamDefs = []
     self.additionalTops = []
     for parameterName in parametersDict:
@@ -930,10 +1009,14 @@ class BenchClass(BaseGeneratorClass):
 
   def initTemplateVars(self,template):
     template['env_name'] = self.env_name
+    template['vinfoDependencies'] = self.vinfoDependencies
     template['resource_parameter_names'] = self.resource_parameter_names
     template['bfms'] = self.bfms
     template['bfm_pkgs'] = self.bfm_packages
+    template['bfm_pkg_env_variables'] = self.bfm_pkg_env_variables
+    template['vipLibEnvVariableNames'] = self.vipLibEnvVariableNames
     template['qvip_bfms'] = self.qvip_bfms
+    template['qvip_hdl_modules'] = self.qvip_hdl_modules
     template['qvip_bfm_pkgs'] = self.qvip_bfm_packages
     template['qvip_pkg_env_variables'] = self.qvip_pkg_env_variables
     template['veloceReady'] = self.veloceReady
@@ -942,35 +1025,60 @@ class BenchClass(BaseGeneratorClass):
     template['clockHalfPeriod'] = self.clockHalfPeriod
     template['clockPhaseOffset'] = self.clockPhaseOffset
     template['resetAssertionLevel'] = self.resetAssertionLevel
+    template['useDpiLink'] = self.useDpiLink
     template['resetDuration'] = self.resetDuration
     template['external_imports'] = self.external_imports
+    template['vmaps'] = self.vmaps
     template['paramDefs'] = self.paramDefs
     template['envParamDefs'] = self.envParamDefs
     template['additionalTops'] = self.additionalTops
     template['svLibNames'] = self.svLibNames
     return template
 
+  ## Overload of the create function - insert some conditional considerations
+  def create(self,desired_template='all',parser=None):
+    """Bench class specific create function - allows for the production of conditional files"""
+    if self.inFactReady == True:
+      self.conditional_array.append('infact_ready')
+    super(BenchClass,self).create(desired_template,parser)
+
+  def addVinfoDependency(self,name):
+    """Add a make target to the vinfo target for compiling c source  """
+    self.vinfoDependencies.append(name)
+
   def addImport(self,name):
     """Add an import to the bench package declaration  """
     self.external_imports.append(name)
 
-  def addBfm(self,name,ifPkg,clk,rst,activity,parametersDict={},sub_env_path='environment',initResp='INITIATOR'):
+  def addVmap(self,name,dirName):
+    """Add a vmap command to bench makefile"""
+    self.vmaps.append(VmapClass(name,dirName))
+
+  def addBfm(self,name,ifPkg,clk,rst,activity,parametersDict={},sub_env_path='environment',initResp='INITIATOR',vipLibEnvVariable='UVMF_VIP_LIBRARY_HOME',agentInstName='agent_inst_name'):
     """Add a BFM instantiation to the definition of this bench class"""
-    self.package_name="_pkg_"+name+"_BFM"
-    self.value_name=ifPkg+"_pkg_"+name+"_BFM"
-    self.resource_parameter_names.append(StringInterfaceNamesClass(self.package_name,self.value_name,name,ifPkg,activity))
-    self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp))
+    package_name=name+"_BFM"
+    value_name=name+"_BFM"
+    self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,""))
+    self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName))
     if (ifPkg not in self.bfm_packages):
       self.bfm_packages.append(ifPkg)
+      self.bfm_pkg_env_variables.append(BfmPkgClass(name,ifPkg,vipLibEnvVariable))
+    if (vipLibEnvVariable != 'UVMF_VIP_LIBRARY_HOME'):
+      if (vipLibEnvVariable not in self.vipLibEnvVariableNames):
+        self.vipLibEnvVariableNames.append(vipLibEnvVariable)
 
-  def addQvipBfm(self,name,ifPkg,activity):
+  def addQvipBfm(self,name,ifPkg,activity,unique_id=""):
     """Instantiate the qvip BFMs to the definition of this bench class"""
-    self.package_name="_pkg_"+name+"_BFM"
-    self.resource_parameter_names.append(StringInterfaceNamesClass(self.package_name,name,name,ifPkg,activity))
-    self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity))
+    package_name=name
+    value_name=name
+    self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,unique_id))
+    self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity,unique_id))
     if (ifPkg not in self.qvip_bfm_packages):
       self.qvip_bfm_packages.append(ifPkg)
       self.qvip_pkg_env_variables.append(unicode(ifPkg).upper())
+    if (unique_id not in self.qvip_hdl_module_list):
+      self.qvip_hdl_module_list.append(unique_id)
+      self.qvip_hdl_modules.append(QvipHdlModuleClass(name,ifPkg,unique_id))
 
   def addTopLevel(self,topName):
     """Add additional top-level module for simulation"""

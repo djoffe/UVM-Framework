@@ -108,7 +108,7 @@ virtual class uvmf_parameterized_agent_configuration_base #(
   // FUNCTION: new
   function new( string name = "" );
     super.new(name);
-    report_id = get_full_name();
+    report_id = name;
   endfunction
 
   // FUNCTION: initialize

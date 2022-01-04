@@ -26,11 +26,11 @@ env.addImport('mgc_axi4_v1_0_pkg')
 ## doing this will add the requested analysis component
 ## to the list, enabling the use of the given template (identified by <keyword>)
 env.defineAnalysisComponent('predictor','block_c_predictor',
-		{'mem_in_ae':'mem_transaction #()', 
+		{'mem_in_ae':'mem_transaction', 
 		'axi4_master_0_ae':'mvc_sequence_item_base', 
 		'axi4_master_1_ae':'mvc_sequence_item_base'},
-                {'mem_sb_ap':'mem_transaction #()', 
-		'pkt_sb_ap':'pkt_transaction #()', 
+                {'mem_sb_ap':'mem_transaction', 
+		'pkt_sb_ap':'pkt_transaction', 
 		'axi4_slave_ap':'mvc_sequence_item_base', 
 		'apb3_config_master_ap':'mvc_sequence_item_base'})
 

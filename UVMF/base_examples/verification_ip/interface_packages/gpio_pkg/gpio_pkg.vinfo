@@ -1,0 +1,7 @@
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+gpio_pkg.sv
+@use gpio_pkg_hdl.vinfo
+./src/gpio_if.sv
+./src/gpio_monitor_bfm.sv
+./src/gpio_driver_bfm.sv

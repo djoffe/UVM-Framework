@@ -21,19 +21,27 @@
 # This variable points to release code that is not user modified.
 # This variable allows for UVMF release directories to reside independent of project related verification_ip and project_benches directories.
 # This code below looks "upward" for directory starting with UVMF_* and returns first match for use with the release examples.
-UVMF_HOME ?= $(firstword $(wildcard $(addsuffix /UVMF_*,. .. ../.. ../../.. ../../../.. ../../../../..)))
+UVMF_HOME ?= ___PLEASE_SET_AN_ENVIRONMENT_VARIABLE_NAMED_UVMF_HOME_TO_POINT_TO_THE_UVMF_INSTALLATION___
+
 #
 # Project(s) specific verification_ip library:
 # Directory where reusable verification packages for interfaces, environments, utilities, etc. reside.
 # This variable allows for verification_ip to reside independent of project bench and UVMF release directories.
 # For examples deployed with UVMF this will be $(UVMF_HOME)/<example_group>/verification_ip
-export UVMF_VIP_LIBRARY_HOME ?= ../../../verification_ip
+# export UVMF_VIP_LIBRARY_HOME ?= ../../../verification_ip
+export UVMF_VIP_LIBRARY_HOME ?= $(PWD)/../../../verification_ip
+{% if vipLibEnvVariableNames|length > 0 %}
+# Include environment variables for all listed vip libraries
+{% for bfm in vipLibEnvVariableNames %}export {{bfm}} ?= $(UVMF_VIP_LIBRARY_HOME)
+{% endfor %}
+{% endif %}
 #
 # Project specific bench:
 # Directory where bench specific code is located.
 # This variable allows for project_benches to reside independent of verification_ip and UVMF release directories.
 # For examples deployed with UVMF this will be $(UVMF_HOME)/<example_group>/project_benches/<example_bench>
-export UVMF_PROJECT_DIR ?= ../../../project_benches/{{name}}
+# export UVMF_PROJECT_DIR ?= ../../../project_benches/{{name}}
+export UVMF_PROJECT_DIR ?= $(PWD)/..
 #
 {% if qvip_pkg_env_variables|length > 0 %}
 # *********************************************************************************************
@@ -57,14 +65,20 @@ else
 endif
 
 # Set test case specific Variables
+{% if inFactReady %}
+TEST_NAME_DEFAULT_0 = test_top
+TEST_NAME_DEFAULT_1 = infact_test_base
+TEST_NAME_DEFAULT   = $(TEST_NAME_DEFAULT_$(USE_INFACT))
+TEST_NAME            ?= $(TEST_NAME_DEFAULT)
+{% else %}
 TEST_NAME            ?= test_top
+{% endif %}
+
 TEST_SEED            ?= random
-TEST_VERBOSITY       ?= UVM_HIGH
 UVM_CLI_ARGS         = 
 
 # Usage of Veloce, etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
-USE_LEGACY_TBX_FLOW ?= 0
 
 # Usage of vinfo flow for generating file list
 USE_VINFO           ?= 0
@@ -86,32 +100,36 @@ REPORTING_DO_FILE    = {{name}}_reports_script
 include $(UVMF_HOME)/scripts/Makefile
 
 {% if useCoEmuClkRstGen %}
-include $(UVMF_HOME)/common/uvm_co_emulation_utilities/clock/Makefile
-include $(UVMF_HOME)/common/uvm_co_emulation_utilities/reset/Makefile
-include $(UVMF_HOME)/common/uvm_co_emulation_utilities/memload/Makefile
+include $(UVMF_HOME)/common/uvm_co_emulation_utilities/Makefile
 {% endif %}
 
 # Include all requisite interface package targets for this bench
-{% for bfm in bfm_pkgs %}include $(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{bfm}}_pkg/Makefile
+{% for bfm in bfm_pkg_env_variables %}include $({{bfm.vipLibEnvVariable}})/interface_packages/{{bfm.ifPkg}}_pkg/Makefile
 {% endfor %}
 
 # Include all requisite environment package targets for this bench
 include $(UVMF_VIP_LIBRARY_HOME)/environment_packages/{{env_name}}_env_pkg/Makefile
 
 {% if inFactReady %}
-PROTOCOLS ?= {% for bfm in bfm_pkgs %} {{bfm}} {% endfor %} 
+INFACT_VSIM_ARGS_0 =
+INFACT_VSIM_ARGS_1 += +infact=infact_proj_dir/infact_proj_dir.ini
+INFACT_VSIM_ARGS = $(INFACT_VSIM_ARGS_$(USE_INFACT))
 
-PROTOCOL ?=  PLEASE_SELECT_A_PROTOCOL_AS_DEFAULT
+INFACT_VLOG_ARGS_0 =
+INFACT_VLOG_ARGS_1 += +incdir+./infact_proj_dir +define+INFACT_ENABLE_COMPILE
+INFACT_VLOG_ARGS = $(INFACT_VLOG_ARGS_$(USE_INFACT))
 
-# Include inFact Makefile
-include $(UVMF_HOME)/scripts/Makefile.inFact
+VLOG_ARGS += $(INFACT_VLOG_ARGS)
+{% endif %}
 
-INFACT_ARGS_0 =
-{% for bfm in bfm_pkgs %}
-INFACT_ARGS_1 += +uvm_set_type_override={{bfm}}_random_sequence,{{bfm}}_infact_sequence
-INFACT_ARGS_1 += +infact=$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{bfm}}_infact_proj/{{bfm}}_infact_proj.ini
-{% endfor %}
-INFACT_ARGS = $(INFACT_ARGS_$(USE_INFACT))
+{% if useDpiLink %}
+GPP                  = $(QUESTA_HOME)/gcc-4.5.0-linux_x86_64/bin/g++
+export MTI_VCO_MODE = 64
+
+# Include dpi link Makefile
+include $(UVMF_HOME)/common/dpi_link_pkg/Makefile
+
+COMMON_VSIM_ARGS      +=   -sv_lib sv_lib
 {% endif %}
 
 # Add to default compile/load/run arguments
@@ -134,22 +152,19 @@ COMMON_VSIM_ARGS      += {% if qvip_bfm_pkgs|length > 0 %} -mvchome $(QUESTA_MVC
 COMMON_VSIM_ARGS      += {% if svLibNames|length > 0 %} {% for svLibName in svLibNames %} -sv_lib {{svLibName}} {% endfor %} {% endif %} 
 
 {% if inFactReady %}
-COMMON_VSIM_ARGS      += $(INFACT_ARGS)
+COMMON_VSIM_ARGS      += $(INFACT_VSIM_ARGS)
 {% endif %}
 
 BATCH_VSIM_ARGS       += #-uvmcontrol=none
 DEBUG_VSIM_ARGS       += 
 EXTRA_VSIM_TOPS       += {% if additionalTops|length > 0 %} {% for top in additionalTops %}{{top}} {% endfor %}{% endif %}
 
-# Do commands
-                      DEBUG_DO_COMMANDS =     -do " \
-                      set NoQuitOnFinish 1; \
-                      onbreak {resume}; \
-                      run 0; \
-                      do wave.do; \
-                      radix hex showbase;  \
-                      "
-                      # run -all; \
+{% if vmaps|length > 0 %}
+create_{{name}}_vmaps: 
+{% for vmap in vmaps %}
+	vmap {{vmap.name}} {{vmap.dirName}}
+{% endfor %}
+{% endif %}
 
 # Project bench package source
 {{name}}_PARAMETERS_PKG =\
@@ -164,12 +179,15 @@ $(UVMF_PROJECT_DIR)/tb/parameters/{{ext_import}}.sv
 $(UVMF_PROJECT_DIR)/tb/sequences/{{name}}_sequences_pkg.sv
 
 {{name}}_TEST_PKG =\
-$(UVMF_PROJECT_DIR)/tb/tests/{{name}}_test_pkg.sv
+$(UVMF_PROJECT_DIR)/tb/tests/{{name}}_tests_pkg.sv
 
-# UVMF_CHANGE_ME : Reference DUT source.
-{{name}}_DUT =\
-$(UVMF_PROJECT_DIR)/rtl/verilog/{{name}}.v
+# UVMF_CHANGE_ME : Reference Verilog DUT source.
+{{name}}_VERILOG_DUT =\
+$(UVMF_PROJECT_DIR)/rtl/verilog/verilog_dut.v
 
+# UVMF_CHANGE_ME : Reference VHDL DUT source.
+{{name}}_VHDL_DUT =\
+$(UVMF_PROJECT_DIR)/rtl/vhdl/vhdl_dut.vhd
 
 
 # Project bench package targets
@@ -193,13 +211,21 @@ comp_{{ext_import}}:
 comp_{{name}}_sequence_pkg:
 	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/sequences $({{name}}_SEQUENCES_PKG)
 
-comp_{{name}}_test_pkg:
+comp_{{name}}_tests_pkg:
 	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/tests $({{name}}_TEST_PKG)
 
+# UVMF_CHANGE_ME : Add make target to compile your verilog dut here
+comp_{{name}}_verilog_dut: 
+	echo "Compile your verilog DUT here"
+	$(HDL_COMP_CMD) $({{name}}_VERILOG_DUT)
+
+# UVMF_CHANGE_ME : Add make target to compile your vhdl dut here
+comp_{{name}}_vhdl_dut: 
+	echo "Compile your vhdl DUT here"
+	$(HDL_COMP_CMD_VHDL) $({{name}}_VHDL_DUT)
+
 # UVMF_CHANGE_ME : Add make target to compile your dut here
-comp_{{name}}_dut:
-	echo "Compile your DUT here"
-#	$(HDL_COMP_CMD) $({{name}}_DUT)
+comp_{{name}}_dut: comp_{{name}}_verilog_dut comp_{{name}}_vhdl_dut
 
 {% if qvip_bfm_pkgs|length > 0 %}
 comp_qvip:
@@ -213,17 +239,89 @@ BUILD_TGT_0 = make_build
 BUILD_TGT_1 = vinfo_build
 BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
 
-make_build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg {% if qvip_bfm_pkgs|length > 0 %} comp_qvip {% endif %} {% if veloceReady %} comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg comp_co_emulation_memload_pkg {% endif %} {% for bfm in bfm_pkgs %} comp_{{bfm}}_pkg {% endfor %} comp_{{env_name}}_env_pkg comp_{{name}}_parameters_pkg comp_{{name}}_sequence_pkg comp_{{name}}_test_pkg comp_{{name}}_dut comp_test_bench
 
-vinfo_build:{% if qvip_bfm_pkgs|length > 0 %} comp_qvip {% endif %}
+{% if inFactReady %}
+ifeq (1,$(USE_INFACT))
+comp_hvl : comp_hvl_pass1 import_infact comp_hvl_pass2
 
-	$(MFLIST) hvl.vinfo
-	$(HVL_COMP_CMD) -f hvl.vf
-	$(MFLIST) hdl.vinfo
-	$(HDL_COMP_CMD) -f hdl.vf
+# comp_infact_imp.d - used to check whether interface-package sources
+#                     have changed since the last time we imported
+
+comp_hvl_pass1 : comp_infact_imp.d
+
+COMP_DEPS = \
+{% for bfm in bfm_pkgs %}
+{% if bfm.activity == 'ACTIVE' %}
+  $(COMP_{{bfm}}_PKG_DEPS) \
+{% endif %}
+{% endfor %} 
+
+comp_infact_imp.d : $(COMP_DEPS)
+	echo "Performing pass1 compilation"
+	$(MAKE) USE_INFACT=0 $(lastword $(MAKEFILE_LIST)) comp_hvl
+	@touch $@
+
+import_infact : infact_{{name}}.d
+
+infact_{{name}}.d : comp_infact_imp.d
+{% for bfm in bfms %}
+{% if bfm.activity == 'ACTIVE' %}
+	$(INFACT_HOME)/bin/infact cmd import_testbench -project infact_proj_dir \
+		-sv_lib work -unit {{name}}_sequences_pkg \
+		{{name}}_sequences_pkg::{{bfm.name}}_{{bfm.ifPkg}}_transaction
+	$(INFACT_HOME)/bin/infact cmd create_stimulus_strategy \
+		-name {{bfm.name}}_fields -auto-bin-max 64 fields \
+		infact_proj_dir/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen/infact_{{bfm.name}}_{{bfm.ifPkg}}_transaction_gen.tmd
+{% endif %}
+{% endfor %}
+	$(INFACT_HOME)/bin/infact cmd genproject -rebuild infact_proj_dir
+	@touch $@
+
+# Now, compile the testbench with inFact compilation flags enabled
+comp_hvl_pass2 : comp_hvl_core
+
+else # USE_INFACT=0
+
+comp_hvl : comp_hvl_core
+
+endif
+
+{% else %}
+comp_hvl : comp_hvl_core
+{% endif %}
+
+{% if useDpiLink %}
+dpiheader.h:
+	$(HDL_COMP_CMD) {% for bfm in bfm_pkgs %}$({{bfm}}_PKG_HDL) $({{bfm}}_PKG) {% endfor %} -dpiheader dpiheader.h -suppress 2275
+
+sv_lib.so:	{% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} uvmf_tc.o dpi_link.o dpiheader.h
+	${GPP}  uvmf_tc.o {% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} dpi_link.o -shared -o sv_lib.so 
+{% endif %}
+
+comp_hvl_core : {% if qvip_bfm_pkgs|length > 0 %} comp_qvip {% endif %} {% if useCoEmuClkRstGen %} comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg comp_co_emulation_memload_pkg {% endif %} \
+	{% for bfm in bfm_pkgs %} comp_{{bfm}}_pkg {% endfor %} \
+	comp_{{env_name}}_env_pkg \
+	comp_{{name}}_parameters_pkg comp_{{name}}_sequence_pkg comp_{{name}}_tests_pkg 
+
+comp_uvmf_core : comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg {% if useDpiLink %} comp_dpi_link_pkg {% endif %}
+
+
+make_build: comp_{{name}}_dut comp_uvmf_core comp_hvl comp_test_bench {% if useDpiLink %} dpi_link.o sv_lib.so {% endif %} {% if vmaps|length > 0 %} create_{{name}}_vmaps {% endif %}
+
+
+vinfo_build:{% if qvip_bfm_pkgs|length > 0 %} comp_qvip {% endif %} comp_{{name}}_vhdl_dut {% for vinfoDependency in vinfoDependencies %} {{vinfoDependency}} {% endfor %} build_hdl_vinfo build_hvl_vinfo $(VINFO_TGT)
+
+	$(HDL_COMP_CMD) -F hdl.vf
 	$(VEL_COMP)
 
 build: $(BUILD_TGT)
 
+{% if inFactReady %}
+clean::
+	@-rm -rvf infact_proj_dir *.d
+	@-rm -rvf inFact.err auxstat.txt
+{% endif %}
+
 {% endblock %}
+
 

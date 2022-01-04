@@ -34,11 +34,15 @@ ben.resetDuration = '250ns'
 
 ## Specify the agents contained in this bench
 ##   addBfm(<agent_handle_name>,<agent_type_name>,<clock_name>,<reset_name>,<activity>,<{bfmParameter:value})
-ben.addBfm('control_plane_in',       'mem', 'clock', 'reset','ACTIVE', {'ADDR_WIDTH':'TEST_CP_IN_ADDR_WIDTH','DATA_WIDTH':'TEST_CP_IN_DATA_WIDTH'})
-ben.addBfm('control_plane_out',      'mem', 'clock', 'reset','ACTIVE', {'ADDR_WIDTH':'TEST_CP_OUT_ADDR_WIDTH'})
-ben.addBfm('unsecure_data_plane_in', 'pkt', 'pclk', 'prst','ACTIVE',   {'DATA_WIDTH':'TEST_UDP_DATA_WIDTH'})
-ben.addBfm('unsecure_data_plane_out','pkt', 'pclk', 'prst','ACTIVE')
+ben.addBfm('control_plane_in',       'mem', 'clock', 'reset','ACTIVE', {'ADDR_WIDTH':'TEST_CP_IN_ADDR_WIDTH','DATA_WIDTH':'TEST_CP_IN_DATA_WIDTH'}, agentInstName="control_plane_in")
+ben.addBfm('control_plane_out',      'mem', 'clock', 'reset','ACTIVE', {'ADDR_WIDTH':'TEST_CP_OUT_ADDR_WIDTH'}, agentInstName="control_plane_out")
+ben.addBfm('unsecure_data_plane_in', 'pkt', 'pclk', 'prst','ACTIVE',   {'DATA_WIDTH':'TEST_UDP_DATA_WIDTH'}, agentInstName="unsecure_data_plane_in")
+ben.addBfm('unsecure_data_plane_out','pkt', 'pclk', 'prst','ACTIVE', agentInstName="unsecure_data_plane_out")
 
+# This API identifies make targets that compile C code.
+# Compilation of c code is needed as a dependency for using the VINFO flow
+ben.addVinfoDependency('comp_pkt_pkg_c_files')
+ben.addVinfoDependency('comp_block_b_env_pkg_c_files')
 
 ## This will prompt the creation of all bench files in their specified
 ##  locations

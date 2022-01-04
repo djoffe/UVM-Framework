@@ -59,10 +59,10 @@ ${UVMF_HOME}/common/modules/ahb_slave.v
 ${UVMF_HOME}/common/modules/apb3_memory_slave_module.sv
 ${UVMF_HOME}/common/sv_connect/hvl/svdpi.sv
 ${UVMF_HOME}/common/utility_packages/qvip_utils_pkg/qvip_utils_pkg.sv
-${UVMF_HOME}/common/uvm_co_emulation_utilities/clock/clock_pkg.sv
-${UVMF_HOME}/common/uvm_co_emulation_utilities/clock/src/clock_bfm.sv
-${UVMF_HOME}/common/uvm_co_emulation_utilities/memload/memload_pkg.sv
-${UVMF_HOME}/common/uvm_co_emulation_utilities/reset/reset_pkg.sv
-${UVMF_HOME}/common/uvm_co_emulation_utilities/reset/src/async_reset_bfm.sv
-${UVMF_HOME}/common/uvm_co_emulation_utilities/reset/src/sync_reset_bfm.sv
+${UVMF_HOME}/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock/clock_pkg.sv
+${UVMF_HOME}/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock/clock/clock_bfm.sv
+${UVMF_HOME}/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock/memload/memload_pkg.sv
+${UVMF_HOME}/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock/reset/reset_pkg.sv
+${UVMF_HOME}/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock/reset/async_reset_bfm.sv
+${UVMF_HOME}/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock/reset/sync_reset_bfm.sv
 

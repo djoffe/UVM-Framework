@@ -52,7 +52,7 @@ class uvmf_driver_base #(
    type RSP
 ) extends uvm_driver#(REQ, RSP );
 
-  typedef uvmf_driver_base #(CONFIG_T, BFM_BIND_T, REQ, RSP) this_t;
+  typedef uvmf_driver_base #(CONFIG_T, BFM_BIND_T, REQ, RSP) uvmf_driver_base_t;
 
   // Agent configuration class
   CONFIG_T configuration;
@@ -66,7 +66,7 @@ class uvmf_driver_base #(
   // Static associative array of back-references to instances derived from
   // this UVMF driver class, from corresponding driver HDL BFM instances 
   // as referenced by the 'bfm' field
-  static this_t bfm_proxy_map[BFM_BIND_T];
+  static uvmf_driver_base_t bfm_proxy_map[BFM_BIND_T];
 
   // Event used to communicate with BFM when configured to operate in RESPONDER mode
   event new_responder_transaction;

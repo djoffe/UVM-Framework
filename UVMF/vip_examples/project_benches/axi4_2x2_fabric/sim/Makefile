@@ -48,7 +48,6 @@ UVM_CLI_ARGS         =
 
 # Usage of Veloce, etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
-USE_LEGACY_TBX_FLOW ?= 0
 
 # Usage of Veloce and Questa profilers
 USE_VELOCE_PROFILER ?= 0

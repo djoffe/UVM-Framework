@@ -44,7 +44,9 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 {% endfor %}
 
 {% for sub_env in qvipSubEnvironments %}
-  {{sub_env.envPkg}}_environment  {{sub_env.name}};
+  typedef {{sub_env.envPkg}}_environment /* #() */ {{sub_env.envPkg}}_{{sub_env.name}}_environment_t;
+  {{sub_env.envPkg}}_{{sub_env.name}}_environment_t  {{sub_env.name}};
+
 {% endfor %}
 
 {% for ap in analysis_ports %}
@@ -111,7 +113,7 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
     {{sub_env.name}}.set_config(configuration.{{sub_env.name}}_config);
 {% endfor %}
 {% for sub_env in qvipSubEnvironments %}
-    {{sub_env.name}} = {{sub_env.envPkg}}_environment::type_id::create("{{sub_env.name}}",this);
+    {{sub_env.name}} = {{sub_env.envPkg}}_{{sub_env.name}}_environment_t::type_id::create("{{sub_env.name}}",this);
     {{sub_env.name}}.set_config(configuration.{{sub_env.name}}_config);
 {% endfor %}
 {% for ap in analysis_ports %}
@@ -162,8 +164,17 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
 {% for connection in qvipConnections %}
     {{connection.output_component}}_ap["{{connection.output_port_name}}"].connect({{connection.input_component}}.{{connection.input_component_export_name}});
 {% endfor %}
+
+{% for sub_env in qvipSubEnvironments %}
+{% for agent in sub_env.qvip_if_name %}
+    if ( configuration.{{sub_env.name}}_interface_activity[{{loop.index0}}] == ACTIVE )
+       uvm_config_db #(mvc_sequencer)::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent}}.m_sequencer  );
+{% endfor %}
+{% endfor %}
+
+
 {% for ap in analysis_ports %}
-    {{ap.name}}.connect({{ap.connection}});
+    {{ap.connection}}.connect({{ap.name}});
 {% endfor %}
 {% for ep in analysis_exports %}
     {{ep.name}}.connect({{ep.connection}});
@@ -177,11 +188,12 @@ extends uvmf_environment_base #(.CONFIG_T( {{name}}_env_configuration
       reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
     // Set sequencer and adapter in register model map
     if (configuration.enable_reg_adaptation)
-      configuration.reg_model.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}, reg_adapter);
+      configuration.reg_model.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.sequencer, reg_adapter);
     // Set map and adapter handles within uvm predictor
     if (configuration.enable_reg_prediction) begin
       reg_predictor.map     = configuration.reg_model.{{regModel.busMap}};
       reg_predictor.adapter = reg_adapter;
+      // temp {{regModel.sequencer}}.monitored_ap.connect(reg_predictor.bus_in);
     end
 {% endif %}
 {% endfor %}

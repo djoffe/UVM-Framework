@@ -1,0 +1,6 @@
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+@use ../ahb2wb_env_pkg/ahb2wb_env_pkg.vinfo
+@use ../wb2spi_env_pkg/wb2spi_env_pkg.vinfo
+./registers/ahb2spi_reg_pkg.sv
+ahb2spi_env_pkg.sv

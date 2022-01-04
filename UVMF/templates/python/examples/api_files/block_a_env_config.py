@@ -7,8 +7,6 @@ env = uvmf_gen.EnvironmentClass('block_a')
 ## These parameters can be used when defining signal and variable sizes.
 # addParamDef(<name>,<type>,<value>)
 
-# addRegisterModel(   sequencer,                    transactionType,   adapterType,       busMap,  useAdapter=True, useExplicitPrediction=True)
-
 ## Specify the agents contained in this environment
 ##   addAgent(<agent_handle_name>,<agent_package_name>,<clock_name>,<reset_name>,<{interfaceParameter1:value1,interfaceParameter2:value2}>, initResp = 'RESPONDER')
 # Note: the agent_package_name will have _pkg appended to it.
@@ -23,10 +21,10 @@ env.addAgent('secure_data_plane_out', 'pkt',       'pclk',  'prst')
 ## the #() is required as part of defining the transaction type used by the analysis component.
 ## doing this will add the requested analysis component to the list, enabling the use of the 
 ## given template (identified by <keyword>)
-env.defineAnalysisComponent('predictor','block_a_predictor',{'control_plane_in_ae':'mem_transaction #()',
-                                                             'secure_data_plane_in_ae':'pkt_transaction #()'},
-                                                            {'control_plane_sb_ap':'mem_transaction #()',
-                                                             'secure_data_plane_sb_ap':'pkt_transaction #()'})
+env.defineAnalysisComponent('predictor','block_a_predictor',{'control_plane_in_ae':'mem_transaction',
+                                                             'secure_data_plane_in_ae':'pkt_transaction'},
+                                                            {'control_plane_sb_ap':'mem_transaction',
+                                                             'secure_data_plane_sb_ap':'pkt_transaction'})
 
 ## Instantiate the components in this environment
 ## addAnalysisComponent(<name>,<type>)

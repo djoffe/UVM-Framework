@@ -16,7 +16,6 @@
 //     - <{{name}}_configuration.svh>
 //     - <{{name}}_environment.svh>
 //     - <{{name}}_env_sequence_base.svh>
-//     - <{{name}}_infact_env_sequence.svh>
 {% for acName in acTypes %}
 //     - <{{acName}}.svh>
 {% endfor %}
@@ -44,8 +43,8 @@ package {{name}}_env_pkg;
    import {{name}}_reg_pkg::*;
 {% endfor %}
 
-{% for sub_env in subEnvironments %}
-   import {{sub_env.envPkg}}_env_pkg::*;
+{% for sub_env in env_pkgs %}
+   import {{sub_env}}_env_pkg::*;
 {% endfor %}
 
 {% for sub_env in qvipSubEnvironments %}
@@ -54,7 +53,7 @@ package {{name}}_env_pkg;
 {% endfor %}
 
 {% for DPIImport in DPIImports %}
-   import "DPI-C" context function {{DPIImport.type}} {{DPIImport.name}} ({% for argument in DPIImport.arguments %}{{argument.type}} {{argument.name}}{% if not loop.last %},{% endif %}{% endfor %});
+   import "DPI-C" context function {{DPIImport.svType}} {{DPIImport.name}} ({% for argument in DPIImport.arguments %}{{argument['dir']}} {{argument['type']}} {{argument['name']}} {{argument['unpacked_dimension']}} {% if not loop.last %},{% endif %}{% endfor %});
 {% endfor %} 
 
 {% for impdecl in impDecls %}
@@ -69,7 +68,6 @@ package {{name}}_env_pkg;
 {% endfor %}
    `include "src/{{name}}_environment.svh"
    `include "src/{{name}}_env_sequence_base.svh"
-   `include "src/{{name}}_infact_env_sequence.svh"
   
 endpackage
 

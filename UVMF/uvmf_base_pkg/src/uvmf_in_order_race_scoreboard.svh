@@ -60,6 +60,35 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
       actual_results_af=new("actual_results_af",this);
    endfunction
 
+   // FUNCTION: 
+   // Used to flush all entries in the scoreboard
+   virtual function void flush_scoreboard();
+      expected_results_af.flush();
+      actual_results_af.flush();
+   endfunction
+
+   // FUNCTION: 
+   // Used to remove an entry from the scoareboard
+   // An entry is removed from the out side of the fifo
+   // The key is used to identify which fifo an entry is removed from
+   // Key = 0 : expected side of scoreboard
+   // Key = 1 : actual side of scoreboard
+   virtual function void remove_entry(int unsigned key=0);
+      T flushed_transaction;
+      if ( key == 0 ) 
+         begin : remove_from_expected
+         void'(expected_results_af.try_get(flushed_transaction));
+         end : remove_from_expected
+      else if ( key == 1 )
+         begin : remove_from_actual
+         void'(actual_results_af.try_get(flushed_transaction));
+         end : remove_from_actual
+      else 
+         begin : invalid_key
+         `uvm_error("SCBD", $sformatf("Invalid key %d out of valid range of 0 and 1", key))
+         end : invalid_key
+   endfunction
+
    // FUNCTION: write_expected
    // Transactions arrive through this interface from the predictor.
    // Since the actual transaction may have arrived first, the arrival of a transaction through
@@ -68,17 +97,20 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
    // analysis_fifo to wait for the actual transaction.
    function void write_expected( input T t);
       T actual_transaction;
-      super.write_expected(t);
+      if (scoreboard_enabled && enable_expected_port) 
+         begin : in_write_expected
+         super.write_expected(t);
 
-      // Check if there is a next entry from actual analysis fifo.  If none exists, queue expected item
-      if ( !actual_results_af.try_get(actual_transaction)) 
-         begin : no_actual_entry_to_compare_against
-         void'(expected_results_af.try_put(t));
-         end : no_actual_entry_to_compare_against
-      else 
-         begin : compare_against_actual
-         compare_entries(t, actual_transaction);
-         end : compare_against_actual
+         // Check if there is a next entry from actual analysis fifo.  If none exists, queue expected item
+         if ( !actual_results_af.try_get(actual_transaction)) 
+            begin : no_actual_entry_to_compare_against
+            void'(expected_results_af.try_put(t));
+            end : no_actual_entry_to_compare_against
+         else 
+            begin : compare_against_actual
+            compare_entries(t, actual_transaction);
+            end : compare_against_actual
+         end : in_write_expected
    endfunction
 
    // FUNCTION: write_actual
@@ -88,17 +120,20 @@ class uvmf_in_order_race_scoreboard #(type T = uvmf_transaction_base) extends uv
    // exists, the transaction is stored in an analysis_fifo to wait for the expected transaction.
    function void write_actual( input T t);
       T expected_transaction;
-      super.write_actual(t);
-
-      // Check if there is a next entry from expected analysis fifo.  If none exists, queue actual item
-      if ( !expected_results_af.try_get(expected_transaction)) 
-         begin : no_expected_entry_to_compare_against
-         void'(actual_results_af.try_put(t));
-         end : no_expected_entry_to_compare_against
-      else 
-         begin : compare_against_expected
-         compare_entries(expected_transaction, t);
-         end : compare_against_expected
+      if (scoreboard_enabled && enable_actual_port) 
+         begin : in_write_actual
+         super.write_actual(t);
+   
+         // Check if there is a next entry from expected analysis fifo.  If none exists, queue actual item
+         if ( !expected_results_af.try_get(expected_transaction)) 
+            begin : no_expected_entry_to_compare_against
+            void'(actual_results_af.try_put(t));
+            end : no_expected_entry_to_compare_against
+         else 
+            begin : compare_against_expected
+            compare_entries(expected_transaction, t);
+            end : compare_against_expected
+         end : in_write_actual
    endfunction : write_actual
 
    // FUNCTION: compare_entries

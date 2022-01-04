@@ -90,6 +90,8 @@ class uvmf_test_base #(
     environment   = ENV_T::type_id::create("environment",this);
 
     environment.set_config(configuration);
+    uvm_config_db#(CONFIG_T)::set(null,UVMF_CONFIGURATIONS, "TOP_ENV_CONFIG",configuration);
+
 
     `uvm_info("CFG",configuration.convert2string(),UVM_HIGH);
 
@@ -105,7 +107,7 @@ class uvmf_test_base #(
        // Commented for UVM 1.2 compatability factory.print();
        uvm_top.check_config_usage(1);
        // uvm_config_db::dump();
-       // uvm_top.print_conifg(1,1);
+       // uvm_top.print_config(1,1);
        // show_connectivity(uvm_top,0);
        // uvmf_analysis_debug #( uvmf_standard_port_debug_policy )::uvmf_analysis_debug( this );
     end

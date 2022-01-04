@@ -12,4 +12,5 @@
 TB_INFO ahb2spi { UVMF_VIP_LIBRARY_HOME=../../../../../../../../verification_ip UVMF_PROJECT_DIR=../../../../../../../../project_benches/ahb2spi } {}
 TB ahb2spi
 TEST test_top 3
+TEST regmodel_test 1
 

@@ -28,7 +28,7 @@ extends uvmf_monitor_base #(
                     .CONFIG_T({{name}}_configuration {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             ) {% endif %}),
-                    .BFM_BIND_T(virtual {{name}}_monitor_bfm {%if paramDefs|length > 0%} #(
+                    .BFM_BIND_T({%if useDpiLink %}{{name}}_monitor_proxy {% else %}virtual {{name}}_monitor_bfm {% endif %}{%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             ) {% endif %}),
                     .TRANS_T({{name}}_transaction {%if paramDefs|length > 0%} #(
@@ -72,7 +72,7 @@ extends uvmf_monitor_base #(
 
 // ****************************************************************************
    virtual function void set_bfm_proxy_handle();
-      bfm.proxy = this;
+      {%if useDpiLink %}bfm.{{name}}_monitor_h = this;{% else %}bfm.proxy = this;{% endif %}
    endfunction
 
  // ****************************************************************************              
@@ -87,7 +87,7 @@ extends uvmf_monitor_base #(
   // ****************************************************************************              
   virtual function void notify_transaction(
 {% for txn in transVars %}
-                        input {{txn.type}} {{txn.name}}{% if not loop.last %}, {% endif %} 
+                        input {{txn.type}} {{txn.name}} {{txn.unpackedDim}}{% if not loop.last %}, {% endif %} 
 {% endfor %}
                         );
     trans = new("trans");                                                                   

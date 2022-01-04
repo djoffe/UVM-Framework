@@ -1,0 +1,17 @@
+# Generated with gen_qvip_yaml.py version 0.9
+# Generated on 2018-03-22 21:48:16.870268
+# Command line: "/media/psf/Home/Documents/Mentor/Bitbucket/UVMF/framework/scripts/gen_qvip_yaml.py qvip_env_dir"
+#
+# Use the following YAML snippet in the higher level environment YAML definition
+# to instantiate this QVIP environment as a sub-environment
+#
+# qvip_subenvs:
+#   - { name: "qvip_env_inst", type: "qvip_env" }
+#
+uvmf:
+  qvip_environments:
+    qvip_env:
+      agents:
+      - name: pcie_rc_serial_0
+      - name: apb_master_0
+      - name: ethernet_mac_0

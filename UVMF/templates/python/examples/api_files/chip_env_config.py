@@ -14,7 +14,7 @@ env.addRegisterModel(None,        None ,             None,        None,   useAda
 
 ##   addSubEnv(<sub_env_handle_name>,<sub_env_package_name>,<number_of_agents_in_the_sub_env>)
 # This chip level env does not use the block level register model associated with block a
-env.addSubEnv('block_a_env', 'block_a', 4,{})
+env.addSubEnv('block_a_env', 'block_a', 4)
 
 #addSubEnv(    name,          envPkg,   numAgents,parametersDict={}, regSubBlock='null',regSubBlockType='null',regSubBlockPkg='null'):
 env.addSubEnv('block_b_env', 'block_b', 4, {'CP_IN_DATA_WIDTH':'CHIP_CP_IN_DATA_WIDTH',

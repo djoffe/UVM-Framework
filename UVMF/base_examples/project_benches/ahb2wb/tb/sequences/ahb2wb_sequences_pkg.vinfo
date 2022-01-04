@@ -1,0 +1,6 @@
+
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+@use ../../../../verification_ip/environment_packages/ahb2wb_env_pkg/ahb2wb_env_pkg.vinfo
+@use ../parameters/ahb2wb_parameters_pkg.vinfo
+ahb2wb_sequences_pkg.sv

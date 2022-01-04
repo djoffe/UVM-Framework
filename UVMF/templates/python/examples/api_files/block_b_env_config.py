@@ -4,11 +4,23 @@ import uvmf_gen
 env = uvmf_gen.EnvironmentClass('block_b')
 
 ## Specify DPI information
-env.setDPISOName('blockBEnvPkgCFunctions',compArgs='-c -DPRINT32 -O2 -fPIC',linkArgs='-shared')
+env.setDPISOName('blockBEnvPkgCFunctions',compArgs='-c -DPRINT32 -O2',linkArgs='-shared')
 env.addDPIFile('myFirstFile.c')
 env.addDPIFile('mySecondFile.c')
-env.addDPIImport('void', 'hello_world_from_environment','(unsigned int variable1, unsigned int variable2)',{'variable1':'int unsigned','variable2':'int unsigned'})
-env.addDPIImport('void', 'good_bye_world_from_environment','(unsigned int variable3, unsigned int variable4)',{'variable3':'int unsigned','variable4':'int unsigned'})
+env.addDPIImport('void','void', 'hello_world_from_environment','(unsigned int variable1, unsigned int variable2)',
+               [{'name':'variable1',
+                 'type':'int unsigned',
+                 'dir':'input'},
+                {'name':'variable2',
+                 'type':'int unsigned',
+                 'dir':'input'}])
+env.addDPIImport('void','void', 'good_bye_world_from_environment','(unsigned int variable3, unsigned int variable4)',
+               [{'name':'variable3',
+                 'type':'int unsigned',
+                 'dir':'input'},
+                {'name':'variable4',
+                 'type':'int unsigned',
+                 'dir':'input'}])
 
 ## Specify parameters for this environment.
 # addParamDef(<name>,<type>,<value>)
@@ -18,7 +30,7 @@ env.addParamDef('CP_OUT_ADDR_WIDTH','int','111')
 env.addParamDef('UDP_DATA_WIDTH','int','140')
 
 # addRegisterModel(   sequencer,                    transactionType,                                                                   adapterType,                                                                     busMap,  useAdapter=True, useExplicitPrediction=True)
-env.addRegisterModel('control_plane_in.sequencer', 'mem_transaction#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))' , 'mem2reg_adapter#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))', 'bus_map',useAdapter=True,useExplicitPrediction=True)
+env.addRegisterModel('control_plane_in', 'mem_transaction#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))' , 'mem2reg_adapter#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))', 'bus_map',useAdapter=True,useExplicitPrediction=True)
 
 ## Specify the agents contained in this environment
 ##   addAgent(<agent_handle_name>,<agent_package_name>,<clock_name>,<reset_name>,<{interfaceParameter1:value1,interfaceParameter2:value2}>, initResp = 'RESPONDER')
@@ -36,7 +48,7 @@ env.defineAnalysisComponent('predictor','control_plane_predictor',{'control_plan
                                                                   {'control_plane_sb_ap':'mem_transaction #(.ADDR_WIDTH(CP_OUT_ADDR_WIDTH))'})
 env.defineAnalysisComponent('predictor','unsecure_data_plane_predictor',{'control_plane_in_ae':'mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))',
                                                                          'unsecure_data_plane_in_ae':'pkt_transaction #(.DATA_WIDTH(UDP_DATA_WIDTH))'},
-                                                                        {'unsecure_data_plane_sb_ap':'pkt_transaction #()'})
+                                                                        {'unsecure_data_plane_sb_ap':'pkt_transaction'})
 
 ## Instantiate the components in this environment
 ## addAnalysisComponent(<name>,<type>)

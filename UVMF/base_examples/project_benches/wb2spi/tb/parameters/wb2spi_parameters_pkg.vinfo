@@ -1,0 +1,4 @@
+
++incdir+@vinfodir
+@use $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.vinfo
+wb2spi_parameters_pkg.sv

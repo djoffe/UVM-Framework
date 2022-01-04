@@ -48,10 +48,10 @@ class {{name}}_configuration {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
 {% endfor %}      ) {% endif %}
 extends uvmf_parameterized_agent_configuration_base #(
-      .DRIVER_BFM_BIND_T(virtual {{name}}_driver_bfm {%if paramDefs|length > 0%} #(
+      .DRIVER_BFM_BIND_T({% if useDpiLink %}{{name}}_driver_proxy {% else %}virtual {{name}}_driver_bfm {% endif %}{%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                          .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                           ) {% endif %}),
-      .MONITOR_BFM_BIND_T(virtual {{name}}_monitor_bfm {%if paramDefs|length > 0%} #(
+      .MONITOR_BFM_BIND_T({% if useDpiLink %} {{name}}_monitor_proxy {% else %} virtual {{name}}_monitor_bfm {% endif %}{%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                          .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                           ) {% endif %}));
 
@@ -98,7 +98,6 @@ extends uvmf_parameterized_agent_configuration_base #(
   function void post_randomize();
     super.post_randomize();
     {{name}}_configuration_cg.sample();
-    return_transaction_response = 1'b1;
   endfunction
 
 // ****************************************************************************
@@ -130,7 +129,16 @@ extends uvmf_parameterized_agent_configuration_base #(
                                             string agent_path,
                                             string interface_name);
 
+{% if useDpiLink %}
+    active_passive      = activity;
+    this.interface_name = interface_name;
+    void'(uvm_config_db #(uvm_bitstream_t)::get(null,interface_name,"enable_transaction_viewing",enable_transaction_viewing));
+
+    driver_bfm   = {{name}}_driver_proxy{%if paramDefs|length > 0%} #({% for param in paramDefs %}.{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}{% endfor %} ){% endif %}::get({interface_name,"_drv_bfm"});
+    monitor_bfm  = {{name}}_monitor_proxy{%if paramDefs|length > 0%} #({% for param in paramDefs %}.{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}{% endfor %} ){% endif %}::get({interface_name,"_mon_bfm"});
+{% else %}
     super.initialize( activity, agent_path, interface_name);
+{% endif %}
 
     // The covergroup is given the same name as the interface
     {{name}}_configuration_cg.set_inst_name(interface_name);
@@ -139,7 +147,7 @@ extends uvmf_parameterized_agent_configuration_base #(
     uvm_config_db #( {{name}}_configuration {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             )
-{% endif %})::set( null ,agent_path,UVMF_AGENT_CONFIG, this );
+{% endif %}                    )::set( null ,agent_path,UVMF_AGENT_CONFIG, this );
 
     // This configuration also places itself in the config db using the same identifier used by the interface.  This allows users to access
     // configuration variables and the interface through the bfm api class rather than directly accessing the BFM.  This is useful for 
@@ -147,12 +155,11 @@ extends uvmf_parameterized_agent_configuration_base #(
     uvm_config_db #( {{name}}_configuration {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}                             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
 {% endfor %}                             )
-{% endif %})::set( null ,UVMF_CONFIGURATIONS, interface_name, this );
+{% endif %}                    )::set( null ,UVMF_CONFIGURATIONS, interface_name, this );
 
-    {{name}}_configuration_cg.set_inst_name(
-        $sformatf("{{name}}_configuration_cg_%s",get_full_name())
-        );
+    {{name}}_configuration_cg.set_inst_name($sformatf("{{name}}_configuration_cg_%s",get_full_name()));
 
+    return_transaction_response = 1'b1;
 
   endfunction
 

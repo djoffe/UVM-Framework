@@ -32,6 +32,17 @@ export UVMF_VIP_LIBRARY_HOME ?= ../../../verification_ip
 export UVMF_PROJECT_DIR ?= ../../../project_benches/ahb2wb
 #
 #
+
+## Check PATH for required vinfo scripts
+PVAL := $(shell command -v make_filelist.py 2> /dev/null)
+ifndef PVAL
+  MFLIST = $(UVMF_HOME)/scripts/make_filelist.py
+else
+  MFLIST = make_filelist.py
+endif
+
+SIMDIR := $(shell dirname $(abspath $(lastword $(MAKEFILE_LIST))))
+
 # *********************************************************************************************
 # Set test case specific Variables
 TEST_NAME            = test_top
@@ -41,7 +52,9 @@ UVM_CLI_ARGS         =
 
 # Usage of Veloce, etc. to be input by the user (subject to defaults)
 USE_VELOCE          ?= 0
-USE_LEGACY_TBX_FLOW ?= 0
+
+# Usage of vinfo flow for generating file list
+USE_VINFO           ?= 0
 
 # Usage of Veloce and Questa profilers
 USE_VELOCE_PROFILER ?= 0
@@ -129,5 +142,18 @@ comp_ahb2wb_dut:
 	$(HDL_COMP_CMD) $(ahb2wb_DUT)
 
 
-build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg    comp_ahb_pkg  comp_wb_pkg  comp_ahb2wb_env_pkg comp_ahb2wb_parameters_pkg comp_ahb2wb_sequence_pkg comp_ahb2wb_test_pkg comp_ahb2wb_dut comp_test_bench
+make_build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg    comp_ahb_pkg  comp_wb_pkg  comp_ahb2wb_env_pkg comp_ahb2wb_parameters_pkg comp_ahb2wb_sequence_pkg comp_ahb2wb_test_pkg comp_ahb2wb_dut comp_test_bench
+
+BUILD_TGT_0 = make_build
+BUILD_TGT_1 = vinfo_build
+BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
+
+vinfo_build:
+	$(MFLIST) $(SIMDIR)/hvl.vinfo -o ./hvl.vf
+	$(HVL_COMP_CMD) -f hvl.vf
+	$(MFLIST) $(SIMDIR)/hdl.vinfo -o ./hdl.vf
+	$(HDL_COMP_CMD) -f hdl.vf
+	$(VEL_COMP)
+
+build: $(BUILD_TGT)
 

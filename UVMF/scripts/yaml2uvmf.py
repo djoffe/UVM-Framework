@@ -24,15 +24,15 @@
 ##############################################################################
 ##
 ##   Created by :    Jon Craft & Bob Oden
-##   Creation date : April 12 2015
+##   Creation date : May 25 2017
 ##
 ##############################################################################
 ##
-##   This module facilitates the creation of UVMF interface packages, 
-##   environment packages and testbench packages through the use of Jinja2-
-##   based template files.  
+##   This script utilizes the Python-based generator API to take data structures
+##   defined in YAML and convert them into UVMF code for interfaces, environments
+##   and benches.   
 ##
-##   See templates.README for more information on usage
+##   Run 'yaml2uvmf.py --help' for more information
 ##
 ##############################################################################
 
@@ -43,13 +43,19 @@ import inspect
 import sys
 from optparse import OptionParser
 from fnmatch import fnmatch
+
+# Determine addition to PYTHONPATH automatically based on script location
+# This means user does not have to explicitly set PYTHONPATH in order for this
+# script to work properly
+sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python");
+
 from uvmf_yaml import  *
 import uvmf_gen
 from uvmf_gen import (UVMFCommandLineParser,PassThroughOptionParser,UserError,InterfaceClass,EnvironmentClass,BenchClass)
 from voluptuous import MultipleInvalid
 from voluptuous.humanize import humanize_error
 
-__version__ = '0.9'
+__version__ = '1.2'
 
 try:
   import yaml
@@ -98,6 +104,7 @@ class DataClass:
       except KeyError:
         pass
 
+  ## Validate various data structures against the associated schema
   def validate(self):
     self.validators = {
       'interfaces':InterfaceValidator(),
@@ -113,6 +120,7 @@ class DataClass:
         except MultipleInvalid as e:
            raise UserError("While validating "+t+" YAML '"+c+"', "+humanize_error(self.data[t][c],e))
 
+  ## Generate everything from the data structures
   def buildElements(self,genarray):
     self.interfaceDict = {}
     try:
@@ -133,14 +141,15 @@ class DataClass:
         self.benchDict[bench_name] = self.generateBench(bench_name)
 
   ## This method recursively searches all environments from the specified level down for QVIP subenvs, compiling
-  ## a list of underlying QVIP agents, their subenvironment parent names and active/passive info
+  ## a list of underlying QVIP agents, their subenvironment parent names, their import list and active/passive info
   def getQVIPAgents(self,topEnv):
     struct = self.data['environments']
     try:
       env = struct[topEnv]
     except KeyError:
-      raise UserError("Unable to find environment \""+topEnv+"\" in defined environments (availalbe list is "+str(struct.keys()))
+      raise UserError("Unable to find environment \""+topEnv+"\" in defined environments (available list is "+str(struct.keys()))
     agent_list = []
+    import_list = []
     ## First look for any local QVIP subenvironments and extract those agent names
     try:
       qvip_subenv_list = env['qvip_subenvs']
@@ -159,15 +168,26 @@ class DataClass:
         except KeyError:
           active_passive = 'ACTIVE'
         agent_list = agent_list + [{ 'name': a['name'], 'parent': s['type'], 'active_passive': active_passive }]
+        try:
+          import_list = import_list + a['imports']
+        except KeyError: pass
     ## Next drill down and call getQVIPAgents on any non-QVIP subenvironments
     try:
-      subenv_list = struct['subenvs']
+      subenv_list = env['subenvs']
     except KeyError:
       subenv_list = []
       pass
     for s in subenv_list:
-      agent_list = agent_list + self.getQVIPAgents(s['type'])
-    return agent_list
+      qstruct = self.getQVIPAgents(s['type'])
+      agent_list = agent_list + qstruct['alist'];
+      import_list = import_list + qstruct['ilist'];
+    ## Finally, uniquify the import list
+    ilist = import_list
+    import_list = []
+    for i in ilist:
+      if i not in import_list:
+        import_list = import_list + [ i ]
+    return {'alist':agent_list, 'ilist':import_list}
 
   ## This method will return a list of environments at the provided environment level or recursively.
   def getEnvironments(self,topEnv,recursive=True):
@@ -185,6 +205,66 @@ class DataClass:
     for subenv in envs:
       envs = envs + self.getEnvironments(subenv['type'],recursive=True)
     return envs
+
+  ## This method takes a dotted component hierarchy string and returns
+  ## the same but with underscores. For use in cases where a unique identifier
+  ## is required. Removes final entry in component hierarchy too.
+  def getUniqueID(self,val):
+    l = val.split(".")
+    return '_'.join(l[:-1])+"_"
+
+  ## This method returns an ordered list of information on ALL BFMs from a given top-level environment, down. 
+  ## The list entries all have the following structure:
+  ##   - BFM Name ('bfm_name')
+  ##   - BFM Type ('bfm_type')
+  ##   - BFM Parent Type ('parent_type')
+  ##   - Environment Path ('env_path')
+  ##   - VIP Library Env Variable Name ('lib_env_var_name') (only valid for non-QVIP)
+  ##   - QVIP/Non-QVIP flag ('is_qvip')
+  def getAllAgents(self,env_type,env_inst,isQVIP,envPath):
+    alist = []
+    if (isQVIP==1):
+      # This environment we've been given is a QVIP environment which is stored
+      # in a different structure
+      struct = self.data['qvip_environments']
+      try:
+        env = struct[env_type]
+      except KeyError:
+        raise UserError("Unable to find QVIP environment \""+env_type+"\" in defined QVIP environments (available list is "+str(struct.keys())+")")
+      for a in env['agents']:
+        ## All we have is the name of each BFM.
+        alist = alist + [{ 'bfm_name': a['name'], 'bfm_type': 'unknown', 'parent_type': env_type, 'env_path': envPath+"."+a['name'],'lib_env_var_name':'unknown','is_qvip': 1 }]
+      ## No nesting with QVIP environments so safe to just return here
+      return alist  
+    else:
+      struct = self.data['environments']
+    try:
+      env = struct[env_type]
+    except KeyError:
+      raise UserError("Unable to find environment \""+env_type+"\" in defined environments (available list is "+str(struct.keys()))
+    ## We're looking at a non-QVIP environment. This can have underlying QVIP and/or non-QVIP sub-environments as well as local agents.
+    ## Look for underlying QVIP subenvs first, then non-QVIP sub-envs, then local agents.
+    try:
+      qvip_subenvs = env['qvip_subenvs']
+      for e in qvip_subenvs:
+        alist = alist + self.getAllAgents(e['type'],e['name'],1,envPath+"."+e['name'])  
+    except KeyError: pass
+    try:
+      subenvs = env['subenvs']
+      for e in subenvs:
+        alist = alist + self.getAllAgents(e['type'],e['name'],0,envPath+"."+e['name'])
+    except KeyError: pass
+    try:
+      agents = env['agents']
+      for a in agents:
+        try:
+          env_var_name = self.data['interfaces'][a['type']]['vip_lib_env_variable']
+        except KeyError:
+          env_var_name = 'UVMF_VIP_LIBRARY_HOME'
+          pass
+        alist = alist + [{ 'bfm_name': a['name'], 'bfm_type': a['type'], 'parent_type': env_type, 'env_path': envPath+"."+a['name'],'lib_env_var_name':env_var_name, 'is_qvip': 0 }]
+    except KeyError: pass
+    return alist
 
   ## This method can be employed to return either a list of (non-QVIP) agents at the provided environment
   ## level or recursively, searching through all sub-environments and down. 
@@ -205,7 +285,11 @@ class DataClass:
     else:
       structure = []
       for agent in agents:
-        structure = structure + [{ 'envpath' : parentPath, 'agent' : agent }]
+          try:
+            vip_lib_env_variable = self.data['interfaces'][agent['type']]['vip_lib_env_variable']
+          except KeyError: 
+            vip_lib_env_variable = "UVMF_VIP_LIBRARY_HOME"
+          structure = structure + [{ 'envpath' : parentPath, 'agent' : agent, 'vip_lib_env_variable' : vip_lib_env_variable }]
     if (recursive==False):
       return structure
     try:
@@ -231,20 +315,10 @@ class DataClass:
         env.addParamDef(pname,ptype,pval)
     except KeyError: pass
     ## Drill down into any QVIP subenvironments for import information, that'll be needed here
-    try:
-      s = struct['qvip_subenvs']
-    except KeyError:
-      s = []
-      pass
-    for e in s:
-      try:
-        d = self.data['qvip_environments'][e['type']]
-      except KeyError:
-        raise UserError("QVIP subenvironment \""+e['name']+"\" of type \""+e['type']+"\" is not defined anywhere")
-      try:
-        for i in d['imports']:
-          env.addImport(i['name'])
-      except KeyError: pass
+    qstruct = self.getQVIPAgents(name)
+    ilist = qstruct['ilist']
+    for i in ilist:
+      env.addImport(i)
     ## Call out any locally defined imports
     try:
       for imp in struct['imports']:
@@ -254,6 +328,26 @@ class DataClass:
     try:
       for impdecl in struct ['imp_decls']:
         env.addImpDecl(impdecl['name'])
+    except KeyError: pass
+    ## The order of the following loops is important. The order in which local agents, sub-environments and QVIP
+    ## sub-environments are added must match the order in which they will be added at the bench level, otherwise
+    ## things will be configured out-of-order. 
+    ## The order is as follows:
+    ##   QVIP subenvs
+    ##   Custom sub-environments
+    ##   Locally defined custom interfaces
+    ## Look for defined QVIP sub-environments and add those
+    try:
+      for subenv in struct['qvip_subenvs']:
+        n,t = self.dataExtract(['name','type'],subenv)
+        try:
+          qvipStruct = self.data['qvip_environments'][t]
+        except KeyError:
+          raise UserError("QVIP environment \""+t+"\" in environment \""+name+"\" is not defined")
+        alist = []
+        for a in qvipStruct['agents']:
+          alist = alist + [a['name']]
+        env.addQvipSubEnv(name=n,envPkg=t,agentList=alist)
     except KeyError: pass
     ## Look for defined sub-environments and add them
     try:
@@ -273,6 +367,9 @@ class DataClass:
         ## Determine how many agents are defined in the subenvironment as that is a required argument going into 
         ## this API call.  This is a recursive count of agents.
         agents = self.getAgents(etype,recursive=True)
+        ## Also find any underlying QVIP agents underneath this subenvironment (nested underneath underlying QVIP subenvs)
+        qvip_agents_struct = self.getQVIPAgents(etype);
+        qvip_agents = qvip_agents_struct['alist']
         if (agents==None):
           raise UserError("Sub-environment type \""+etype+"\" used in environment \""+name+"\" is not found")
         ## Check if subenv has a register model defined unless asked explicitly to avoid it
@@ -294,21 +391,8 @@ class DataClass:
           rm_name = None
         else:
           rm_name = etype+'_rm'
-        env.addSubEnv(ename,etype,len(agents),eparams,rm_name)  
-    except KeyError: pass
-    ## Do the same for QVIP sub-environments
-    try:
-      for subenv in struct['qvip_subenvs']:
-        n,t = self.dataExtract(['name','type'],subenv)
-        try:
-          qvipStruct = self.data['qvip_environments'][t]
-        except KeyError:
-          raise UserError("QVIP environment \""+t+"\" in environment \""+name+"\" is not defined")
-        alist = []
-        for a in qvipStruct['agents']:
-          alist = alist + [a['name']]
-        env.addQvipSubEnv(n,t,alist)
-    except KeyError: pass
+        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_name)  
+    except KeyError: pass    
     ## Locally defined agent instantiations
     try:
       for agent in self.getAgents(name,recursive=False):
@@ -326,8 +410,13 @@ class DataClass:
           intf = self.data['interfaces'][atype]
         except KeyError:
           raise UserError("Agent type \""+atype+"\" in environment \""+name+"\" is not recognized")
-        env.addAgent(agent['name'],atype,intf['clock'],intf['reset'],aparams)
-    except KeyError: pass
+        try:
+          initResp = agent['initiator_responder']
+        except KeyError:
+          initResp = 'INITIATOR'
+          pass
+        env.addAgent(agent['name'],atype,intf['clock'],intf['reset'],aparams,initResp)
+    except KeyError: pass    
     defined_ac_items = []
     try:
       ac_items = struct['analysis_components']
@@ -459,7 +548,7 @@ class DataClass:
             break
         if agent_type == "":
           raise UserError("For register map \""+maps[0]['name']+"\" in environment \""+name+"\" no interface \""+maps[0]['interface']+"\" was found")
-        sequencer = maps[0]['interface']+".sequencer"
+        sequencer = maps[0]['interface']
         trans = agent_type+"_transaction"+agent_params
         adapter = agent_type+"2reg_adapter"+agent_params
         mapName = maps[0]['name']
@@ -485,17 +574,22 @@ class DataClass:
         env.addDPIFile(f)
       try:
         for imp in dpi_def['imports']:
-          sv_args = {}
+          sv_args = []
           try:
-            for a in imp['sv_args']:
-              sv_args[a['name']] = a['type']
+            sv_args = imp['sv_args']
           except KeyError: pass
-          env.addDPIImport(imp['return_type'],imp['name'],imp['c_args'],sv_args)
+          env.addDPIImport(imp['c_return_type'],imp['sv_return_type'],imp['name'],imp['c_args'],sv_args)
       except KeyError: pass
       try:
         for exp in dpi_def['exports']:
           intf.addDPIExport(exp)
       except KeyError: pass
+    except KeyError: pass
+    try:
+      typedefs = struct['typedefs']
+      for t in typedefs:
+        n,v = self.dataExtract(['name','type'],t)
+        env.addTypedef(n,v)
     except KeyError: pass
     env.create(parser=self.parser)
     return env
@@ -538,7 +632,18 @@ class DataClass:
       ben.resetAssertionLevel = (struct['reset_assertion_level']=='True')
     except KeyError: pass
     try:
+      ben.useDpiLink = (struct['use_dpi_link']=='True')
+    except KeyError: pass
+    try:
       ben.resetDuration = struct['reset_duration']
+    except KeyError: pass
+    ## Check for inFact ready flag
+    try:
+      ben.inFactReady = (struct['infact_ready']=='True')
+    except KeyError: pass
+    ## Use co-emulation clk/rst generator
+    try:
+      ben.useCoEmuClkRstGen = (struct['use_co_emu_clk_rst_gen']=='True')
     except KeyError: pass
     ## Pull out bench-level parameter definitions, if any
     try:
@@ -572,48 +677,70 @@ class DataClass:
       ifp_dict[bfm_name] = {}
       for p in param_list:
         ifp_dict[bfm_name][p['name']] = p['value']
-    ## Find QVIP BFMs and add those - order is important, must match how we instantiated the components
-    ## within the environment
-    for agent_struct in self.getQVIPAgents(top_env):
-      ben.addQvipBfm(name=agent_struct['name'],ifPkg=agent_struct['parent'],activity=agent_struct['active_passive'])
-    ## Now drill down into top-level environment to generate a list of required BFMs to instantiate.
-    ## This time we also need to get information about sub-environment names and paths in order to
-    ## provide a unique BFM name as well as the path down to the subenv
-    for agent_struct in self.getAgents(top_env,recursive=True,givePath=True):
-      agent = agent_struct['agent']
-      envpath = agent_struct['envpath']
-      if (len(envpath)>0):
-        ## We have sub-environments that need to be incorporated into the addBfm call as both
-        ## the name of the BFM as well as debug information path.
-        bfm_name = "_".join(envpath) + "_" + agent['name']
-        debugpath = "environment/" + "/".join(envpath)
-      else:
-        bfm_name = agent['name']
+    ## Find BFMs and add those - order is important, must match how we instantiated the components
+    ## within the environment. Traverse the environment topology in the order in which sub-envs were 
+    ## called out in the YAML. Use getAllAgents to intelligently traverse the topology and build up a list
+    ## of BFMs (may be a mix of QVIP and non-QVIP BFMs).  Each entry in the resulting list will be a structure
+    ## with the following information:
+    ##   - BFM Name
+    ##   - BFM Type
+    ##   - Environment Path
+    ##   - QVIP/Non-QVIP flag
+    ##   - Active/Passive flag
+    alist = self.getAllAgents(top_env,'environment',0,'environment')
+    valid_bfm_names = []
+    ## Now that we have an ordered list of BFMs we can call the appropriate API call for each
+    for a in alist:
+      if (a['env_path'].count('.')==1):
+        bfm_name = a['bfm_name']
         debugpath = 'environment'
-      try:
-        active_passive = ap_dict[bfm_name]
-      except KeyError:
-        active_passive = 'ACTIVE'
-        pass
-      try:
-        agentDef = self.data['interfaces'][agent['type']]
-      except:
-        raise UserError("Definition for interface type \""+agent['type']+"\" for instance \""+agent['name']+"\" is not found")
-      ## There may be interface parameters defined for the interface we're looking at, track those as well
-      try:
-        aParams = ifp_dict[bfm_name]
-      except KeyError:
-        aParams = {}
-        pass
-      ben.addBfm(name=bfm_name,ifPkg=agent['type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath)
+      else:
+        debugpath = re.sub(r'(.*)\.\w+',r'\1',a['env_path'])
+        bfm_name = re.sub(r'^environment\.','',a['env_path'])
+        bfm_name = re.sub(r'\.',r'_',bfm_name)
+      valid_bfm_names = valid_bfm_names + [bfm_name]
+      if (a['is_qvip']==1):
+        ## Add each QVIP BFM instantiation. Function API is slightly different for QVIP vs. non-QVIP
+        ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity='ACTIVE',unique_id=self.getUniqueID(a['env_path']))
+      else:
+        ## Name of each BFM is simplified if they live under the top-level env
+        ## Determine this by inspecting the env_path entry for each item and counting
+        ## the number of dots (.). If only one, means this BFM lives at the top-most
+        ## level.
+        try:
+          active_passive = ap_dict[bfm_name]
+        except KeyError:
+          active_passive = 'ACTIVE'
+        try:
+          agentDef = self.data['interfaces'][a['bfm_type']]
+        except:
+          raise UserError("Definition for interface type \""+a['bfm_type']+"\" for instance \""+a['env_path']+"\" is not found")
+        try:
+          aParams = ifp_dict[bfm_name]
+        except KeyError:
+          aParams = {}
+          pass
+        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'])
+    ## Check that all keys in the ifp_dict and ap_dict match something in the valid_bfm_names list that 
+    ## was based on the actual UVM component hierarchy elements. If not, it probably means we have a typo somewhere in the bench YAML
+    for k in ifp_dict.keys():
+      if (k not in valid_bfm_names):
+        raise UserError("BFM name entry \""+k+"\" listed in interface_params structure for bench \""+name+"\" but not a valid BFM name")
+    for k in ap_dict.keys():
+      if (k not in valid_bfm_names):
+        raise UserError("BFM name entry \""+k+"\" listed in active_passive structure for bench \""+name+"\" but not a valid BFM name")
     ## Now drill down again but this time find any DPI packages - these could be defined at any
     ## interface or environment, so getAgents isn't good enough.  Also need to call getEnvironments
     dpi_packages = []
+    vinfo_interface_dpi_dependencies = []
+    vinfo_environment_dpi_dependencies = []
     for agent in self.getAgents(top_env,recursive=True):
       try:
         dpi_pkg = self.data['interfaces'][agent['type']]['dpi_define']['name']
         if dpi_pkg not in dpi_packages:
           dpi_packages.append(dpi_pkg)
+          #vinfo_interface_dpi_dependencies.append(self.data['interfaces'][agent['type']]['dpi_define']['name'])
+          vinfo_interface_dpi_dependencies.append(agent['type'])
       except KeyError: pass
     envs = self.getEnvironments(top_env,recursive=True)
     ## Also add the top-environment
@@ -623,9 +750,15 @@ class DataClass:
         dpi_pkg = self.data['environments'][env['type']]['dpi_define']['name']
         if dpi_pkg not in dpi_packages:
           dpi_packages.append(dpi_pkg)
+          #vinfo_environment_dpi_dependencies.append(self.data['environments'][env['type']]['dpi_define']['name'])
+          vinfo_environment_dpi_dependencies.append(env['type'])
       except KeyError: pass
     for d in dpi_packages:
       ben.addDPILibName(d)
+    for d in vinfo_interface_dpi_dependencies:
+      ben.addVinfoDependency("comp_"+d+"_pkg_c_files")
+    for d in vinfo_environment_dpi_dependencies:
+      ben.addVinfoDependency("comp_"+d+"_env_pkg_c_files")
     ben.create(parser=self.parser)
     return ben
 
@@ -635,11 +768,17 @@ class DataClass:
     intf.clock = struct['clock']
     intf.reset = struct['reset']
     try:
-      intf.resetAssertionLevel = (struct['reset_assertion_level'] == "True")
+      intf.resetAssertionLevel = (struct['reset_assertion_level'] == 'True')
+    except KeyError: pass
+    try:
+      intf.useDpiLink = (struct['use_dpi_link']=='True')
+    except KeyError: pass
+    try:
+      intf.vipLibEnvVariable = struct['vip_lib_env_variable']
     except KeyError: pass
     try:
       for imp in struct['imports']:
-        env.addImport(imp['name'])
+        intf.addImport(imp['name'])
     except KeyError: pass
     try:
       for item in struct['parameters']:
@@ -676,7 +815,12 @@ class DataClass:
         except KeyError: 
           tcomp = True
           pass
-        intf.addTransVar(n,t,isrand=trand,iscompare=tcomp)
+        try:
+          ud = trans['unpacked_dimension']
+        except KeyError:
+          ud = ""
+          pass
+        intf.addTransVar(n,t,isrand=trand,iscompare=tcomp,unpackedDim=ud)
     except KeyError: pass
     try:
       for cfg in struct['config_vars']:
@@ -720,12 +864,11 @@ class DataClass:
         intf.addDPIFile(f)
       try:
         for imp in dpi_def['imports']:
-          sv_args = {}
+          sv_args = []
           try:
-            for a in imp['sv_args']:
-              sv_args[a['name']] = a['type']
+            sv_args = imp['sv_args']
           except KeyError: pass
-          intf.addDPIImport(imp['return_type'],imp['name'],imp['c_args'],sv_args)
+          intf.addDPIImport(imp['c_return_type'],imp['sv_return_type'],imp['name'],imp['c_args'],sv_args)
       except KeyError: pass
       try:
         for exp in dpi_def['exports']:
