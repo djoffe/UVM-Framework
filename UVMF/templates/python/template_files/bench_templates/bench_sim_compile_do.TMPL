@@ -22,8 +22,8 @@ file delete -force veloce.med veloce.wave veloce.map tbxbindings.h edsenv velrun
 file delete -force sv_connect.*
 vlib work 
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/fli_pkg $env(UVMF_HOME)/common/fli_pkg/fli_pkg.sv
-vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/uvmf_base_pkg -F $env(UVMF_HOME)/uvmf_base_pkg/uvmf_base_pkg_filelist_hvl.f
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/uvmf_base_pkg -F $env(UVMF_HOME)/uvmf_base_pkg/uvmf_base_pkg_filelist_hdl.f
+vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/uvmf_base_pkg -F $env(UVMF_HOME)/uvmf_base_pkg/uvmf_base_pkg_filelist_hvl.f
 {% if useCoEmuClkRstGen %}
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock_filelist_hvl.f
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co-emulation_utilities/utils/clock -F $env(UVMF_HOME)/common/uvm_co_emulation_utilities/clock_filelist_hdl.f
@@ -50,8 +50,8 @@ vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_PROJ
 vlog -sv -timescale 1ps/1ps -suppress 2223,2286 $env(UVMF_PROJECT_DIR)/rtl/verilog/verilog_dut.v
 vcom $env(UVMF_PROJECT_DIR)/rtl/vhdl/vhdl_dut.vhd
 
-vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 {% if qvip_bfm_pkgs|length > 0 %} +incdir+$env(QUESTA_MVC_HOME)/questa_mvc_src/sv {% endif %} +incdir+$env(UVMF_PROJECT_DIR)/tb/testbench -F $env(UVMF_PROJECT_DIR)/tb/testbench/top_filelist_hvl.f
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(UVMF_PROJECT_DIR)/tb/testbench -F $env(UVMF_PROJECT_DIR)/tb/testbench/top_filelist_hdl.f
+vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 {% if qvip_bfm_pkgs|length > 0 %} +incdir+$env(QUESTA_MVC_HOME)/questa_mvc_src/sv {% endif %} +incdir+$env(UVMF_PROJECT_DIR)/tb/testbench -F $env(UVMF_PROJECT_DIR)/tb/testbench/top_filelist_hvl.f
 vopt          hvl_top hdl_top   -o optimized_batch_top_tb
 vopt  +acc    hvl_top hdl_top   -o optimized_debug_top_tb
 {% endblock %}

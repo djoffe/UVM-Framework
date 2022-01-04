@@ -1,16 +1,11 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 09
-//----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb2spi_predictor 
-// Unit            : wb2spi_predictor 
-// File            : wb2spi_predictor.svh
-//----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //
+//----------------------------------------------------------------------
 //
 // DESCRIPTION: This analysis component contains analysis_exports for receiving
 //   data and analysis_ports for sending data.
@@ -18,35 +13,61 @@
 //   This analysis component has the following analysis_exports that receive the 
 //   listed transaction type.
 //   
-//   wb_ae receives transactions of type  wb_transaction  
+//   wb_ae receives transactions of type  wb_transaction #(.WB_DATA_WIDTH(WB_DATA_WIDTH), .WB_ADDR_WIDTH(WB_ADDR_WIDTH))  
 //
 //   This analysis component has the following analysis_ports that can broadcast 
 //   the listed transaction type.
 //
 //  wb2spi_sb_ap broadcasts transactions of type spi_transaction 
+//----------------------------------------------------------------------
+//----------------------------------------------------------------------
 //
 
-class wb2spi_predictor  #(
-  int WB_ADDR_WIDTH = 32, 
-  int WB_DATA_WIDTH = 16) extends uvm_component;
+class wb2spi_predictor #(
+  type CONFIG_T,
+  int WB_DATA_WIDTH = 16,
+  int WB_ADDR_WIDTH = 32
+  ) extends uvm_component;
 
   // Factory registration of this class
-  `uvm_component_param_utils( wb2spi_predictor#(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH)) );
+  `uvm_component_param_utils( wb2spi_predictor #(
+                              CONFIG_T,
+                              WB_DATA_WIDTH,
+                              WB_ADDR_WIDTH
+                              ))
 
+
+  // Instantiate a handle to the configuration of the environment in which this component resides
+  CONFIG_T configuration;
+
+  
   // Instantiate the analysis exports
-  uvm_analysis_imp_wb_ae #(
-      .T(wb_transaction#(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH))), 
-      .IMP(wb2spi_predictor#(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH)))) 
-    wb_ae;
+  uvm_analysis_imp_wb_ae #(wb_transaction #(.WB_DATA_WIDTH(WB_DATA_WIDTH), .WB_ADDR_WIDTH(WB_ADDR_WIDTH)), wb2spi_predictor #(
+                              .CONFIG_T(CONFIG_T),
+                              .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                              .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                              )) wb_ae;
 
+  
   // Instantiate the analysis ports
   uvm_analysis_port #(spi_transaction) wb2spi_sb_ap;
 
+
+  // Transaction variable for predicted values to be sent out wb2spi_sb_ap
+  typedef spi_transaction wb2spi_sb_ap_output_transaction_t;
+  wb2spi_sb_ap_output_transaction_t wb2spi_sb_ap_output_transaction;
+  // Code for sending output transaction out through wb2spi_sb_ap
+  // wb2spi_sb_ap.write(wb2spi_sb_ap_output_transaction);
+
+  // pragma uvmf custom class_item_additional begin
+
   // Prediction variables
-  spi_transaction next_miso_predicted=new;
+  bit[7:0] next_miso_predicted;
   bit [3:0] mem [7:0];
 
 
+
+  // pragma uvmf custom class_item_additional end
 
   // FUNCTION: new
   function new(string name, uvm_component parent);
@@ -55,59 +76,47 @@ class wb2spi_predictor  #(
 
   // FUNCTION: build_phase
   virtual function void build_phase (uvm_phase phase);
-    super.build_phase(phase);
 
     wb_ae = new("wb_ae", this);
-
     wb2spi_sb_ap =new("wb2spi_sb_ap", this );
-
-    // Setup for first miso transaction
-    next_miso_predicted.dir = MISO; 
-
   endfunction
 
   // FUNCTION: write_wb_ae
   // Transactions received through wb_ae initiate the execution of this function.
   // This function performs prediction of DUT output values based on DUT input, configuration and state
-  virtual function void write_wb_ae(wb_transaction#(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH)) t);
-    spi_transaction mosi_predicted=new;
+  virtual function void write_wb_ae(wb_transaction #(.WB_DATA_WIDTH(WB_DATA_WIDTH), .WB_ADDR_WIDTH(WB_ADDR_WIDTH)) t);
+    // pragma uvmf custom wb_ae_predictor begin
+    if (t.op == WB_WRITE && t.addr == 'd2) begin 
+      `uvm_info("PRED",{"RECEIVED: ",t.convert2string()},UVM_MEDIUM);
+      // Predict SPI operation
+      wb2spi_sb_ap_output_transaction = wb2spi_sb_ap_output_transaction_t::type_id::create("wb2spi_sb_ap_output_transaction");
+      // MISO is result of last MOSI
+      wb2spi_sb_ap_output_transaction.miso_data = next_miso_predicted;
+      // MOSI will be presented on SPI bus
+      wb2spi_sb_ap_output_transaction.mosi_data = t.data;
+      // Broadcast predicted value
+      wb2spi_sb_ap.write(wb2spi_sb_ap_output_transaction);
+      `uvm_info("PRED",{"PREDICTED: ",wb2spi_sb_ap_output_transaction.convert2string()},UVM_MEDIUM);
 
-    `uvm_info("PRED", "Transaction Recievied through wb_ae", UVM_MEDIUM)
-        `uvm_info("PRED",{"WB: ",t.convert2string()},UVM_HIGH);
-        if (t.op == WB_WRITE && t.addr == 'd2) begin 
-            // Predict MOSI
-            // if (t.data[7] == 1) mosi_predicted.op = SPI_SLAVE_WRITE;
-            // else                mosi_predicted.op = SPI_SLAVE_READ;
-            mosi_predicted.dir = MOSI;
-            // mosi_predicted.command = t.data[7];
-            mosi_predicted.spi_data[7] = t.data[7];
-            // mosi_predicted.addr = t.data[6:4];
-            mosi_predicted.spi_data[6:4] = t.data[6:4];
-            // mosi_predicted.data = t.data[3:0];
-            mosi_predicted.spi_data[3:0] = t.data[3:0];
-            `uvm_info("PRED",{"SPI-mosi: ",mosi_predicted.convert2string()},UVM_HIGH);
-            wb2spi_sb_ap.write(mosi_predicted);
-            // Send previously predicted MISO
-            `uvm_info("PRED",{"SPI-miso: ",next_miso_predicted.convert2string()},UVM_HIGH);
-            wb2spi_sb_ap.write(next_miso_predicted);
-            // Predict next MISO
-            next_miso_predicted = new mosi_predicted;
-            next_miso_predicted.dir = MISO;
-            // next_miso_predicted.command = 0;
-            // next_miso_predicted.status = 1;
-            next_miso_predicted.spi_data[7] = 1;
-            next_miso_predicted.spi_data[6:4] = t.data[6:4];
-            if (t.data[7] == 0 ) begin // SPI Slave read operation
-               // next_miso_predicted.data = mem[next_miso_predicted.addr];
-               next_miso_predicted.spi_data[3:0] = mem[t.data[6:4]];
-            end else begin // SPI Slave write operation
-               // mem[t.data[6:4]] = t.data[3:0];
-               mem[t.data[6:4]] = t.data[3:0];
-               next_miso_predicted.spi_data[3:0] = t.data[3:0];
-            end
-         end
+      // Predict next MISO value and update memory
+      if (t.data[7] == 0 ) begin // SPI Slave read operation
+        // predict miso for read operation
+        next_miso_predicted[7:4] = t.data[7:4];
+        next_miso_predicted[3:0] = mem[t.data[6:4]];
+      end else begin // SPI Slave write operation
+        // update the memory
+        mem[t.data[6:4]] = t.data[3:0];
+        // predict miso for write operation
+        next_miso_predicted = t.data;
+      end
+      // Set success bit for next miso predicted as design will
+      next_miso_predicted[7] = 1'b1;
+    end
 
+
+
+    // pragma uvmf custom wb_ae_predictor end
   endfunction
 
-endclass 
 
+endclass 

@@ -20,22 +20,22 @@ serial_peripheral_extensions_reg =  Reg("serial_peripheral_extensions_reg",     
                                                                                                                                               Field("extended_spi_clock_rate_sel",         2,    0,     "RW",  has_coverage=True )])                  #Extended SPI Clock Rate Select
 
 ## Create block 
-wb2spi_reg_block = Block("wb2spi_reg_block", hdl_path="hdl_top.DUT",has_coverage = True)
+wb2spi_reg_model = Block("wb2spi_reg_model", hdl_path="hdl_top.DUT",has_coverage = True)
 ## Add map to block
-bus_map = wb2spi_reg_block.addMap("bus_map")
+bus_map = wb2spi_reg_model.addMap("bus_map")
 ## Add registers to block and map.  Default is to name each instance as <name>_h unless
 ## specified explicitly.  The map can be "None" which means that no mapping to this
 ## sub-element will be applied at this time.  
-wb2spi_reg_block.addBlockSub(serial_peripheral_control_reg,     bus_map, 0x0, inst_name = "spcr")
-wb2spi_reg_block.addBlockSub(serial_peripheral_status_reg,      bus_map, 0x1, inst_name = "spsr")
-wb2spi_reg_block.addBlockSub(serial_peripheral_data_reg,        bus_map, 0x2, inst_name = "spdr")
-wb2spi_reg_block.addBlockSub(serial_peripheral_extensions_reg,  bus_map, 0x3, inst_name = "sper")
+wb2spi_reg_model.addBlockSub(serial_peripheral_control_reg,     bus_map, 0x0, inst_name = "spcr")
+wb2spi_reg_model.addBlockSub(serial_peripheral_status_reg,      bus_map, 0x1, inst_name = "spsr")
+wb2spi_reg_model.addBlockSub(serial_peripheral_data_reg,        bus_map, 0x2, inst_name = "spdr")
+wb2spi_reg_model.addBlockSub(serial_peripheral_extensions_reg,  bus_map, 0x3, inst_name = "sper")
 
 ## This is required
-wb2spi_reg_block.elaborate()
+wb2spi_reg_model.elaborate()
 ## This just produces STDOUT for info
-wb2spi_reg_block.disp()
+wb2spi_reg_model.disp()
 ## This is what actually produces the file
-wb2spi_reg_block.create(pkgname="wb2spi_reg_pkg",fname="wb2spi_reg_pkg.sv")
+wb2spi_reg_model.create(pkgname="wb2spi_reg_pkg",fname="wb2spi_reg_pkg.sv")
 
 

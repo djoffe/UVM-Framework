@@ -71,15 +71,15 @@ package ahb2spi_reg_pkg;
 
 
    //--------------------------------------------------------------------
-   // Class: ahb2spi_reg_block
+   // Class: ahb2spi_reg_model
    // 
    // Register block for ahb2spi
    //--------------------------------------------------------------------
 
-   class ahb2spi_reg_block extends uvm_reg_block;
-      `uvm_object_utils(ahb2spi_reg_block)
+   class ahb2spi_reg_model extends uvm_reg_block;
+      `uvm_object_utils(ahb2spi_reg_model)
 
-      wb2spi_reg_block wb2spi; 
+      wb2spi_reg_model wb2spi_rm; 
 
       uvm_reg_map bus_map; 
       ahb2spi_reg_block_bus_map_coverage bus_map_cg;
@@ -87,7 +87,7 @@ package ahb2spi_reg_pkg;
 
       // Function: new
       // 
-      function new(string name = "ahb2spi_reg_block");
+      function new(string name = "ahb2spi_reg_model");
          super.new(name, build_coverage(UVM_CVR_ALL));
       endfunction
 
@@ -103,14 +103,14 @@ package ahb2spi_reg_pkg;
             bus_map_cg.ra_cov.set_inst_name(this.get_full_name());
             void'(set_coverage(UVM_CVR_ADDR_MAP));
          end
-         wb2spi = wb2spi_reg_block::type_id::create("wb2spi");
-         wb2spi.configure(this, "wb2spi");
-         wb2spi.build();
+         wb2spi_rm = wb2spi_reg_model::type_id::create("wb2spi_rm");
+         wb2spi_rm.configure(this, "wb2spirm");
+         wb2spi_rm.build();
 
          bus_map = create_map("bus_map", 'h0, 1, UVM_LITTLE_ENDIAN);
          default_map = bus_map;
 
-         bus_map.add_submap(wb2spi.bus_map, 'h0);
+         bus_map.add_submap(wb2spi_rm.bus_map, 'h0);
 
          lock_model();
       endfunction

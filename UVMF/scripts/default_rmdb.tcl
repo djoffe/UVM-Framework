@@ -61,11 +61,13 @@ proc vrmSetupDefaults {} {
   setIniVar code_coverage_enable 0 1
   setIniVar code_coverage_types "bsf" 1
   setIniVar code_coverage_target "/hdl_top/DUT." 1
+  setIniVar code_coverage_map 1 1
   setIniVar extra_merge_options "" 1
   setIniVar extra_vsim_options "" 1
   setIniVar tplanfile "" 1
   setIniVar tplanoptions "-format Excel" 1
   setIniVar no_rerun 1 1
+  setIniVar use_infact 0 1
   setIniVar use_vis 0 1
   setIniVar use_vinfo 0 1
   setIniVar dump_waves 0 1
@@ -73,50 +75,100 @@ proc vrmSetupDefaults {} {
   setIniVar vis_dump_options "+signal+report+memory=512" 1
   setIniVar exclusionfile "" 1
   setIniVar pre_run_dofile {""} 1
+  setIniVar pre_vsim_dofile {""} 1
   setIniVar build_exec "" 1
   setIniVar run_exec "" 1
   setIniVar use_test_dofile 0 1
   setIniVar use_job_mgmt_run 0 1
   setIniVar use_job_mgmt_build 0 1
   setIniVar use_job_mgmt_covercheck 0 1
+  setIniVar use_job_mgmt_exclusion 0 1
+  setIniVar use_job_mgmt_report 0 1
   setIniVar gridtype "lsf" 1
   setIniVar html_report_args "-details -source -testdetails -showexcluded -htmldir (%VRUNDIR%)/covhtmlreport" 1
   setIniVar gridcommand_run "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar gridcommand_build "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar gridcommand_covercheck "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
+  setIniVar gridcommand_exclusion "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
+  setIniVar gridcommand_report "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar use_covercheck 0 1
   setIniVar top_du_name "top_du_name" 1
   setIniVar covercheck_build "covercheck_build" 1
   setIniVar extra_covercheck_options "" 1
+  setIniVar timeout 3600 1
+  setIniVar queue_timeout 60 1
+  setIniVar build_timeout -1 1
+  setIniVar build_queue_timeout -1 1
+  setIniVar run_timeout -1 1
+  setIniVar run_queue_timeout -1 1
+  setIniVar exclusion_timeout -1 1
+  setIniVar exclusion_queue_timeout -1 1
+  setIniVar covercheck_timeout -1 1
+  setIniVar covercheck_queue_timeout -1 1
+  setIniVar report_timeout -1 1
+  setIniVar report_queue_timeout -1 1
+  setIniVar email_servers {} 1
+  setIniVar email_recipients {} 1
+  setIniVar email_sections "all" 1
+  setIniVar email_subject {} 1
+  setIniVar email_message {} 1
+  setIniVar email_originator {} 1
+  setIniVar usestderr 1 1
+  setIniVar trendfile {} 1
+  setIniVar trendoptions {} 1
+  setIniVar triagefile {} 1
+  setIniVar triageoptions {} 1
   return 0
+}
+
+proc getTimeoutVal {globalTimeout timeout} {
+  if { $timeout == -1 } { 
+    return $globalTimeout 
+  } else { 
+    return $timeout
+  }
 }
 
 proc getIniVar {varname} {
   global ini
   global debug
-  if {[info exists ini($varname)]} {
-    return $ini($varname)
+  set lv [string tolower $varname]
+  if {[info exists ini($lv)]} {
+    return $ini($lv)
   }
-  puts [format "ERROR : ini variable %s not found" $varname]
-  puts [format "        Available ini variables: %s" [array names ini]]
-  exit
+  if {[array size ini] > 0} {
+    puts [format "ERROR : ini variable %s not found" $varname]
+    puts [format "        Available ini variables: %s" [array names ini]]
+    exit
+  }
 }
 
 proc setIniVar {varname value {firsttime 0}} {
   global ini
   global debug
+  set lv [string tolower $varname]
   if {$firsttime==0} {
-    if {![info exists ini($varname)]} {
+    if {![info exists ini($lv)]} {
       puts [format "ERROR: ini variable \"%s\" unrecognized on set attempt. Following list are available:\n\t%s" $varname [array names ini]]
       exit
     }
   }
-  set ini($varname) $value
+  set ini($lv) $value
 }
 
 proc dumpIniVars {} {
   global ini
   parray ini
+}
+
+## Returns a path to the inFact SDM .ini file if inFact is enabled.
+## Returns "" if inFact is disabled
+proc getInfactSdmIni {datadir} {
+  if {[getIniVar use_infact]} {
+	return [file join "+infact=$datadir" "infactsdm_info.ini"]
+  } else {
+    return ""
+  }
 }
 
 ## Top level test list parser invocation.  Sets up some globals and then
@@ -167,6 +219,18 @@ proc print_builddict {} {
     puts [format "%s - %s" $buildname $entry]
   }
 }
+
+proc GetMapInfo { build_name key } {
+  global builddict
+  if {![dict exists $builddict $build_name]} {
+    puts [format "ERROR getMapInfo - build %s invalid" $build_name]
+    exit
+  }
+  if {![dict exists $builddict $build_name "mapinfo"]} {
+    return ""
+  }
+  return [dict get $builddict $build_name "mapinfo" $key]
+}
  
 ## Actual test list file reader.  See embedded comments for more detail
 proc ReadTestlistFile_int {file_name collapse {debug 0}} {
@@ -177,6 +241,8 @@ proc ReadTestlistFile_int {file_name collapse {debug 0}} {
   set tops ""
   ## Elaborate "^" at beginning of $file_name and expand with $root_dir
   regsub -- {^\^} $file_name $root_dir file_name
+  ## Derive full path for filename
+  set file_name [file normalize $file_name]
   ## Recursion is checked for, i.e. if a test list includes itself
   if {[lsearch $recursion_check $file_name] >= 0} {
     puts [format "ERROR RECURSION : %s" $file_name]
@@ -213,6 +279,25 @@ proc ReadTestlistFile_int {file_name collapse {debug 0}} {
           if {$debug==1} {
             puts [format "DEBUG: Registering testbench %s" [lindex $line 1]]
           }
+        ##
+        ## Process TB_MAP lines, which must contain three arguments after the keyword
+        ##   The three arguments should be the testbench name, followed by the source hierarchy, then the destination hierarchy
+        ##
+        } elseif {[string match "TB_MAP" [lindex $line 0]]} {
+          if {[llength $line] != 4} {
+            puts [format "ERROR TB_MAP ARGS : %s" $line]
+          }
+          if {![info exists builddict] || ![dict exists $builddict [lindex $line 1]]} {
+            puts [format "ERROR TB_MAP - No TB_INFO entry for %s" [lindex $line 1]]
+            print_builddict
+            exit
+          }
+          set source_hier [split [string trim [lindex $line 2]] "/"]
+          set dest_hier [split [string trim [lindex $line 3]] "/" ]
+          dict set builddict [lindex $line 1] "mapinfo" "blockpath" [join [lrange $source_hier 0 end-1] "/"]
+          dict set builddict [lindex $line 1] "mapinfo" "blockleaf" [lindex $source_hier end]
+          dict set builddict [lindex $line 1] "mapinfo" "syspath" [join [lrange $dest_hier 0 end-1] "/"]
+          dict set builddict [lindex $line 1] "mapinfo" "sysleaf" [lindex $dest_hier end]
         ##
         ## Process TB lines, which should contain a unique build label
         ##
@@ -323,10 +408,8 @@ proc ReadTestlistFile_int {file_name collapse {debug 0}} {
             puts [format "DEBUG: Including file %s" [lindex $line 1]]
           }
           ReadTestlistFile_int [lindex $line 1] $collapse $debug
-        } else {
-          puts [format "ERROR UNKNOWN CMD: %s" $line]
-          exit
         }
+        ## No check for invalid commands for potential forward-compatibility
       }
     }
   }

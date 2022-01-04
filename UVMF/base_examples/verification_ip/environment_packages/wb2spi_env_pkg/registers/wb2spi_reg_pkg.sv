@@ -143,7 +143,7 @@ package wb2spi_reg_pkg;
          serial_peripheral_interrupt_enable.configure(this, 1, 7, "RW", 0, 1'b0, 1, 1, 0);
          serial_peripheral_enable.configure(this, 1, 6, "RW", 0, 1'b0, 1, 1, 0);
          reserved.configure(this, 1, 5, "RW", 0, 1'b0, 1, 1, 0);
-         master_mode_select.configure(this, 1, 4, "RW", 0, 1'b1, 1, 1, 0);
+         master_mode_select.configure(this, 1, 4, "RW", 0, 1'b0, 1, 1, 0);
          clock_polarity.configure(this, 1, 3, "RW", 0, 1'b0, 1, 1, 0);
          clock_phase.configure(this, 1, 2, "RW", 0, 1'b0, 1, 1, 0);
          spi_clock_rate_select.configure(this, 2, 0, "RW", 0, 2'b00, 1, 1, 0);
@@ -195,7 +195,7 @@ package wb2spi_reg_pkg;
    //--------------------------------------------------------------------
    // Class: wb2spi_reg_block_bus_map_coverage
    // 
-   // Coverage for the 'bus_map' in 'wb2spi_reg_block'
+   // Coverage for the 'bus_map' in 'wb2spi_reg_model'
    //--------------------------------------------------------------------
 
    class wb2spi_reg_block_bus_map_coverage extends uvm_object;
@@ -235,13 +235,13 @@ package wb2spi_reg_pkg;
 
 
    //--------------------------------------------------------------------
-   // Class: wb2spi_reg_block
+   // Class: wb2spi_reg_model
    // 
    // Register block
    //--------------------------------------------------------------------
 
-   class wb2spi_reg_block extends uvm_reg_block;
-      `uvm_object_utils(wb2spi_reg_block)
+   class wb2spi_reg_model extends uvm_reg_block;
+      `uvm_object_utils(wb2spi_reg_model)
 
       rand serial_peripheral_control_reg spcr; 
       rand serial_peripheral_status_reg spsr; 
@@ -254,7 +254,7 @@ package wb2spi_reg_pkg;
 
       // Function: new
       // 
-      function new(string name = "wb2spi_reg_block");
+      function new(string name = "wb2spi_reg_model");
          super.new(name, build_coverage(UVM_CVR_ALL));
       endfunction
 

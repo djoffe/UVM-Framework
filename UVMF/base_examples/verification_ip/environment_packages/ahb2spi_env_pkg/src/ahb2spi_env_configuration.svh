@@ -1,38 +1,63 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 14
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb2spi Environment 
-// Unit            : Environment configuration
-// File            : ahb2spi_env_configuration.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: THis is the configuration for the ahb2spi environment.
 //  it contains configuration classes for each agent.  It also contains
 //  environment level configuration variables.
 //
-//
-//
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
-class ahb2spi_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16) extends uvmf_environment_configuration_base;
+class ahb2spi_env_configuration #(
+             int WB_DATA_WIDTH = 16,
+             int WB_ADDR_WIDTH = 32
+             )
+extends uvmf_environment_configuration_base;
 
-  `uvm_object_param_utils( ahb2spi_env_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) );
+  `uvm_object_param_utils( ahb2spi_env_configuration #(
+                           WB_DATA_WIDTH,
+                           WB_ADDR_WIDTH
+                           ))
 
 
 //Constraints for the configuration variables:
 
+// Instantiate the register model
+  ahb2spi_reg_model  ahb2spi_rm;
+
   covergroup ahb2spi_configuration_cg;
+    // pragma uvmf custom covergroup begin
     option.auto_bin_max=1024;
+  // pragma uvmf custom covergroup end
   endgroup
 
-   ahb2wb_env_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) ahb2wb_env_config;
-   wb2spi_env_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH)) wb2spi_env_config;
+typedef ahb2wb_env_configuration#(
+                .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                ) ahb2wb_config_t;
+ahb2wb_config_t ahb2wb_config;
 
-  ahb2spi_reg_block     reg_model;
+typedef wb2spi_env_configuration#(
+                .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                ) wb2spi_config_t;
+wb2spi_config_t wb2spi_config;
+
+
+
+    string                ahb2wb_interface_names[];
+    uvmf_active_passive_t ahb2wb_interface_activity[];
+    string                wb2spi_interface_names[];
+    uvmf_active_passive_t wb2spi_interface_activity[];
+
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // FUNCTION : new()
@@ -42,12 +67,30 @@ class ahb2spi_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
   function new( string name = "" );
     super.new( name );
 
-   ahb2wb_env_config = ahb2wb_env_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("ahb2wb_env_config");
-   wb2spi_env_config = wb2spi_env_configuration#(.WB_ADDR_WIDTH(WB_ADDR_WIDTH),.WB_DATA_WIDTH(WB_DATA_WIDTH))::type_id::create("wb2spi_env_config");
+   ahb2wb_config = ahb2wb_config_t::type_id::create("ahb2wb_config");
+   wb2spi_config = wb2spi_config_t::type_id::create("wb2spi_config");
 
 
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
+  endfunction
+
+// ****************************************************************************
+// FUNCTION: post_randomize()
+// This function is automatically called after the randomize() function 
+// is executed.
+//
+  function void post_randomize();
+    super.post_randomize();
+    // pragma uvmf custom post_randomize begin
+   if(!ahb2wb_config.randomize()) `uvm_fatal("RAND","ahb2wb randomization failed");
+   if(!wb2spi_config.randomize()) `uvm_fatal("RAND","wb2spi randomization failed");
+
+
+    // pragma uvmf custom post_randomize end
 
   endfunction
+  
 // ****************************************************************************
 // FUNCTION: convert2string()
 // This function converts all variables in this class to a single string for
@@ -55,14 +98,18 @@ class ahb2spi_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
 // each agent configuration in this configuration class.
 //
   virtual function string convert2string();
+    // pragma uvmf custom convert2string begin
     return {
      
 
-     "\n", ahb2wb_env_config.convert2string,
-     "\n", wb2spi_env_config.convert2string
+     "\n", ahb2wb_config.convert2string,
+     "\n", wb2spi_config.convert2string
 
        };
 
+
+
+    // pragma uvmf custom convert2string end
   endfunction
 // ****************************************************************************
 // FUNCTION: initialize();
@@ -78,40 +125,44 @@ class ahb2spi_env_configuration #(int WB_ADDR_WIDTH = 32,int WB_DATA_WIDTH = 16)
                                       string environment_path,
                                       string interface_names[],
                                       uvm_reg_block register_model = null,
-                                      uvmf_active_passive_t interface_activity[] = null
+                                      uvmf_active_passive_t interface_activity[] = {}
                                      );
-    string                ahb2wb_env_interface_names[];
-    uvmf_active_passive_t ahb2wb_env_interface_activity[];
-    string                wb2spi_env_interface_names[];
-    uvmf_active_passive_t wb2spi_env_interface_activity[];
-
 
     super.initialize(sim_level, environment_path, interface_names, register_model, interface_activity);
 
-    ahb2wb_env_interface_names    = new[2];
-    ahb2wb_env_interface_activity = new[2];
+  // Interface initialization for sub-environments
+    ahb2wb_interface_names    = new[2];
+    ahb2wb_interface_activity = new[2];
 
-    ahb2wb_env_interface_names     = interface_names[0:1];
-    ahb2wb_env_interface_activity  = interface_activity[0:1];
+    ahb2wb_interface_names     = interface_names[0:1];
+    ahb2wb_interface_activity  = interface_activity[0:1];
+    wb2spi_interface_names    = new[2];
+    wb2spi_interface_activity = new[2];
 
-    wb2spi_env_interface_names    = new[2];
-    wb2spi_env_interface_activity = new[2];
+    wb2spi_interface_names     = interface_names[2:3];
+    wb2spi_interface_activity  = interface_activity[2:3];
 
-    wb2spi_env_interface_names     = interface_names[2:3];
-    wb2spi_env_interface_activity  = interface_activity[2:3];
 
+    // pragma uvmf custom reg_model_config_initialize begin
+    // Register model creation and configuation
     if (register_model == null) begin
-      reg_model = ahb2spi_reg_block::type_id::create("reg_model");
-      reg_model.build();
-
+      ahb2spi_rm = ahb2spi_reg_model::type_id::create("ahb2spi_rm");
+      ahb2spi_rm.build();
       enable_reg_adaptation = 1;
-      wb2spi_env_config.enable_reg_prediction = 1;
+      enable_reg_prediction = 1;
+    end else begin
+      $cast(ahb2spi_rm,register_model);
+      enable_reg_prediction = 0;
     end
+    // pragma uvmf custom reg_model_config_initialize end
 
-     ahb2wb_env_config.initialize( NA, {environment_path,".ahb2wb_env"}, ahb2wb_env_interface_names, null,             ahb2wb_env_interface_activity);
-     wb2spi_env_config.initialize( NA, {environment_path,".wb2spi_env"}, wb2spi_env_interface_names, reg_model.wb2spi, wb2spi_env_interface_activity);
+     ahb2wb_config.initialize( sim_level, {environment_path,".ahb2wb"}, ahb2wb_interface_names, null,   ahb2wb_interface_activity);
+     wb2spi_config.initialize( sim_level, {environment_path,".wb2spi"}, wb2spi_interface_names, ahb2spi_rm.wb2spi_rm,   wb2spi_interface_activity);
 
 
+
+  // pragma uvmf custom initialize begin
+  // pragma uvmf custom initialize end
 
   endfunction
 

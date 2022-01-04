@@ -1,6 +1,9 @@
 {% set fname = "verification_ip/interface_packages/{{name}}_pkg/compile.do" %}
 # Tcl do file for compile of {{name}} interface
 
+# pragma uvmf custom additional begin
+# pragma uvmf custom additional end
+
 {% if DPIFiles|length > 0 %}
 # Build from associated DPI C source
 if {$tcl_platform(pointerSize)==8} {
@@ -37,9 +40,11 @@ set gcccmd [format "gcc %s {{DPILinkArgs}} %s -o {{soName}}.%s" $gcc_comp_arch $
 eval $gcccmd
 {% endif %}
 
+vlog -sv -timescale 1ps/1ps -suppress 2223,2286 +incdir+$env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg \
+  -F $env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/{{name}}_filelist_hdl.f
+
 vlog -sv -timescale 1ps/1ps -suppress 2223,2286 {% if useDpiLink %}+incdir+$env(UVMF_HOME)/common/dpi_link_pkg {% endif %}+incdir+$env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg \
   -F $env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/{{name}}_filelist_hvl.f
 
 vlog -sv -timescale 1ps/1ps -suppress 2223,2286 +incdir+$env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg \
-  -F $env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/{{name}}_filelist_hdl.f
-
+  -F $env({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/{{name}}_filelist_xrtl.f

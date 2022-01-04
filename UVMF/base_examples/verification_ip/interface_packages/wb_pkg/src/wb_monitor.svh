@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : jcraft
-// Creation Date   : 2016 Nov 03
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb interface agent
-// Unit            : Interface UVM monitor
-// File            : wb_monitor.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This class receives wb transactions observed by the
@@ -17,34 +13,40 @@
 //     for viewing in the waveform viewer if the
 //     enable_transaction_viewing flag is set in the configuration.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
-class wb_monitor  #(
-      int WB_ADDR_WIDTH = 32,                                
-      int WB_DATA_WIDTH = 16                                
+class wb_monitor #(
+      int WB_ADDR_WIDTH = 32,
+      int WB_DATA_WIDTH = 16
       ) extends uvmf_monitor_base #(
                     .CONFIG_T(wb_configuration  #(
-                             .WB_ADDR_WIDTH(WB_ADDR_WIDTH),                                
-                             .WB_DATA_WIDTH(WB_DATA_WIDTH)                                
-                             ) ),
+                             .WB_ADDR_WIDTH(WB_ADDR_WIDTH),
+                             .WB_DATA_WIDTH(WB_DATA_WIDTH)
+                             )),
                     .BFM_BIND_T(virtual wb_monitor_bfm  #(
-                             .WB_ADDR_WIDTH(WB_ADDR_WIDTH),                                
-                             .WB_DATA_WIDTH(WB_DATA_WIDTH)                                
-                             ) ),
+                             .WB_ADDR_WIDTH(WB_ADDR_WIDTH),
+                             .WB_DATA_WIDTH(WB_DATA_WIDTH)
+                             )),
                     .TRANS_T(wb_transaction  #(
-                             .WB_ADDR_WIDTH(WB_ADDR_WIDTH),                                
-                             .WB_DATA_WIDTH(WB_DATA_WIDTH)                                
-                             ) ));
+                             .WB_ADDR_WIDTH(WB_ADDR_WIDTH),
+                             .WB_DATA_WIDTH(WB_DATA_WIDTH)
+                             )));
 
   `uvm_component_param_utils( wb_monitor #(
                               WB_ADDR_WIDTH,
                               WB_DATA_WIDTH
-                            ))
+                              ))
 
+// Structure used to pass data from monitor BFM to monitor class in agent.
+// Use to_monitor_struct function to pack transaction variables into structure.
+// Use from_monitor_struct function to unpack transaction variables from structure.
+`wb_MONITOR_STRUCT
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
 // ****************************************************************************
-// FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
 //
   function new( string name = "", uvm_component parent = null );
@@ -52,21 +54,23 @@ class wb_monitor  #(
   endfunction
 
 // ****************************************************************************
+// This function sends configuration object variables to the monitor BFM 
+// using the configuration struct.
+//
    virtual function void configure(input CONFIG_T cfg);
-      bfm.configure(
+      bfm.configure( cfg.to_struct() );
 
-          cfg.active_passive,
-          cfg.initiator_responder
-);                    
-   
    endfunction
 
 // ****************************************************************************
+// This function places a handle to this class in the proxy variable in the
+// monitor BFM.  This allows the monitor BFM to call the notify_transaction
+// function within this class.
+//
    virtual function void set_bfm_proxy_handle();
-      bfm.proxy = this;
-   endfunction
+      bfm.proxy = this;   endfunction
 
- // ****************************************************************************              
+// ***************************************************************************              
   virtual task run_phase(uvm_phase phase);                                                   
   // Start monitor BFM thread and don't call super.run() in order to                       
   // override the default monitor proxy 'pull' behavior with the more                      
@@ -75,21 +79,17 @@ class wb_monitor  #(
   bfm.start_monitoring();                                                   
   endtask                                                                                    
   
-  // ****************************************************************************              
-  virtual function void notify_transaction(
-                        input wb_op_t op,  
-                        input bit [WB_DATA_WIDTH-1:0] data,  
-                        input bit [WB_ADDR_WIDTH-1:0] addr,  
-                        input bit [(WB_DATA_WIDTH/8)-1:0] byte_select 
-                        );
+// **************************************************************************  
+  
+// This function is called by the monitor BFM.  It receives data observed by the
+// monitor BFM.  Data is passed using the wb_monitor_struct.          
+ virtual function void notify_transaction(input wb_monitor_s wb_monitor_struct);
     trans = new("trans");                                                                   
     trans.start_time = time_stamp;                                                          
     trans.end_time = $time;                                                                 
-    time_stamp = trans.end_time;                                                            
-    trans.op = op;
-    trans.data = data;
-    trans.addr = addr;
-    trans.byte_select = byte_select;
+    time_stamp = trans.end_time;  
+                                                            
+    trans.from_monitor_struct(wb_monitor_struct);
     analyze(trans);                                                                         
   endfunction  
 

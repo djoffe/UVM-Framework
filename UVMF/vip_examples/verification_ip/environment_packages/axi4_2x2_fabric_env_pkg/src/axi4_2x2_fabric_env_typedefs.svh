@@ -1,23 +1,23 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_5
 //----------------------------------------------------------------------
-// Created by      : daerne
-// Creation Date   : 2017 Nov 02
-// Created with uvmf_gen version 3.6g
+// Created by: Vijay Gill
+// E-mail:     vijay_gill@mentor.com
+// Date:       2019/11/05
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : axi4_2x2_fabric environment package
-// Unit            : Interface Typedefs
-// File            : axi4_2x2_fabric_typedefs.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This file contains defines and typedefs to be compiled for use in
 // the environment package.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 
+
+  // pragma uvmf custom additional begin
+  // pragma uvmf custom additional end
 

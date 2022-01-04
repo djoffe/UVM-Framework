@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 15
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb interface agent
-// Unit            : Interface UVM monitor
-// File            : ahb_monitor.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This class receives ahb transactions observed by the
@@ -17,20 +13,25 @@
 //     for viewing in the waveform viewer if the
 //     enable_transaction_viewing flag is set in the configuration.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
-class ahb_monitor extends uvmf_monitor_base #(
-                    .CONFIG_T(ahb_configuration),
-                    .BFM_BIND_T(virtual ahb_monitor_bfm),
-                    .TRANS_T(ahb_transaction)
-                    );
+class ahb_monitor  extends uvmf_monitor_base #(
+                    .CONFIG_T(ahb_configuration  ),
+                    .BFM_BIND_T(virtual ahb_monitor_bfm  ),
+                    .TRANS_T(ahb_transaction  ));
 
   `uvm_component_utils( ahb_monitor )
 
+// Structure used to pass data from monitor BFM to monitor class in agent.
+// Use to_monitor_struct function to pack transaction variables into structure.
+// Use from_monitor_struct function to unpack transaction variables from structure.
+`ahb_MONITOR_STRUCT
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
 // ****************************************************************************
-// FUNCTION : new()
 // This function is the standard SystemVerilog constructor.
 //
   function new( string name = "", uvm_component parent = null );
@@ -38,21 +39,23 @@ class ahb_monitor extends uvmf_monitor_base #(
   endfunction
 
 // ****************************************************************************
+// This function sends configuration object variables to the monitor BFM 
+// using the configuration struct.
+//
    virtual function void configure(input CONFIG_T cfg);
-      bfm.configure(
+      bfm.configure( cfg.to_struct() );
 
-          cfg.active_passive,
-          cfg.master_slave
-);                    
-   
    endfunction
 
 // ****************************************************************************
+// This function places a handle to this class in the proxy variable in the
+// monitor BFM.  This allows the monitor BFM to call the notify_transaction
+// function within this class.
+//
    virtual function void set_bfm_proxy_handle();
-      bfm.proxy = this;
-   endfunction
+      bfm.proxy = this;   endfunction
 
- // ****************************************************************************              
+// ***************************************************************************              
   virtual task run_phase(uvm_phase phase);                                                   
   // Start monitor BFM thread and don't call super.run() in order to                       
   // override the default monitor proxy 'pull' behavior with the more                      
@@ -61,18 +64,17 @@ class ahb_monitor extends uvmf_monitor_base #(
   bfm.start_monitoring();                                                   
   endtask                                                                                    
   
-  // ****************************************************************************              
-  virtual function void notify_transaction(
-                                            input ahb_op_t op,
-                                            input bit [15:0] data,
-                                            input bit [31:0] addr                              );
+// **************************************************************************  
+  
+// This function is called by the monitor BFM.  It receives data observed by the
+// monitor BFM.  Data is passed using the ahb_monitor_struct.          
+ virtual function void notify_transaction(input ahb_monitor_s ahb_monitor_struct);
     trans = new("trans");                                                                   
     trans.start_time = time_stamp;                                                          
     trans.end_time = $time;                                                                 
-    time_stamp = trans.end_time;                                                            
-    trans.op = op;
-    trans.data = data;
-    trans.addr = addr;
+    time_stamp = trans.end_time;  
+                                                            
+    trans.from_monitor_struct(ahb_monitor_struct);
     analyze(trans);                                                                         
   endfunction  
 

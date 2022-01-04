@@ -37,36 +37,36 @@
 ##############################################################################
 
 import sys
-
-# Check version of Python in use - fatal error if not 2.x (don't support Python3 yet)
-if (sys.version_info[0] >= 3):
-  print "ERROR : yaml2uvmf only supported on Python2 - version in use is "+str(sys.version_info[0])+"."+str(sys.version_info[1])+"."+str(sys.version_info[2])
-  sys.exit(1)
-
 import os
 import time
 import re
 import inspect
-from optparse import OptionParser
+import copy
+import pprint
+from optparse import OptionParser, SUPPRESS_HELP
 from fnmatch import fnmatch
 
-# Determine addition to PYTHONPATH automatically based on script location
+# Determine addition to sys.path automatically based on script location
 # This means user does not have to explicitly set PYTHONPATH in order for this
-# script to work properly
+# script to work properly.
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python");
+# Only need python2 packages if using python2
+if sys.version_info[0] < 3:
+  sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2");
 
 from uvmf_yaml import  *
 import uvmf_gen
 from uvmf_gen import (UVMFCommandLineParser,PassThroughOptionParser,UserError,InterfaceClass,EnvironmentClass,BenchClass)
-from voluptuous import MultipleInvalid
+from voluptuous import Invalid, MultipleInvalid
 from voluptuous.humanize import humanize_error
+from uvmf_version import version
 
-__version__ = '2019.1'
+__version__ = version
 
 try:
   import yaml
-except ImportError,e:
-  print "ERROR : yaml package not found.  See templates.README for more information"
+except ImportError:
+  print("ERROR : yaml package not found.  See templates.README for more information")
   sys.exit(1)
 
 
@@ -88,10 +88,11 @@ class ConfigFileReader:
 
 class DataClass:
   def __init__(self,parser,debug=False):
-    self.data = {'interfaces':{},'environments':{},'benches':{},'util_components':{},'qvip_environments':{}}
+    self.data = {'interfaces':{},'environments':{},'benches':{},'util_components':{},'qvip_environments':{},'qvip_library':{},'global':{}}
     self.parser = parser
     self.debug = debug
     self.validators = {}
+    self.used_ac_items = []
 
   def parseFile(self,fname):
     try:
@@ -105,6 +106,9 @@ class DataClass:
         raise UserError("Contents of "+fname+" not valid UVMF info")
     except:
       raise UserError("Contents of "+fname+" not valid UVMF info")
+    for k in d['uvmf'].keys():
+      if k not in self.data.keys():
+        raise UserError("Top-level element \""+k+"\" in "+fname+" is not valid. Allowed entries:\n  "+str(self.data.keys()))
     for elem in self.data.keys():
       try: self.data[elem].update(d['uvmf'][elem])
       except KeyError:
@@ -117,14 +121,22 @@ class DataClass:
       'util_components':ComponentValidator(),
       'qvip_environments':QVIPEnvValidator(),
       'environments':EnvironmentValidator(),
-      'benches':BenchValidator()
+      'benches':BenchValidator(),
+      'global':GlobalValidator(),
+#      'qvip_library':QVIPLibValidator(),   ## Don't validate QVIP library info, for debug purposes only
     }
+    ## Check for any incorrect top-level keys
     for t in self.validators.keys():
       for c in self.data[t].keys():
+        if (t=='global'):
+          v = self.data[t]
+        else:
+          v = self.data[t][c]
         try:
-          self.validators[t].schema(self.data[t][c])
+          self.validators[t].schema(v)
         except MultipleInvalid as e:
-           raise UserError("While validating "+t+" YAML '"+c+"', "+humanize_error(self.data[t][c],e))
+          resp = humanize_error(v,e).split('\n')
+          raise UserError("While validating "+t+" YAML '"+c+"':\n"+pprint.pformat(resp,indent=2))
 
   ## Generate everything from the data structures
   def buildElements(self,genarray):
@@ -135,21 +147,36 @@ class DataClass:
       arrlen = 0
       pass
     for interface_name in self.data['interfaces']:
-      if (((arrlen>0) and (interface_name in genarray)) or arrlen==0):
+      if ((arrlen>0) and (interface_name in genarray)) or (arrlen==0):
         self.interfaceDict[interface_name] = self.generateInterface(interface_name)
     self.environmentDict = {}
     for environment_name in self.data['environments']:
-      if (((arrlen>0) and (environment_name in genarray)) or arrlen==0):
+      if ((arrlen>0) and (environment_name in genarray)) or (arrlen==0):
         self.environmentDict[environment_name] = self.generateEnvironment(environment_name)
     self.benchDict = {}
     for bench_name in self.data['benches']:
-      if (((arrlen>0) and (bench_name in genarray)) or arrlen==0):
+      if ((arrlen>0) and (bench_name in genarray)) or (arrlen==0):
         self.benchDict[bench_name] = self.generateBench(bench_name)
+    ## Check to see if any utility components were defined but never instantiated, flag that as a warning
+    for util_comp in self.data['util_components']:
+      if util_comp not in self.used_ac_items:
+        print("  WARNING : Utility component \""+util_comp+"\" was defined but never used. It will not be generated.")
+
+  def recursion_print(self,recurse_list):
+    r = ""
+    for i,s in enumerate(recurse_list):
+      r = r + s
+      if i != len(recurse_list)-1:
+        r = r + " -> "
+    return r
 
   ## This method recursively searches all environments from the specified level down for QVIP subenvs, compiling
   ## a list of underlying QVIP agents, their subenvironment parent names, their import list and active/passive info
-  def getQVIPAgents(self,topEnv):
+  def getQVIPAgents(self,topEnv,recurse_list=[]):
     struct = self.data['environments']
+    # Check for recursion, error out if detected
+    if topEnv in recurse_list:
+      raise UserError("Sub-environment recursion detected within environment \""+topEnv+"\". Tree: \""+self.recursion_print(recurse_list+[topEnv])+"\"")
     try:
       env = struct[topEnv]
     except KeyError:
@@ -184,7 +211,7 @@ class DataClass:
       subenv_list = []
       pass
     for s in subenv_list:
-      qstruct = self.getQVIPAgents(s['type'])
+      qstruct = self.getQVIPAgents(s['type'],recurse_list+[topEnv])
       agent_list = agent_list + qstruct['alist'];
       import_list = import_list + qstruct['ilist'];
     ## Finally, uniquify the import list
@@ -206,7 +233,7 @@ class DataClass:
     try:
       envs = env['subenvs']
     except KeyError: pass
-    if recursive==False:
+    if not recursive:
       return envs
     for subenv in envs:
       envs = envs + self.getEnvironments(subenv['type'],recursive=True)
@@ -227,6 +254,8 @@ class DataClass:
   ##   - Environment Path ('env_path')
   ##   - VIP Library Env Variable Name ('lib_env_var_name') (only valid for non-QVIP)
   ##   - QVIP/Non-QVIP flag ('is_qvip')
+  ##   - Initiator/Responder info ('initiator_responder')
+  ##   - VeloceReady flag ('veloce_ready')
   def getAllAgents(self,env_type,env_inst,isQVIP,envPath):
     alist = []
     if (isQVIP==1):
@@ -239,7 +268,14 @@ class DataClass:
         raise UserError("Unable to find QVIP environment \""+env_type+"\" in defined QVIP environments (available list is "+str(struct.keys())+")")
       for a in env['agents']:
         ## All we have is the name of each BFM.
-        alist = alist + [{ 'bfm_name': a['name'], 'bfm_type': 'unknown', 'parent_type': env_type, 'env_path': envPath+"."+a['name'],'lib_env_var_name':'unknown','is_qvip': 1 }]
+        alist = alist + [{ 'bfm_name': a['name'], 
+                           'bfm_type': 'unknown', 
+                           'parent_type': env_type, 
+                           'env_path': envPath+"."+a['name'],
+                           'lib_env_var_name':'unknown',
+                           'is_qvip': 1 ,
+                           'initiator_responder':'UNKNOWN',
+                           'veloce_ready':False }]
       ## No nesting with QVIP environments so safe to just return here
       return alist  
     else:
@@ -273,9 +309,50 @@ class DataClass:
         except KeyError:
           init_resp = 'INITIATOR'
           pass
-        alist = alist + [{ 'bfm_name': a['name'], 'bfm_type': a['type'], 'parent_type': env_type, 'env_path': envPath+"."+a['name'],'lib_env_var_name':env_var_name, 'is_qvip': 0, 'initiator_responder':init_resp }]
+        try:
+          veloce_ready = (self.data['interfaces'][a['type']]['veloce_ready']=="True")
+        except KeyError:
+          veloce_ready = True
+          pass
+        alist = alist + [{ 'bfm_name': a['name'], 
+                           'bfm_type': a['type'], 
+                           'parent_type': env_type, 
+                           'env_path': envPath+"."+a['name'],
+                           'lib_env_var_name':env_var_name, 
+                           'is_qvip': 0, 
+                           'initiator_responder':init_resp ,
+                           'veloce_ready':veloce_ready }]
     except KeyError: pass
     return alist
+
+  ## This method returns an ordered list of information on ALL BFMs from a given top-level environment, down. 
+  ## The list entries all have the following structure:
+  ##   - BFM Name ('bfm_name')
+  ##   - BFM Type ('bfm_type')
+  ##   - BFM Parent Type ('parent_type')
+  ##   - Environment Path ('env_path')
+  ##   - VIP Library Env Variable Name ('lib_env_var_name') (only valid for non-QVIP)
+  ##   - QVIP/Non-QVIP flag ('is_qvip')
+  ##   - Initiator/Responder info ('initiator_responder')
+  ##   - VeloceReady flag ('veloce_ready')
+  def getAllScoreboards(self,env_type,env_inst,envPath):
+    sblist = []
+    struct = self.data['environments']
+    try:
+      env = struct[env_type]
+    except KeyError:
+      raise UserError("Unable to find environment \""+env_type+"\" in defined environments (available list is "+str(struct.keys()))
+    try:
+      subenvs = env['subenvs']
+      for e in subenvs:
+        sblist = sblist + self.getAllScoreboards(e['type'],e['name'],envPath+"."+e['name'])
+    except KeyError: pass
+    try:
+      sbs = env['scoreboards']
+      for sb in sbs:
+        sblist = sblist + [envPath+"."+sb['name']]
+    except KeyError: pass
+    return sblist
 
   ## This method can be employed to return either a list of (non-QVIP) agents at the provided environment
   ## level or recursively, searching through all sub-environments and down. 
@@ -291,7 +368,7 @@ class DataClass:
     except:
       agents = []
       pass
-    if (givePath==False):
+    if not givePath:
       structure = agents
     else:
       structure = []
@@ -301,7 +378,7 @@ class DataClass:
           except KeyError: 
             vip_lib_env_variable = "UVMF_VIP_LIBRARY_HOME"
           structure = structure + [{ 'envpath' : parentPath, 'agent' : agent, 'vip_lib_env_variable' : vip_lib_env_variable }]
-    if (recursive==False):
+    if not recursive:
       return structure
     try:
       subEnvs = env['subenvs']
@@ -325,6 +402,17 @@ class DataClass:
   def generateEnvironment(self,name):
     env = EnvironmentClass(name)
     struct = self.data['environments'][name]
+    qvip_agents_dot = []
+    qvip_agents_und = []
+    valid_ap_list = []
+    valid_ae_list = []
+    valid_qsubenv_list = []
+    env_has_extdef_items = False
+    try:
+      env.header = self.data['global']['header']
+    except KeyError:
+      env.header = None
+      pass
     ## Extract any environment-level parameters and add them
     try:
       for param in struct['parameters']:
@@ -336,6 +424,12 @@ class DataClass:
         pname,ptype,pval = self.dataExtract(['name','type','value'],param)
         env.addHvlPkgParamDef(pname,ptype,pval)
     except KeyError: pass
+    ## Extract any configuration variable settings and add them
+    try:
+      for cv_val in struct['config_variable_values']:
+        cvvname,cvvval = self.dataExtract(['name','value'],cv_val)
+        env.addConfigVariableValue(cvvname,cvvval)
+    except KeyError: pass    
     ## Drill down into any QVIP subenvironments for import information, that'll be needed here
     qstruct = self.getQVIPAgents(name)
     ilist = qstruct['ilist']
@@ -397,6 +491,9 @@ class DataClass:
         alist = []
         for a in qvipStruct['agents']:
           alist = alist + [a['name']]
+          qvip_agents_dot = qvip_agents_dot + [n+"."+a['name']]
+          qvip_agents_und = qvip_agents_und + [n+"_"+a['name']]
+        valid_qsubenv_list = valid_qsubenv_list + [n] 
         env.addQvipSubEnv(name=n,envPkg=t,agentList=alist)
     except KeyError: pass
     ## Look for defined sub-environments and add them
@@ -420,28 +517,40 @@ class DataClass:
         ## Also find any underlying QVIP agents underneath this subenvironment (nested underneath underlying QVIP subenvs)
         qvip_agents_struct = self.getQVIPAgents(etype);
         qvip_agents = qvip_agents_struct['alist']
-        if (agents==None):
+        if agents==None:
           raise UserError("Sub-environment type \""+etype+"\" used in environment \""+name+"\" is not found")
+        self.check_parameters('environment',name,'subenv',ename,etype,eparams_array,self.data['environments'][etype])
         ## Check if subenv has a register model defined unless asked explicitly to avoid it
         try:
           v = subenv['use_register_model']=='True'
         except KeyError:
           v = True
           pass
-        if v==True:
+        if v:
           env_def = self.data['environments'][etype]
           try:
-            rm = env_def['register_model']
+            rm = env_def['register_model'] 
           except KeyError:
             rm = None
             pass
         else:
           rm = None
-        if rm == None:
+        if not rm:
           rm_name = None
         else:
           rm_name = etype+'_rm'
-        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_name)  
+        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_name) 
+        env_def = self.data['environments'][etype]
+        try:
+          env_ap_list = env_def['analysis_ports']
+          for env_ap in env_ap_list:
+            valid_ap_list = valid_ap_list + [ename+"."+env_ap['name']]
+        except KeyError: pass
+        try:
+          env_ae_list = env_def['analysis_exports']
+          for env_ae in env_ae_list:
+            valid_ae_list = valid_ae_list + [ename+"."+env_ae['name']]
+        except KeyError: pass
     except KeyError: pass    
     ## Locally defined agent instantiations
     try:
@@ -465,7 +574,9 @@ class DataClass:
         except KeyError:
           initResp = 'INITIATOR'
           pass
+        self.check_parameters('environment',name,'agent',agent['name'],atype,aparams_list,self.data['interfaces'][atype])
         env.addAgent(agent['name'],atype,intf['clock'],intf['reset'],aparams,initResp)
+        valid_ap_list = valid_ap_list + [agent['name']+".monitored_ap"]
     except KeyError: pass    
     defined_ac_items = []
     try:
@@ -475,14 +586,20 @@ class DataClass:
       pass
     for ac_item in ac_items:
       ac_type,ac_name = self.dataExtract(['type','name'],ac_item)
+      try:
+        ac_params = ac_item['parameters']
+      except KeyError:
+        ac_params = []
+        pass
       ## Don't go through the trouble of poking at the definition of the analysis component if it was already
       ## used before.  Just instantiate it
       try:
         extdef = (ac_item['extdef'] == 'True')
+        env_has_extdef_items = True
       except KeyError:
         extdef = False
         pass
-      if ((ac_type not in defined_ac_items) and extdef==False):
+      if (ac_type not in defined_ac_items) and (not extdef):
         try:
           definition = self.data['util_components'][ac_type]
         except KeyError:
@@ -496,11 +613,40 @@ class DataClass:
         ports = {}
         try:
           for item in definition['analysis_ports']:
-            ports[item['name']] = item['type'] 
+            ports[item['name']] = item['type']
         except KeyError: pass
-        env.defineAnalysisComponent(ac_type_type,ac_type,exports,ports)
+        qvip_exports = {}
+        try:
+          for item in definition['qvip_analysis_exports']:
+            qvip_exports[item['name']] = item['type']
+        except KeyError: pass
+        try:
+          parameters = definition['parameters']
+        except KeyError:
+          parameters = []
+          pass
+        env.defineAnalysisComponent(ac_type_type,ac_type,exports,ports,qvip_exports,parameters)
         defined_ac_items = defined_ac_items + [ac_type]
-      env.addAnalysisComponent(ac_name,ac_type)
+        if ac_type not in self.used_ac_items:
+          self.used_ac_items = self.used_ac_items + [ac_type]
+      if not extdef:
+        self.check_parameters('environment',name,ac_type_type,ac_name,ac_type,ac_params,self.data['util_components'][ac_type])
+      env.addAnalysisComponent(ac_name,ac_type,ac_params,extdef)
+      try: ports
+      except NameError: ports = None
+      if ports is not None:
+        for ap in ports:
+          valid_ap_list = valid_ap_list + [ac_name+"."+ap]
+      try: exports
+      except NameError: exports = None
+      if exports is not None:
+        for ae in exports:
+          valid_ae_list = valid_ae_list + [ac_name+"."+ae]
+      try: qvip_exports
+      except NameError: qvip_exports = None
+      if qvip_exports is not None:
+        for qae in qvip_exports:
+          valid_ae_list = valid_ae_list + [ac_name+"."+qae]
     try:
       sb_items = struct['scoreboards']
     except KeyError:
@@ -516,23 +662,65 @@ class DataClass:
       sb_params = {}
       for item in sb_params_list:
         n,v = self.dataExtract(['name','value'],item)
-        sb_params[n] = v;
+        sb_params[n] = v
       env.addUvmfScoreboard(sb_name,sb_type,trans_type,sb_params)
+      valid_ae_list = valid_ae_list + [sb_name+".expected_analysis_export"]
+      valid_ae_list = valid_ae_list + [sb_name+".actual_analysis_export"]
     try:
       for item in struct['analysis_ports']:
         n,t,c = self.dataExtract(['name','trans_type','connected_to'],item)
+        if c not in valid_ap_list:
+          mess = "TLM connected_to entry \""+c+"\" listed in analysis_ports for environment \""+name+"\" not a valid TLM driver name. \nValid names:"
+          for ap in valid_ap_list:
+            mess = mess+"\n "+ap
+          if env_has_extdef_items:
+            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+            print(mess)
+          else:
+            raise UserError(mess)
         env.addAnalysisPort(n,t,c)
     except KeyError: pass
     try:
       for item in struct['analysis_exports']:
         n,t,c = self.dataExtract(['name','trans_type','connected_to'],item)
+        if c not in valid_ae_list:
+          mess = "TLM connected_to entry \""+c+"\" listed in analysis_exports for environment \""+name+"\" not a valid TLM receiver name. \nValid names:"
+          for ae in valid_ae_list:
+            mess = mess+"\n "+ae
+          if env_has_extdef_items:
+            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+            print(mess)
+          else:
+            raise UserError(mess)
         env.addAnalysisExport(n,t,c)
     except KeyError: pass
     try:
       for item in struct['qvip_connections']:
         d,r,k = self.dataExtract(['driver','receiver','ap_key'],item)
         rlist = r.split(".")
-        env.addQvipConnection(d,k,'.'.join(rlist[:-1]),rlist[-1])
+        ## Allow the driver (QVIP) to contain regular "." hierarchy for clarity. Convert any found
+        ## to underscores in order to adhere to the API
+        dm = re.sub(r'\.','_',d)
+        if dm not in qvip_agents_und:
+          mess = "QVIP TLM Driver name entry \""+d+"\" listed in qvip_connections for environment \""+name+"\" not a valid QVIP agent name. \nValid names:"
+          for b in qvip_agents_dot:
+            mess = mess+"\n  "+b
+          mess = mess+"\nNote: Underscores are valid substitutions within YAML for dot delimeters in this list of valid names.\n"
+          if env_has_extdef_items:
+            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+            print(mess)
+          else:
+            raise UserError(mess)
+        if r not in valid_ae_list:
+          mess = "QVIP TLM Receiver name entry \""+r+"\" listed in qvip_connections for environment \""+name+"\" not a valid QVIP TLM receiver name. \nValid names:"
+          for ae in valid_ae_list:
+            mess = mess+"\n "+ae
+          if env_has_extdef_items:
+            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+            print(mess)
+          else:
+            raise UserError(mess)
+        env.addQvipConnection(dm,k,'.'.join(rlist[:-1]),rlist[-1])
     except KeyError: pass
     try:
       for conn in struct['tlm_connections']:
@@ -540,6 +728,25 @@ class DataClass:
         ## The driver and receiver entries provided need to be split to work with the API in uvmf_gen
         dlist = d.split(".")
         rlist = r.split(".")
+        if d not in valid_ap_list:
+          mess = "TLM Driver name entry \""+d+"\" listed in tlm_connections for environment \""+name+"\" not a valid TLM driver name. \nValid names:"
+          for ap in valid_ap_list:
+            mess = mess+"\n "+ap
+          if dlist[0] not in valid_qsubenv_list:
+            if env_has_extdef_items:
+              mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+              print(mess)
+            else:
+              raise UserError(mess)
+        if r not in valid_ae_list:
+          mess = "TLM Receiver name entry \""+r+"\" listed in tlm_connections for environment \""+name+"\" not a valid TLM receiver name. \nValid names:"
+          for ae in valid_ae_list:
+            mess = mess+"\n "+ae
+          if env_has_extdef_items:
+            mess = mess+"\nPort may be on externally defined component - Skipping check on this connnection."
+            print(mess)
+          else:
+            raise UserError(mess)
         env.addConnection('.'.join(dlist[:-1]),dlist[-1],'.'.join(rlist[:-1]),rlist[-1])
     except KeyError: pass
     try:
@@ -654,7 +861,27 @@ class DataClass:
         n,v = self.dataExtract(['name','type'],t)
         env.addTypedef(n,v)
     except KeyError: pass
-    env.create(parser=self.parser)
+    ## UVMC Stuff
+    try:
+      env.addUVMCflags(struct['uvmc_flags'])
+    except KeyError: pass
+    try:
+     env.addUVMClinkArgs(struct['uvmc_link_args'])
+    except KeyError: pass
+    try:
+      cpp_files = struct['uvmc_files']
+      for f in cpp_files:
+        env.addUVMCfile(f)
+    except KeyError: pass
+    try:
+      existing_component = (struct['existing_library_component']=="True")
+    except KeyError: 
+      existing_component = False
+      pass
+    if (existing_component == True):
+      print("  Skipping generation of predefined component "+str(name))
+    else:
+      env.create(parser=self.parser)
     return env
 
   def parameterSyntax(self,parameterList):
@@ -682,8 +909,15 @@ class DataClass:
     env_params = {}
     for p in env_params_list:
       env_params[p['name']] = p['value']
+    ## Check that parameterization is valid for the top-env
+    self.check_parameters('bench',name,'environment',top_env,'top_env',env_params_list,self.data['environments'][top_env])
     ## With this information we can create the bench class object
     ben = BenchClass(name,top_env,env_params)
+    try:
+      ben.header = self.data['global']['header']
+    except KeyError:
+      ben.header = None
+      pass
     ## Look for clock and reset control settings (all optional)
     try:
       ben.clockHalfPeriod = struct['clock_half_period']
@@ -708,6 +942,12 @@ class DataClass:
     try:
       ben.useCoEmuClkRstGen = (struct['use_co_emu_clk_rst_gen']=='True')
     except KeyError: pass
+    ## Set the veloceReady flag for the bench
+    try:
+      ben.veloceReady = (struct['veloce_ready'] == "True")
+    except KeyError: 
+      ben.veloceReady = True
+      pass   
     ## Pull out bench-level parameter definitions, if any
     try:
       for param in struct['parameters']:
@@ -767,11 +1007,20 @@ class DataClass:
     ##   - QVIP/Non-QVIP flag
     ##   - Active/Passive flag
     ##   - Initiator/Responder flag
+    ##   - Veloce Ready flag (for checking)
     alist = self.getAllAgents(top_env,'environment',0,'environment')
+    ## Check for Veloce compatibility. If the bench has been flagged for veloce_ready then none of the underlying
+    ## non-QVIP agents can be flagged differently. QVIP is a different story, for now.
+    if ben.veloceReady:
+      for a in alist:
+        if a['is_qvip']==0: # Don't bother checking QVIP agents
+          if not a['veloce_ready']:
+            ## Fatal out if bench veloce_ready is TRUE but any agents underneath are FALSE
+            raise UserError("Bench \""+name+"\" is flagged veloce_ready True but underlying agent \""+a['env_path']+"\" of type \""+a['bfm_type']+"\" is flagged veloce_ready False")
     valid_bfm_names = []
     ## Now that we have an ordered list of BFMs we can call the appropriate API call for each
     for a in alist:
-      if (a['env_path'].count('.')==1):
+      if a['env_path'].count('.')==1:
         bfm_name = a['bfm_name']
         debugpath = 'environment'
       else:
@@ -779,7 +1028,7 @@ class DataClass:
         bfm_name = re.sub(r'^environment\.','',a['env_path'])
         bfm_name = re.sub(r'\.',r'_',bfm_name)
       valid_bfm_names = valid_bfm_names + [bfm_name]
-      if (a['is_qvip']==1):
+      if a['is_qvip']==1:
         ## Add each QVIP BFM instantiation. Function API is slightly different for QVIP vs. non-QVIP
         ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity='ACTIVE',unique_id=self.getUniqueID(a['env_path']))
       else:
@@ -804,14 +1053,17 @@ class DataClass:
     ## Check that all keys in the ifp_dict and ap_dict match something in the valid_bfm_names list that 
     ## was based on the actual UVM component hierarchy elements. If not, it probably means we have a typo somewhere in the bench YAML
     for k in ifp_dict.keys():
-      if (k not in valid_bfm_names):
+      if k not in valid_bfm_names:
         mess = "BFM name entry \""+k+"\" listed in interface_params structure for bench \""+name+"\" but not a valid BFM name. Valid BFM names:"
         for b in valid_bfm_names:
           mess = mess+"\n  "+b
         raise UserError(mess)
     for k in ap_dict.keys():
-      if (k not in valid_bfm_names):
-        raise UserError("BFM name entry \""+k+"\" listed in active_passive structure for bench \""+name+"\" but not a valid BFM name")
+      if k not in valid_bfm_names:
+        mess = "BFM name entry \""+k+"\" listed in active_passive structure for bench \""+name+"\" but not a valid BFM name. Valid BFM names:"
+        for b in valid_bfm_names:
+          mess = mess+"\n  "+b
+        raise UserError(mess)
     ## Now drill down again but this time find any DPI packages - these could be defined at any
     ## interface or environment, so getAgents isn't good enough.  Also need to call getEnvironments
     dpi_packages = []
@@ -826,9 +1078,8 @@ class DataClass:
           vinfo_interface_dpi_dependencies.append(agent['type'])
       except KeyError: pass
     envs = self.getEnvironments(top_env,recursive=True)
-    ## Also add the top-environment
-    envs.append({'type':top_env})
-    for env in envs:
+    ## Also add the top-environment to the array when searching for DPI
+    for env in envs+[{'type':top_env}]:
       try:
         dpi_pkg = self.data['environments'][env['type']]['dpi_define']['name']
         if dpi_pkg not in dpi_packages:
@@ -842,10 +1093,25 @@ class DataClass:
       ben.addVinfoDependency("comp_"+d+"_pkg_c_files")
     for d in vinfo_environment_dpi_dependencies:
       ben.addVinfoDependency("comp_"+d+"_env_pkg_c_files")
+    sblist = self.getAllScoreboards(top_env,'environment','environment')  
+    try: sblist
+    except NameError: sblist = None
+    if sblist is not None:
+      for sb in sblist:
+        ben.addScoreboard(sb) 
     try:
-      ben.veloceReady = (struct['veloce_ready'] == "True")
+      for t in struct['additional_tops']:
+        ben.addTopLevel(t)
     except KeyError: pass
-    ben.create(parser=self.parser)
+    try:
+      existing_component = (struct['existing_library_component']=="True")
+    except KeyError: 
+      existing_component = False
+      pass
+    if (existing_component == True):
+      print("  Skipping generation of predefined component "+str(name))
+    else:
+      ben.create(parser=self.parser)
     return ben
 
   def generateInterface(self,name):
@@ -854,10 +1120,18 @@ class DataClass:
     intf.clock = struct['clock']
     intf.reset = struct['reset']
     try:
+      intf.header = self.data['global']['header']
+    except KeyError:
+      intf.header = None
+      pass
+    try:
       intf.resetAssertionLevel = (struct['reset_assertion_level'] == 'True')
     except KeyError: pass
     try:
       intf.useDpiLink = (struct['use_dpi_link']=='True')
+    except KeyError: pass
+    try:
+      intf.genInBoundStreamingDriver = (struct['gen_inbound_streaming_driver']=='True')
     except KeyError: pass
     try:
       intf.vipLibEnvVariable = struct['vip_lib_env_variable']
@@ -981,13 +1255,57 @@ class DataClass:
     except KeyError: pass
     try:
       intf.veloceReady = (struct['veloce_ready'] == "True")
-    except KeyError: pass
+    except KeyError: 
+      intf.veloceReady = True
+      pass
     try:
       intf.enableFunctionalCoverage = (struct['enable_functional_coverage'] == "True")
     except KeyError: pass
-    intf.create(parser=self.parser)
+    if intf.veloceReady == True:
+      try:
+        for trans in struct['transaction_vars']:
+          try:
+            if trans['unpacked_dimension'] != "":
+              raise UserError("Interface \""+name+"\" flagged to be Veloce ready but transaction variable \""+trans['name']+"\" has specified an unpacked dimension")
+          except KeyError: pass
+      except KeyError: 
+        ## If this happens it means there are no transaction variables, which is also illegal
+        raise UserError("Interface \"{0}\" flagged to be Veloce ready but no transaction variables have been defined. Must define at least one".format(name))
+        pass
+      ## Also possible that there was a transaction variables array defined but its empty. Also illegal
+      if len(struct['transaction_vars'])==0:
+        raise UserError("Interface \"{0}\" flagged to be Veloce ready but no transaction variables have been defined. Must define at least one".format(name))     
+    try:
+      existing_component = (struct['existing_library_component']=="True")
+    except KeyError: 
+      existing_component = False
+      pass
+    if existing_component == True:
+      print("  Skipping generation of predefined component "+str(name))
+    else:
+      intf.create(parser=self.parser)
     return intf
 
+  def check_parameters(self,parentType,parentName,instanceType,instanceName,definitionName,instanceParams,instanceDefinition):
+    ## Compare the parameters in a given instance to make sure that the names match up with 
+    ## something in the list of parameters given in the definition. Can be used for any component. Pass
+    ## in the list of parameters for both. If problem found, display debug information
+    ## including the name of the parent component, the name and type of the instance and the
+    ## parameter in question.
+    ## Don't bother checking anything if the instiation was not provided any parameters.
+    if len(instanceParams) == 0:
+      return
+    try:
+      definitionParams = instanceDefinition['parameters']
+    except KeyError:
+      raise UserError("When instantiating "+instanceType+" \""+instanceName+"\" of type \""+definitionName+"\" inside "+parentType+" \""+parentName+"\", parameters were provided but definition had no parameters")
+    ipn = []
+    dpn = []
+    for p in definitionParams:
+      dpn = dpn + [p['name']]
+    for p in instanceParams:
+      if p['name'] not in dpn:
+        raise UserError("Unable to find parameter \""+p['name']+"\" in definition of "+instanceType+" \""+definitionName+"\" as instance \""+instanceName+"\" in "+parentType+" \""+parentName+"\"")
 
 ## When invoked, this script can read a series of provided YAML-based configuration files and parse them, building
 ## up a database of information on the contained components. Each component will have an associated uvmf_gen class
@@ -1003,18 +1321,25 @@ if __name__ == '__main__':
   uvmf_parser = UVMFCommandLineParser(version=__version__,usage="yaml2uvmf.py [options] [yaml_file1 [yaml_fileN]]")
   uvmf_parser.parser.add_option("-f","--file",dest="configfile",action="append",help="Specify a file list of YAML configs")
   uvmf_parser.parser.add_option("-g","--generate",dest="gen_name",action="append",help="Specify which elements to generate (default is everything")
-  uvmf_parser.parser.add_option("-p","--pdb",dest="enable_pdb",action="store_true",help="Enable PDB interactive debugger (internal use only)",default=False)
+  uvmf_parser.parser.add_option("--pdb",dest="enable_pdb",action="store_true",help=SUPPRESS_HELP,default=False)
+  uvmf_parser.parser.add_option("-m","--merge_source",dest="merge_source",action="store",help="Enable auto-merge flow, pulling from the specified source directory")
+  uvmf_parser.parser.add_option("-e","--merge_output",dest="merge_output",action="store",help="Specify output directory for auto-merge. Default is \"uvmf_template_merged\".",default="uvmf_template_merged")
+  uvmf_parser.parser.add_option("-s","--merge_skip_missing_blocks",dest="merge_skip_missing",action="store_true",help="Continue merge if unable to locate a labeled block that was defined in old source, producing a report at the end. Default behavior is to raise an error",default=False)
+  uvmf_parser.parser.add_option("--merge_export_yaml",dest="merge_export_yaml",action="store",help=SUPPRESS_HELP,default=None)
+  uvmf_parser.parser.add_option("--merge_import_yaml",dest="merge_import_yaml",action="store",help=SUPPRESS_HELP,default=None)
   (options,args) = uvmf_parser.parser.parse_args()
-  if (options.enable_pdb == True):
+  if options.enable_pdb == True:
     import pdb
     pdb.set_trace()
-  elif (options.debug == False):
+  elif options.debug == False:
     sys.tracebacklimit = 0
-  if (len(args) == 0 and options.configfile == None):
+  if (len(args) == 0) and (options.configfile == None) and (options.merge_source == None):
     raise UserError("No configurations or config file specified as input. Must provide one or both")
+  if (options.merge_source != None) and (options.merge_import_yaml != None):
+    raise UserError("--merge_source and --merge_import_yaml options are mutually exclusive")
   dataObj = DataClass(uvmf_parser)
   configfiles = []
-  if (options.configfile != None):
+  if options.configfile != None:
     for cf in options.configfile:
       cfr = ConfigFileReader(cf)
       configfiles = configfiles + cfr.files
@@ -1022,9 +1347,46 @@ if __name__ == '__main__':
     configfiles = configfiles + args
   except TypeError:
     pass
-  if configfiles == []:
+  if (len(configfiles) == 0) and (options.merge_source == None):
     raise UserError("No configuration YAML specified to parse, must provide at least one")
   for cfg in configfiles:
     dataObj.parseFile(cfg)
   dataObj.validate()
-  dataObj.buildElements(options.gen_name);
+  dataObj.buildElements(options.gen_name)
+  if options.merge_source or options.merge_import_yaml:
+    if not options.merge_import_yaml:
+      if not options.quiet:
+        print("Parsing customizations from {0} ...".format(options.merge_source))
+      parse = Parse(quiet=options.quiet,cleanup=options.merge_import_yaml,root=os.path.abspath(os.path.normpath(options.merge_source)))
+      parse.traverse_dir(options.merge_source)
+      if options.merge_export_yaml:
+        if not options.quiet:
+          print("  Exporting merge data to {0}".format(options.merge_export_yaml))
+          parse.dump(options.merge_export_yaml)
+          sys.exit(0)
+    else:
+      if not options.quiet:
+        print("Merging customizations from imported YAML {0}".format(options.merge_import_yaml))
+    merge = Merge(outdir=options.merge_output,skip_missing_blocks=options.merge_skip_missing,root=os.path.abspath(os.path.normpath(options.dest_dir)),quiet=options.quiet)
+    if options.merge_import_yaml:
+      merge.load_yaml(options.merge_import_yaml)
+    else:
+      merge.load_data(parse.data)
+      merge.old_root = parse.root
+    merge.traverse_dir(options.dest_dir,overwrite=options.overwrite)
+    merge.copy_old_files(options.dest_dir,overwrite=options.overwrite)
+    if not options.quiet:
+      print("  Parsed {0} files finding a total of {1} custom blocks".format(len(merge.rd), merge.found_blocks))
+      print("  Copied {0} new files from {1}".format(merge.copied_files, merge.root))
+      if (options.merge_source):
+        print("  Copied {0} old files from {1}".format(merge.copied_old_files, merge.old_root))
+      else:
+        print("  Copied {0} old files pointed to by {1}".format(merge.copied_old_files, options.merge_import_yaml))
+      print("  Ignored {0} new labels found in {1}".format(merge.ignored_blocks, merge.root))
+      print("  Wrote results to {0}".format(os.path.abspath(options.merge_output)))
+    if len(merge.missing_blocks)>0:
+      print("WARNING: Found labeled blocks in old source that could not be mapped to new. These require hand-edits:")
+      for f in merge.missing_blocks:
+        print ("  File: {0}".format(f))
+        for l in merge.missing_blocks[f]:
+          print("    Label: {0} (start line {1})".format(l,merge.rd[f][l]['begin_line']))

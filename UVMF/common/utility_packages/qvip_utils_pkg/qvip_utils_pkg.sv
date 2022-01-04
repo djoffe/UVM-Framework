@@ -40,9 +40,6 @@ import mvc_pkg::*;
 
 import uvmf_base_pkg::*;
 
-   `include "src/qvip_axi3_parameters.svh"
-   `include "src/qvip_ahb_parameters.svh"
-   `include "src/qvip_pcie_parameters.svh"
    `include "src/qvip_agent_adapter.svh"
    `include "src/qvip_memory_agent.svh"
 

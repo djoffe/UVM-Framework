@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : Bench Sequence Base
-// File            : {{name}}_bench_sequence_base.svh
 //----------------------------------------------------------------------
 //
 // Description: This file contains the top level and utility sequences
@@ -23,28 +18,29 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 
   `uvm_object_utils( {{name}}_bench_sequence_base );
 
+  // pragma uvmf custom sequences begin
   // UVMF_CHANGE_ME : Instantiate, construct, and start sequences as needed to create stimulus scenarios.
-
   // Instantiate sequences here
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
 {% if bfm.initResp == 'INITIATOR' %}
 {% if inFactReady == True %}
-  typedef {{bfm.ifPkg}}_sequence_base {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %}   {{bfm.name}}_base_seq_t;
+  typedef {{bfm.ifPkg}}_sequence_base {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_base_seq_t;
 {% endif %}
-  typedef {{bfm.ifPkg}}_random_sequence {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %}   {{bfm.name}}_random_seq_t;
+  typedef {{bfm.ifPkg}}_random_sequence {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_random_seq_t;
   {{bfm.name}}_random_seq_t {{bfm.name}}_random_seq;
 {% else %}
-  typedef {{bfm.ifPkg}}_responder_sequence {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %}   {{bfm.name}}_responder_seq_t;
+  typedef {{bfm.ifPkg}}_responder_sequence {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_responder_seq_t;
   {{bfm.name}}_responder_seq_t {{bfm.name}}_responder_seq;
 {% endif %}
 {% endif %}
 {% endfor %}
+  // pragma uvmf custom sequences end
 
   // Sequencer handles for each active interface in the environment
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
-  typedef {{bfm.ifPkg}}_transaction {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_transaction_t;
+  typedef {{bfm.ifPkg}}_transaction {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_transaction_t;
   uvm_sequencer #({{bfm.name}}_transaction_t)  {{bfm.name}}_sequencer; 
 {% endif %}
 {% endfor %}
@@ -57,12 +53,12 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% endif %}
 
   // Top level environment configuration handle
-  typedef {{env_name}}_env_configuration {% if envParamDefs|length > 0 %}#({% endif %}{% for param in envParamDefs %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if envParamDefs|length > 0 %}) {% endif %}{{env_name}}_env_configuration_t;
+  typedef {{env_name}}_env_configuration {{macro.paramUseNested(envParamDefs)|indent(8)}} {{env_name}}_env_configuration_t;
   {{env_name}}_env_configuration_t top_configuration;
 
   // Configuration handles to access interface BFM's
 {% for bfm in bfms %}
-  {{bfm.ifPkg}}_configuration  {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_config;
+  {{bfm.ifPkg}}_configuration {{macro.paramUseNested(bfm.parameters)|indent(8)}} {{bfm.name}}_config;
 {% endfor %}
 {% if topEnvHasRegisterModel %}
   // Local handle to register model for convenience
@@ -85,6 +81,9 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
   reset_ctrl_base reset_ctrl;
 {% endif %}
 
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+
   // ****************************************************************************
   function new( string name = "" );
     super.new( name );
@@ -92,12 +91,13 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 
     // Retrieve top level configuration handle
     if ( !uvm_config_db#({{env_name}}_env_configuration_t)::get(null,UVMF_CONFIGURATIONS, "TOP_ENV_CONFIG",top_configuration) ) begin
+      `uvm_info("CFG", "*** FATAL *** uvm_config_db::get can not find TOP_ENV_CONFIG.  Are you using an older UVMF release than what was used to generate this bench?",UVM_NONE);
       `uvm_fatal("CFG", "uvm_config_db#({{env_name}}_env_configuration_t)::get cannot find resource TOP_ENV_CONFIG");
     end
 
     // Retrieve config handles for all agents
 {% for bfm in bfms %}
-    if( !uvm_config_db #( {{bfm.ifPkg}}_configuration {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %})::get( null , UVMF_CONFIGURATIONS , {{bfm.name}}_BFM , {{bfm.name}}_config ) ) 
+    if( !uvm_config_db #( {{bfm.ifPkg}}_configuration{{macro.paramUseNested(bfm.parameters)|indent(8)}} )::get( null , UVMF_CONFIGURATIONS , {{bfm.name}}_BFM , {{bfm.name}}_config ) ) 
       `uvm_fatal("CFG" , "uvm_config_db #( {{bfm.ifPkg}}_configuration )::get cannot find resource {{bfm.name}}_BFM" )
 {% endfor %}
 
@@ -129,10 +129,16 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
       `uvm_fatal("CFG" , "uvm_config_db #( sync_reset_ctrl )::get cannot find resource RESET_CONTROLLER" )
     end
 {% endif %}
+
+    // pragma uvmf custom new begin
+    // pragma uvmf custom new end
+
   endfunction
 
   // ****************************************************************************
   virtual task body();
+    // pragma uvmf custom body begin
+
     // Construct sequences here
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
@@ -178,6 +184,8 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% endfor %}
     join
 {% endif %}
+
+    // pragma uvmf custom body end
   endtask
 
 endclass

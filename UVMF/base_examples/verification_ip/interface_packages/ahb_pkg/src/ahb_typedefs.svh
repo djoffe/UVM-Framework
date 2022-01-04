@@ -1,22 +1,20 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 15
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb interface agent
-// Unit            : Interface HVL Typedefs
-// File            : ahb_typedefs.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This file contains defines and typedefs to be compiled for use in
 // the simulation running on the host server when using Veloce.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 
+
+// pragma uvmf custom additional begin
+// pragma uvmf custom additional end
 

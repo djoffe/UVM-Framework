@@ -30,16 +30,15 @@
 //
 //----------------------------------------------------------------------
 //
-class spi_mem_slave_seq extends spi_sequence_base #(.REQ(spi_mem_slave_transaction),
-                                                    .RSP(spi_transaction));
+class spi_mem_slave_seq extends spi_sequence_base;
 
   `uvm_object_utils( spi_mem_slave_seq )
 
-  REQ req_transaction;
-  RSP rsp_transaction;
+  spi_mem_slave_transaction req_transaction;
+  // mem_slave_transaction rsp_transaction;
 
-  bit [(SPI_XFER_WIDTH-1):0] next_req;
-  bit [3:0] mem [(SPI_XFER_WIDTH-1):0];
+  bit [7:0] next_req;
+  bit [3:0] mem [7:0];
 
   function new(string name = "" );
     super.new( name );
@@ -55,14 +54,14 @@ class spi_mem_slave_seq extends spi_sequence_base #(.REQ(spi_mem_slave_transacti
       req_transaction.pack_fields();
       start_item(req_transaction);
       finish_item(req_transaction);
-      get_response(rsp_transaction);
-      if (rsp_transaction.spi_data[7] == SPI_SLAVE_WRITE ) begin
-         mem[rsp_transaction.spi_data[6:4]]=rsp_transaction.spi_data[3:0];
-         next_req = {1'b1, rsp_transaction.spi_data[6:0]};
-         `uvm_info("SEQ",{"WRITE:",rsp_transaction.convert2string()},UVM_HIGH)
+      // get_response(rsp_transaction);
+      if (req_transaction.mosi_data[7] == SPI_SLAVE_WRITE ) begin
+         mem[req_transaction.mosi_data[6:4]]=req_transaction.mosi_data[3:0];
+         next_req = {1'b1, req_transaction.mosi_data[6:0]};
+         `uvm_info("SEQ",{"WRITE:",req_transaction.convert2string()},UVM_HIGH)
       end else begin // SPI_SLAVE_READ
-         next_req = {1'b1, rsp_transaction.spi_data[6:4], mem[rsp_transaction.spi_data[6:4]]};
-         `uvm_info("SEQ",{"READ:",rsp_transaction.convert2string()},UVM_HIGH)
+         next_req = {1'b1, req_transaction.mosi_data[6:4], mem[req_transaction.mosi_data[6:4]]};
+         `uvm_info("SEQ",{"READ:",req_transaction.convert2string()},UVM_HIGH)
       end
     end
   endtask

@@ -48,16 +48,24 @@ env.addAgent('unsecure_data_plane_out','pkt', 'pclk', 'prst')
 ## addAnalysisComponent(<keyword>,<predictor_type_name>,<dict_of_exports>,<dict_of_ports>) - 
 ## List any parameters of the transaction when listing the transaction.
 ## doing this will add the requested analysis component to the list, enabling the use of the given template (identified by <keyword>)
-env.defineAnalysisComponent('predictor','control_plane_predictor',{'control_plane_in_ae':'mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))'},
-                                                                  {'control_plane_sb_ap':'mem_transaction #(.ADDR_WIDTH(CP_OUT_ADDR_WIDTH))'})
-env.defineAnalysisComponent('predictor','unsecure_data_plane_predictor',{'control_plane_in_ae':'mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))',
-                                                                         'unsecure_data_plane_in_ae':'pkt_transaction #(.DATA_WIDTH(UDP_DATA_WIDTH))'},
-                                                                        {'unsecure_data_plane_sb_ap':'pkt_transaction'})
+env.defineAnalysisComponent('predictor','control_plane_predictor',{'control_plane_in_ae':'ae_mem_transaction_t'},
+                                                                  {'control_plane_sb_ap':'ap_mem_transaction_t'},
+                                                                  parametersList=[{'name':'ae_mem_transaction_t','type':'type'},
+                                                                                  {'name':'ap_mem_transaction_t','type':'type'}])
+env.defineAnalysisComponent('predictor','unsecure_data_plane_predictor',{'control_plane_in_ae':'control_plane_in_ae_t',
+                                                                         'unsecure_data_plane_in_ae':'unsecure_data_plane_in_ae_t'},
+                                                                        {'unsecure_data_plane_sb_ap':'unsecure_data_plane_sb_ap_t'},
+                                                                        parametersList=[{'name':'control_plane_in_ae_t','type':'type'},
+                                                                                        {'name':'unsecure_data_plane_in_ae_t','type':'type'},
+                                                                                        {'name':'unsecure_data_plane_sb_ap_t','type':'type'}])
 
 ## Instantiate the components in this environment
 ## addAnalysisComponent(<name>,<type>)
-env.addAnalysisComponent('control_plane_pred','control_plane_predictor')
-env.addAnalysisComponent('unsecure_data_plane_pred','unsecure_data_plane_predictor')
+env.addAnalysisComponent('control_plane_pred','control_plane_predictor',[{'name':'ae_mem_transaction_t','value':'mem_transaction#(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))'},
+                                                                         {'name':'ap_mem_transaction_t','value':'mem_transaction #(.ADDR_WIDTH(CP_OUT_ADDR_WIDTH))'}])
+env.addAnalysisComponent('unsecure_data_plane_pred','unsecure_data_plane_predictor',[{'name':'control_plane_in_ae_t','value':'mem_transaction #(.ADDR_WIDTH(CP_IN_ADDR_WIDTH),.DATA_WIDTH(CP_IN_DATA_WIDTH))'},
+                                                                                     {'name':'unsecure_data_plane_in_ae_t','value':'pkt_transaction #(.DATA_WIDTH(UDP_DATA_WIDTH))'},
+                                                                                     {'name':'unsecure_data_plane_sb_ap_t','value':'pkt_transaction'}])
 
 ## Specify the scoreboards contained in this environment
 ## addUvmfScoreboard(<scoreboard_handle_name>, <uvmf_scoreboard_type_name>, <transaction_type_name>)

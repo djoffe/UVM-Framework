@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 {% set conditional = "dpi_link" %}
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Driver proxy
-// File            : {{name}}_driver_proxy.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This class communicates with the driver BFM using the 
@@ -15,8 +10,7 @@
 //      for generic C routines that can be used with any interface package
 //      using DPI link for BFM communication.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 {% block contents %}
 
@@ -29,6 +23,9 @@ class {{name}}_driver_proxy {%if paramDefs|length > 0%}      #(
       {% else %}
       `uvm_object_utils({{name}})
       {% endif %}
+
+      // pragma uvmf custom class_item_additional begin
+      // pragma uvmf custom class_item_additional end
 
       protected function new(string name = "xrtl_path");
          super.new(name);

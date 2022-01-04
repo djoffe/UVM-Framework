@@ -17,9 +17,9 @@ uvmf:
           type: "int"
           value: "230"
       ports:                                 # All ports must have a name, a width and a direction. The
-        - name: "sop"                        #   direction is relative to the interface when behaving as
-          width: "1"                         #   an active driver in INITIATOR/MASTER mode. The width can
-          dir: "output"                      #   be an integer value or reference a parameter
+        - name: "sop"                        #   direction is relative to the INITIATOR or MASTER
+          width: "1"                         #   The width can be an integer value or reference a parameter
+          dir: "output"                         
           reset_value: "1'b0"
         - name: "eop"    
           width: "1"            

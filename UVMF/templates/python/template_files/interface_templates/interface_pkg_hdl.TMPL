@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface HDL Package
-// File            : {{name}}_pkg_hdl.sv
 //----------------------------------------------------------------------
 //     
 // PACKAGE: This file defines all of the files contained in the
@@ -16,8 +11,7 @@
 // CONTAINS:
 //    - <{{name}}_typedefs_hdl>
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
@@ -25,12 +19,19 @@ package {{name}}_pkg_hdl;
   
   import uvmf_base_pkg_hdl::*;
 
+  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional end
+
   // Parameters defined as HDL parameters
 {% for param in hdlPkgParamDefs %}
   parameter {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %};
 {% endfor %}
 
   `include "src/{{name}}_typedefs_hdl.svh"
+  `include "src/{{name}}_macros.svh"
+
+  // pragma uvmf custom package_item_additional begin
+  // pragma uvmf custom package_item_additional end
 
 endpackage
 

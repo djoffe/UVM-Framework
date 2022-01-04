@@ -3,19 +3,15 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface infact sequence
-// File            : {{name}}_infact_sequence.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This sequences is a place holder for the infact sequence which will 
 // reach full coverage for the {{name}} transaction without redundancy.
 //
-// ****************************************************************************
-// 
+//----------------------------------------------------------------------
+{% endblock %}
+{% block contents %}
 class {{name}}_infact_sequence {%if paramDefs|length > 0%} #(
 {% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
 {% endfor %}      ) {% endif %}
@@ -32,6 +28,9 @@ extends {{name}}_sequence_base {%if paramDefs|length > 0%} #(
   `uvm_object_utils({{name}}_infact_sequence)
 {% endif %}
 
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+  
 //*****************************************************************
   function new(string name = "");
     super.new(name);

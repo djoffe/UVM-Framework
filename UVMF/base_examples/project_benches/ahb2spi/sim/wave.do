@@ -3,17 +3,18 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 
-add wave -noupdate -divider ahb 
-add wave -noupdate /uvm_root/uvm_test_top/environment/ahb2wb_env/ahb/ahb_monitor/txn_stream
-add wave -noupdate -group ahb_bus /hdl_top/ahb_bus/*
-add wave -noupdate -divider wb 
-add wave -noupdate /uvm_root/uvm_test_top/environment/wb_mon/txn_stream
-add wave -noupdate -group wb_bus /hdl_top/wb_bus/*
-add wave -noupdate -divider spi 
-add wave -noupdate /uvm_root/uvm_test_top/environment/wb2spi_env/spi/spi_monitor/txn_stream
-add wave -noupdate -group spi_bus /hdl_top/spi_bus/*
-add wave -noupdate -divider spi_mem_slave_transactions
-add wave -noupdate /uvm_root/uvm_test_top/environment/wb2spi_env/spi_mem_slave_viewer/txn_stream
+add wave -noupdate -divider ahb2wb_wb 
+add wave -noupdate /uvm_root/uvm_test_top/environment.ahb2wb/wb/wb_monitor/txn_stream
+add wave -noupdate -group ahb2wb_wb_bus /hdl_top/ahb2wb_wb_bus/*
+add wave -noupdate -divider ahb2wb_ahb 
+add wave -noupdate /uvm_root/uvm_test_top/environment.ahb2wb/ahb/ahb_monitor/txn_stream
+add wave -noupdate -group ahb2wb_ahb_bus /hdl_top/ahb2wb_ahb_bus/*
+add wave -noupdate -divider wb2spi_wb 
+add wave -noupdate /uvm_root/uvm_test_top/environment.wb2spi/wb/wb_monitor/txn_stream
+add wave -noupdate -group wb2spi_wb_bus /hdl_top/wb2spi_wb_bus/*
+add wave -noupdate -divider wb2spi_spi 
+add wave -noupdate /uvm_root/uvm_test_top/environment.wb2spi/spi/spi_monitor/txn_stream
+add wave -noupdate -group wb2spi_spi_bus /hdl_top/wb2spi_spi_bus/*
 
 TreeUpdate [SetDefaultTree]
 quietly wave cursor active 0

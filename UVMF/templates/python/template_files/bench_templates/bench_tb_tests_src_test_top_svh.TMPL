@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : Top level UVM test
-// File            : test_top.svh
 //----------------------------------------------------------------------
 // Description: This top level UVM test is the base class for all
 //     future tests created for this project.
@@ -15,13 +10,14 @@
 //          Configuration:  The top level configuration for the project.
 //          Environment:    The top level environment for the project.
 //          Top_level_sequence:  The top level sequence for the project.
-//                                       f   
+//                                        
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
 
-typedef {{env_name}}_env_configuration {% if envParamDefs|length > 0 %}#({% endif %}{% for param in envParamDefs %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if envParamDefs|length > 0 %}) {% endif %}{{env_name}}_env_configuration_t;
-typedef {{env_name}}_environment {% if envParamDefs|length > 0 %}#({% endif %}{% for param in envParamDefs %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if envParamDefs|length > 0 %}) {% endif %}{{env_name}}_environment_t;
+typedef {{env_name}}_env_configuration {{macro.paramUseNested(envParamDefs)|indent(8)}}{{env_name}}_env_configuration_t;
+typedef {{env_name}}_environment {{macro.paramUseNested(envParamDefs)|indent(8)}}{{env_name}}_environment_t;
 
 class test_top extends uvmf_test_base #(.CONFIG_T({{env_name}}_env_configuration_t), 
                                         .ENV_T({{env_name}}_environment_t), 
@@ -61,6 +57,9 @@ uvmf_active_passive_t interface_activities[] = {
 {% endif %}
 {% endfor %}
   };
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
   // ****************************************************************************
   // FUNCTION: new()
@@ -117,7 +116,9 @@ uvmf_active_passive_t interface_activities[] = {
   //
   virtual function void build_phase(uvm_phase phase);
     super.build_phase(phase);
-    configuration.initialize(BLOCK, "uvm_test_top.environment", interface_names, null, interface_activities);
+    // pragma uvmf custom configuration_settings_post_randomize begin
+    // pragma uvmf custom configuration_settings_post_randomize end
+    configuration.initialize(NA, "uvm_test_top.environment", interface_names, null, interface_activities);
 {% if useCoEmuClkRstGen %}
     setup_clock_reset_controllers();
 {% endif %}

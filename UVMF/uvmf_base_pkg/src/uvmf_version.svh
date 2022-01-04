@@ -31,8 +31,8 @@
 //
 // Define the major and minor UVMF release number
 `define UVMF_MAJOR_VERSION 2019
-`define UVMF_MINOR_VERSION 1
-`define UVMF_PATCH_VERSION ""
+`define UVMF_MINOR_VERSION 4
+`define UVMF_PATCH_VERSION "_5"
 
 class uvmf_version;
   static bit b = print_version();

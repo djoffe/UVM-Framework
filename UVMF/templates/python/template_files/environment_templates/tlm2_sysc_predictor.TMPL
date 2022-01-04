@@ -5,13 +5,6 @@
 {% block description %}
 //
 //----------------------------------------------------------------------
-// Project         : {{name}} 
-// Unit            : {{name}} 
-// File            : {{name}}.svh
-//----------------------------------------------------------------------
-{% endblock %}
-{% block contents %}
-//
 // DESCRIPTION: This analysis component contains analysis_exports for receiving
 //   data and analysis_ports for sending data.
 // 
@@ -28,7 +21,9 @@
 {% for port in ports %}
 //     {{port.name}} broadcasts transactions of type {{port.tType}} 
 {% endfor %}
-//
+//----------------------------------------------------------------------
+{% endblock %}
+{% block contents %}
 
 import uvmc_pkg::*;
 
@@ -149,35 +144,19 @@ endclass
 {% endfor %}
 // ===========================================================================
 
-class {{name}} 
-{%if paramDefs|length > 0%}      #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
-{% endfor %}      )
-{% endif %}
-extends uvm_component;
+class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_component;
 
   // Factory registration of this class
-{%if paramDefs|length > 0%}
-  `uvm_component_param_utils( {{name}} #(
-  {% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
-
-  {% endfor %}                          ))
-{% else %}
-  `uvm_component_utils( {{name}} );
-{% endif %}
+{{macro.compUtils(name,parameters)}}
 
   // Instantiate a handle to the configuration of the environment in which this component resides
-  {{env_name}}_env_configuration {%if paramDefs|length > 0%}  #(
-{% for param in paramDefs %}             .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}             ) {% endif %} configuration;
+  CONFIG_T configuration;
 
   // Instantiate the analysis exports
 {% for export in exports %}
 
   // Transaction sequence items from agent monitor for Catapult resource arrive on this export
-  uvm_analysis_imp_{{export.name}} #({{export.tType}}, {{name}} {%if paramDefs|length > 0%} #(
-  {% for param in paramDefs %}                            .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}
-  {% endfor %}                          ) {% endif %}) {{export.name}};
+  uvm_analysis_imp_{{export.name}} #({{export.tType}}, {{name}} {{macro.paramUse(parameters)|indent(30)}}) {{export.name}};
   // Transaction sequence items converted to GP are sent out the nb port to SysC
   uvm_tlm_nb_transport_fw_port #(uvm_tlm_generic_payload) gp_{{export.name}};
 
@@ -188,7 +167,7 @@ extends uvm_component;
 {% for port in ports %}
 
   // GP items from analysis port of Catapult C++ Predictor arrive on this port (blocking)
-  uvm_tlm_nb_target_socket_gp_{{port.name}} #({{name}},uvm_tlm_generic_payload,uvm_tlm_phase_e)  gp_{{port.name}};
+  uvm_tlm_nb_target_socket_gp_{{port.name}} #({{name}} {{macro.paramUse(parameters)|indent(30)}},uvm_tlm_generic_payload,uvm_tlm_phase_e)  gp_{{port.name}};
   // GP items are converted to transactions and sent out this analysis port to scoreboard
   uvm_analysis_port #({{port.tType}}) {{port.name}};
 
@@ -209,8 +188,6 @@ extends uvm_component;
 
   // FUNCTION: build_phase
   virtual function void build_phase (uvm_phase phase);
-    super.build_phase(phase);
-
     // Ports/Exports for transactions coming into predictor
 {% for export in exports %}
     {{export.name}} = new("{{export.name}}", this);
@@ -248,7 +225,7 @@ extends uvm_component;
     uvm_tlm_sync_e status;
     uvm_tlm_phase_e phase;
     uvm_tlm_time delay = new("del", 1e-12);
-    `uvm_info("PRED",           "Transaction Receivied through {{export.name}}", UVM_HIGH)
+    `uvm_info("PRED",           "Transaction Received through {{export.name}}", UVM_HIGH)
     `uvm_info("PRED", $psprintf("            Data: %s",t.convert2string()), UVM_FULL)
     status = gp_{{export.name}}.nb_transport_fw(t.to_gp(),phase,delay);
     if ( status != UVM_TLM_COMPLETED )
@@ -275,7 +252,7 @@ extends uvm_component;
       // create new transaction object
       {{port.name}}_output_transaction = {{port.tType}}::type_id::create("{{port.name}}_output_transaction");
       {{port.name}}_output_transaction.from_gp(gp); // transfer GP data into transaction
-      `uvm_info("PRED",           "Transaction Receivied through {{port.name}}", UVM_MEDIUM)
+      `uvm_info("PRED",           "Transaction Received through {{port.name}}", UVM_MEDIUM)
       `uvm_info("PRED", $psprintf("            Data: %s",{{port.name}}_output_transaction.convert2string()), UVM_HIGH);
       {{port.name}}.write({{port.name}}_output_transaction); // write to analysis port
     end

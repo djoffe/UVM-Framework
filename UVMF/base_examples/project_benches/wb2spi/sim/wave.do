@@ -9,9 +9,6 @@ add wave -noupdate -group wb_bus /hdl_top/wb_bus/*
 add wave -noupdate -divider spi 
 add wave -noupdate /uvm_root/uvm_test_top/environment/spi/spi_monitor/txn_stream
 add wave -noupdate -group spi_bus /hdl_top/spi_bus/*
-add wave -noupdate -divider spi_mem_slave_transactions
-add wave -noupdate /uvm_root/uvm_test_top/environment/spi_mem_slave_viewer/txn_stream
-
 
 TreeUpdate [SetDefaultTree]
 quietly wave cursor active 0

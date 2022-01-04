@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Nov 30
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : gpio_example Simulation Bench 
-// Unit            : Bench Sequence Base
-// File            : gpio_example_bench_sequence_base.svh
 //----------------------------------------------------------------------
 //
 // Description: This file contains the top level and utility sequences
@@ -23,75 +19,82 @@ class gpio_example_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence
 
   `uvm_object_utils( gpio_example_bench_sequence_base );
 
-  // Instantiate sequences here
+  // pragma uvmf custom sequences begin
 typedef gpio_gpio_sequence #(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16))  gpio_a_seq_t;
 gpio_a_seq_t gpio_a_wr_seq;
 gpio_a_seq_t gpio_a_rd_seq;
 typedef gpio_gpio_sequence #(.WRITE_PORT_WIDTH(16),.READ_PORT_WIDTH(32))  gpio_b_seq_t;
 gpio_b_seq_t gpio_b_wr_seq;
 gpio_b_seq_t gpio_b_rd_seq;
+  // pragma uvmf custom sequences end
 
   // Sequencer handles for each active interface in the environment
-typedef gpio_transaction #(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16))  gpio_a_transaction_t;
-uvm_sequencer #(gpio_a_transaction_t)  gpio_a_sequencer; 
-typedef gpio_transaction #(.WRITE_PORT_WIDTH(16),.READ_PORT_WIDTH(32))  gpio_b_transaction_t;
-uvm_sequencer #(gpio_b_transaction_t)  gpio_b_sequencer; 
-
-// Sequencer handles for each QVIP interface
-
-// Configuration handles to access interface BFM's
-gpio_configuration  #(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16))  gpio_a_config;
-gpio_configuration  #(.WRITE_PORT_WIDTH(16),.READ_PORT_WIDTH(32))  gpio_b_config;
-
-
-  //variable: clk_ctrl
-  //Clock Proxy Object used to control the Clock
-  // Must be extended clock_ctrl object and not clock_ctrl_base because
-  // bfm is set here.  Usage elsewhere in testbench can just use a
-  // clock_ctrl_base handle.
-  clock_ctrl_base clk_ctrl;
-  
-  //variable: reset_ctrl
-  //Reset Proxy Object used to control Reset
-  // Must be extended reset_ctrl object and not reset_ctrl_base because bfm
-  // is set here.  Usage elsewhere in testbench can just use a reset_ctrl_base
-  // handle
-  reset_ctrl_base reset_ctrl;
+  typedef gpio_transaction #(
+        .WRITE_PORT_WIDTH(32),
+        .READ_PORT_WIDTH(16)
+        ) gpio_a_transaction_t;
+  uvm_sequencer #(gpio_a_transaction_t)  gpio_a_sequencer; 
+  typedef gpio_transaction #(
+        .WRITE_PORT_WIDTH(16),
+        .READ_PORT_WIDTH(32)
+        ) gpio_b_transaction_t;
+  uvm_sequencer #(gpio_b_transaction_t)  gpio_b_sequencer; 
 
 
-// ****************************************************************************
+  // Top level environment configuration handle
+  typedef gpio_example_env_configuration  gpio_example_env_configuration_t;
+  gpio_example_env_configuration_t top_configuration;
+
+  // Configuration handles to access interface BFM's
+  gpio_configuration #(
+        .WRITE_PORT_WIDTH(32),
+        .READ_PORT_WIDTH(16)
+        ) gpio_a_config;
+  gpio_configuration #(
+        .WRITE_PORT_WIDTH(16),
+        .READ_PORT_WIDTH(32)
+        ) gpio_b_config;
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+
+  // ****************************************************************************
   function new( string name = "" );
-     super.new( name );
+    super.new( name );
+    // Retrieve the configuration handles from the uvm_config_db
 
-  // Retrieve the configuration handles from the uvm_config_db
-if( !uvm_config_db #( gpio_configuration #(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16)) )::get( null , UVMF_CONFIGURATIONS , gpio_pkg_gpio_a_BFM , gpio_a_config ) ) 
-`uvm_error("CFG" , "uvm_config_db #( gpio_configuration )::get cannot find resource gpio_pkg_gpio_a_BFM" )
-if( !uvm_config_db #( gpio_configuration #(.WRITE_PORT_WIDTH(16),.READ_PORT_WIDTH(32)) )::get( null , UVMF_CONFIGURATIONS , gpio_pkg_gpio_b_BFM , gpio_b_config ) ) 
-`uvm_error("CFG" , "uvm_config_db #( gpio_configuration )::get cannot find resource gpio_pkg_gpio_b_BFM" )
+    // Retrieve top level configuration handle
+    if ( !uvm_config_db#(gpio_example_env_configuration_t)::get(null,UVMF_CONFIGURATIONS, "TOP_ENV_CONFIG",top_configuration) ) begin
+      `uvm_info("CFG", "*** FATAL *** uvm_config_db::get can not find TOP_ENV_CONFIG.  Are you using an older UVMF release than what was used to generate this bench?",UVM_NONE);
+      `uvm_fatal("CFG", "uvm_config_db#(gpio_example_env_configuration_t)::get cannot find resource TOP_ENV_CONFIG");
+    end
 
-  // Retrieve the sequencer handles from the uvm_config_db
-if( !uvm_config_db #( uvm_sequencer #(gpio_a_transaction_t) )::get( null , UVMF_SEQUENCERS , gpio_pkg_gpio_a_BFM , gpio_a_sequencer ) ) 
-`uvm_error("CFG" , "uvm_config_db #( uvm_sequencer #(gpio_transaction) )::get cannot find resource gpio_pkg_gpio_a_BFM" ) 
-if( !uvm_config_db #( uvm_sequencer #(gpio_b_transaction_t) )::get( null , UVMF_SEQUENCERS , gpio_pkg_gpio_b_BFM , gpio_b_sequencer ) ) 
-`uvm_error("CFG" , "uvm_config_db #( uvm_sequencer #(gpio_transaction) )::get cannot find resource gpio_pkg_gpio_b_BFM" ) 
+    // Retrieve config handles for all agents
+    if( !uvm_config_db #( gpio_configuration#(
+        .WRITE_PORT_WIDTH(32),
+        .READ_PORT_WIDTH(16)
+        ) )::get( null , UVMF_CONFIGURATIONS , gpio_a_BFM , gpio_a_config ) ) 
+      `uvm_fatal("CFG" , "uvm_config_db #( gpio_configuration )::get cannot find resource gpio_a_BFM" )
+    if( !uvm_config_db #( gpio_configuration#(
+        .WRITE_PORT_WIDTH(16),
+        .READ_PORT_WIDTH(32)
+        ) )::get( null , UVMF_CONFIGURATIONS , gpio_b_BFM , gpio_b_config ) ) 
+      `uvm_fatal("CFG" , "uvm_config_db #( gpio_configuration )::get cannot find resource gpio_b_BFM" )
+
+    // Assign the sequencer handles from the handles within agent configurations
+    gpio_a_sequencer = gpio_a_config.get_sequencer();
+    gpio_b_sequencer = gpio_b_config.get_sequencer();
 
 
-      if ( !uvm_config_db #( clock_ctrl_base )::get(null,UVMF_CLOCK_APIS, CLOCK_CONTROLLER, clk_ctrl) ) begin
-         `uvm_error("CFG" , "uvm_config_db #( clock_ctrl )::get cannot find resource CLOCK_CONTROLLER" )
-      end
 
-      if ( !uvm_config_db #(reset_ctrl_base )::get(null, UVMF_RESET_APIS, RESET_CONTROLLER, reset_ctrl) ) begin
-         `uvm_error("CFG" , "uvm_config_db #( sync_reset_ctrl )::get cannot find resource RESET_CONTROLLER" )
-      end
-
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
 
   endfunction
 
-
-// ****************************************************************************
+  // ****************************************************************************
   virtual task body();
-
-  // Construct sequences here
+    // pragma uvmf custom body begin
    gpio_a_wr_seq     = gpio_a_seq_t::type_id::create("gpio_a_wr_seq");
    gpio_a_rd_seq     = gpio_a_seq_t::type_id::create("gpio_a_rd_seq");
    gpio_b_wr_seq     = gpio_b_seq_t::type_id::create("gpio_b_wr_seq");
@@ -121,7 +124,7 @@ if( !uvm_config_db #( uvm_sequencer #(gpio_b_transaction_t) )::get( null , UVMF_
    gpio_b_rd_seq.read_gpio();
 
    gpio_a_config.wait_for_num_clocks(10);
-
+    // pragma uvmf custom body end
   endtask
 
 endclass

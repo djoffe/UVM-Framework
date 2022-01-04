@@ -1,13 +1,14 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 26
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 
 ,
 Interface Description, Interface Type, Interface Transaction, Interface Name,
-ahb, ahb_driver_bfm ahb_monitor_bfm, ahb_transaction, ahb_pkg_ahb_BFM,
 wb, wb_driver_bfm wb_monitor_bfm, wb_transaction, wb_pkg_wb_BFM,
+ahb, ahb_driver_bfm ahb_monitor_bfm, ahb_transaction, ahb_pkg_ahb_BFM,
 

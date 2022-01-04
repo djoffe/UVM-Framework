@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : jcraft
-// Creation Date   : 2016 Nov 03
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb interface agent
-// Unit            : Interface Signal Bundle
-// File            : wb_if.sv
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This interface contains the wb interface signals.
@@ -18,47 +14,106 @@
 //      the BFM in order to give the BFM access to the signals in this
 //      interface.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 // This template can be used to connect a DUT to these signals
 //
-// .dut_signal_port(wb_bus.inta), // Agent inout 
-// .dut_signal_port(wb_bus.cyc), // Agent inout 
-// .dut_signal_port(wb_bus.stb), // Agent inout 
-// .dut_signal_port(wb_bus.adr), // Agent inout 
-// .dut_signal_port(wb_bus.we), // Agent inout 
-// .dut_signal_port(wb_bus.dout), // Agent inout 
-// .dut_signal_port(wb_bus.din), // Agent inout 
-// .dut_signal_port(wb_bus.err), // Agent inout 
-// .dut_signal_port(wb_bus.rty), // Agent inout 
-// .dut_signal_port(wb_bus.sel), // Agent inout 
-// .dut_signal_port(wb_bus.q), // Agent inout 
+// .dut_signal_port(wb_bus.inta), // Agent output 
+// .dut_signal_port(wb_bus.cyc), // Agent output 
+// .dut_signal_port(wb_bus.stb), // Agent output 
+// .dut_signal_port(wb_bus.adr), // Agent output 
+// .dut_signal_port(wb_bus.we), // Agent output 
+// .dut_signal_port(wb_bus.dout), // Agent output 
+// .dut_signal_port(wb_bus.din), // Agent input 
+// .dut_signal_port(wb_bus.err), // Agent output 
+// .dut_signal_port(wb_bus.rty), // Agent output 
+// .dut_signal_port(wb_bus.sel), // Agent input 
+// .dut_signal_port(wb_bus.q), // Agent input 
+// .dut_signal_port(wb_bus.ack), // Agent input 
 
 import uvmf_base_pkg_hdl::*;
 import wb_pkg_hdl::*;
 
-interface  wb_if       #(
-      int WB_ADDR_WIDTH = 32,                                
-      int WB_DATA_WIDTH = 16                                
-      )
- ( 
+interface  wb_if #(
+  int WB_ADDR_WIDTH = 32,
+  int WB_DATA_WIDTH = 16
+  )
+
+  (
   input tri clk, 
-  input tri rst
-  ,inout tri  inta
-  ,inout tri  cyc
-  ,inout tri  stb
-  ,inout tri [WB_ADDR_WIDTH-1:0] adr
-  ,inout tri  we
-  ,inout tri [WB_DATA_WIDTH-1:0] dout
-  ,inout tri [WB_DATA_WIDTH-1:0] din
-  ,inout tri  err
-  ,inout tri  rty
-  ,inout tri [(WB_DATA_WIDTH/8)-1:0] sel
-  ,inout tri [WB_DATA_WIDTH-1:0] q
-  ,inout tri ack
-);
+  input tri rst,
+  inout tri  inta,
+  inout tri  cyc,
+  inout tri  stb,
+  inout tri [WB_ADDR_WIDTH-1:0] adr,
+  inout tri  we,
+  inout tri [WB_DATA_WIDTH-1:0] dout,
+  inout tri [WB_DATA_WIDTH-1:0] din,
+  inout tri  err,
+  inout tri  rty,
+  inout tri [WB_DATA_WIDTH/8-1:0] sel,
+  inout tri [WB_DATA_WIDTH-1:0] q,
+  inout tri  ack
+  );
+
+modport monitor_port 
+  (
+  input clk,
+  input rst,
+  input inta,
+  input cyc,
+  input stb,
+  input adr,
+  input we,
+  input dout,
+  input din,
+  input err,
+  input rty,
+  input sel,
+  input q,
+  input ack
+  );
+
+modport initiator_port 
+  (
+  input clk,
+  input rst,
+  output inta,
+  output cyc,
+  output stb,
+  output adr,
+  output we,
+  output dout,
+  input din,
+  output err,
+  output rty,
+  input sel,
+  input q,
+  input ack
+  );
+
+modport responder_port 
+  (
+  input clk,
+  input rst,  
+  input inta,
+  input cyc,
+  input stb,
+  input adr,
+  input we,
+  input dout,
+  output din,
+  input err,
+  input rty,
+  output sel,
+  output q,
+  output ack
+  );
+  
+
+// pragma uvmf custom interface_item_additional begin
+// pragma uvmf custom interface_item_additional end
 
 endinterface
 

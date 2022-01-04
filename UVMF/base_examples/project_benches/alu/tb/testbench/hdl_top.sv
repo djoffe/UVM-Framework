@@ -1,32 +1,13 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
-//   All Rights Reserved Worldwide
-//
-//   Licensed under the Apache License, Version 2.0 (the
-//   "License"); you may not use this file except in
-//   compliance with the License.  You may obtain a copy of
-//   the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in
-//   writing, software distributed under the License is
-//   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-//   CONDITIONS OF ANY KIND, either express or implied.  See
-//   the License for the specific language governing
-//   permissions and limitations under the License.
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//                   Mentor Graphics Inc
-//----------------------------------------------------------------------
-// Project         : AHB to WB Simulation Bench
-// Unit            : DUT Top Module
-// File            : hdl_top.sv
-//----------------------------------------------------------------------
-// Creation Date   : 05.12.2011
-//----------------------------------------------------------------------
+//----------------------------------------------------------------------                     
+//               
 // Description: This top level module instantiates all synthesizable
-//    static content.  This and hvl_top.sv are the two top level modules
+//    static content.  This and tb_top.sv are the two top level modules
 //    of the simulation.  
 //
 //    This module instantiates the following:
@@ -36,51 +17,90 @@
 //        Monitor BFM's: BFM's that passively monitor interface signals
 //
 //----------------------------------------------------------------------
+
+//----------------------------------------------------------------------
 //
+
 import alu_parameters_pkg::*;
 import uvmf_base_pkg_hdl::*;
 
 module hdl_top;
-// pragma attribute hdl_top partition_module_xrtl
+  // pragma attribute hdl_top partition_module_xrtl                                            
+// pragma uvmf custom clock_generator begin
+  bit clk;
+  // Instantiate a clk driver 
+  // tbx clkgen
+  initial begin
+    clk = 0;
+    #9ns;
+    forever begin
+      clk = ~clk;
+      #5ns;
+    end
+  end
 
-  alu_out_if          alu_out_bus(.clk(),.rst(),.done(),.result());
-  alu_out_monitor_bfm alu_out_mon_bfm(alu_out_bus);
-  alu_out_driver_bfm  alu_out_drv_bfm(alu_out_bus);
 
-  alu_in_if           alu_in_bus(.clk(),.rst(),.valid(),.ready(),.op(),.a(),.b());
-  alu_in_monitor_bfm  alu_in_mon_bfm(alu_in_bus);
-  alu_in_driver_bfm   alu_in_drv_bfm(alu_in_bus);
+// pragma uvmf custom clock_generator end
 
-  assign alu_out_bus.clk = alu_in_bus.clk;
-  assign alu_out_bus.rst = alu_in_bus.rst;
+// pragma uvmf custom reset_generator begin
+  bit rst;
+  // Instantiate a rst driver
+  // tbx clkgen
+  initial begin
+    rst = 0; 
+    #200ns;
+    rst =  1; 
+  end
 
 
+// pragma uvmf custom reset_generator end
+
+  // pragma uvmf custom module_item_additional begin
+  // pragma uvmf custom module_item_additional end
+
+  // Instantiate the signal bundle, monitor bfm and driver bfm for each interface.
+  // The signal bundle, _if, contains signals to be connected to the DUT.
+  // The monitor, monitor_bfm, observes the bus, _if, and captures transactions.
+  // The driver, driver_bfm, drives transactions onto the bus, _if.
+  alu_in_if  alu_in_agent_bus(
+     // pragma uvmf custom alu_in_agent_bus_connections begin
+     .clk(clk), .rst(rst)
+     // pragma uvmf custom alu_in_agent_bus_connections end
+     );
+  alu_out_if  alu_out_agent_bus(
+     // pragma uvmf custom alu_out_agent_bus_connections begin
+     .clk(clk), .rst(rst)
+     // pragma uvmf custom alu_out_agent_bus_connections end
+     );
+  alu_in_monitor_bfm  alu_in_agent_mon_bfm(alu_in_agent_bus.monitor_port);
+  alu_out_monitor_bfm  alu_out_agent_mon_bfm(alu_out_agent_bus.monitor_port);
+  alu_in_driver_bfm  alu_in_agent_drv_bfm(alu_in_agent_bus.initiator_port);
+
+  // pragma uvmf custom dut_instantiation begin
   alu   #(.OP_WIDTH(8), .RESULT_WIDTH(16)) DUT  (
        // AHB connections
-      .clk    (alu_in_bus.clk ) ,
-      .rst    (alu_in_bus.rst ) ,
-      .ready  (alu_in_bus.ready ) ,
-      .valid  (alu_in_bus.valid ) ,
-      .op     (alu_in_bus.op ) ,
-      .a      (alu_in_bus.a ) ,
-      .b      (alu_in_bus.b ) ,
-      .done   (alu_out_bus.done ) ,
-      .result (alu_out_bus.result ) );
+      .clk    (alu_in_agent_bus.clk ) ,
+      .rst    (alu_in_agent_bus.rst ) ,
+      .ready  (alu_in_agent_bus.ready ) ,
+      .valid  (alu_in_agent_bus.valid ) ,
+      .op     (alu_in_agent_bus.op ) ,
+      .a      (alu_in_agent_bus.a ) ,
+      .b      (alu_in_agent_bus.b ) ,
+      .done   (alu_out_agent_bus.done ) ,
+      .result (alu_out_agent_bus.result ) );
 
 
-  initial begin // tbx vif_binding_block
-   import uvm_pkg::uvm_config_db;
+  // pragma uvmf custom dut_instantiation end
 
-   uvm_config_db #( virtual alu_out_monitor_bfm )::
-      set( null , UVMF_VIRTUAL_INTERFACES , ALU_OUT_BFM , alu_out_mon_bfm );
-   uvm_config_db #( virtual alu_out_driver_bfm  )::
-      set( null , UVMF_VIRTUAL_INTERFACES , ALU_OUT_BFM  , alu_out_drv_bfm  );
-
-   uvm_config_db #( virtual alu_in_monitor_bfm )::
-      set( null , UVMF_VIRTUAL_INTERFACES  , ALU_IN_BFM  , alu_in_mon_bfm );
-   uvm_config_db #( virtual alu_in_driver_bfm  )::
-      set( null , UVMF_VIRTUAL_INTERFACES  , ALU_IN_BFM   , alu_in_drv_bfm  );
-
+  initial begin      // tbx vif_binding_block 
+    import uvm_pkg::uvm_config_db;
+    // The monitor_bfm and driver_bfm for each interface is placed into the uvm_config_db.
+    // They are placed into the uvm_config_db using the string names defined in the parameters package.
+    // The string names are passed to the agent configurations by test_top through the top level configuration.
+    // They are retrieved by the agents configuration class for use by the agent.
+    uvm_config_db #( virtual alu_in_monitor_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , alu_in_agent_BFM , alu_in_agent_mon_bfm ); 
+    uvm_config_db #( virtual alu_out_monitor_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , alu_out_agent_BFM , alu_out_agent_mon_bfm ); 
+    uvm_config_db #( virtual alu_in_driver_bfm  )::set( null , UVMF_VIRTUAL_INTERFACES , alu_in_agent_BFM , alu_in_agent_drv_bfm  );
   end
-    
+
 endmodule

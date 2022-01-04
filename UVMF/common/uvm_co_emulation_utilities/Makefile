@@ -49,9 +49,9 @@ CO_EMULATION_MEMLOAD_PKG = \
 +incdir+$(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co_emulation_utilities/utils/memload/ \
 -F $(UVMF_HOME)/common/uvm_co_emulation_utilities/memload_filelist_hvl.f
 
-CO_EMULATION_MEMLOAD_PKG_HDL = \
-+incdir+$(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co_emulation_utilities/utils/memload \
--F $(UVMF_HOME)/common/uvm_co_emulation_utilities/memload_filelist_hdl.f
+#CO_EMULATION_MEMLOAD_PKG_HDL = \
+#+incdir+$(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co_emulation_utilities/utils/memload \
+#-F $(UVMF_HOME)/common/uvm_co_emulation_utilities/memload_filelist_hdl.f
 
 CCFLAGS_0 = -DQUESTA
 CCFLAGS_1 = -I${VMW_HOME}/runtime/include
@@ -59,7 +59,7 @@ CCFLAGS   = $(CCFLAGS_$(USE_VELOCE))
 
 #velcomp creates the tbxbindings.h that is needed in Veloce mode
 comp_co_emulation_memload_pkg: $(COMP_CO_EMULATION_MEMLOAD_PKG_TGT)
-	$(HDL_COMP_CMD) $(CO_EMULATION_MEMLOAD_PKG_HDL)
+#	$(HDL_COMP_CMD) $(CO_EMULATION_MEMLOAD_PKG_HDL)
 
 q_comp_co_emulation_memload_pkg:
 	$(HVL_COMP_CMD) $(CO_EMULATION_MEMLOAD_PKG) \

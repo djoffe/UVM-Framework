@@ -75,7 +75,6 @@ virtual class uvmf_sorting_predictor_base #(
 
   // FUNCTION: build_phase
   virtual function void build_phase(uvm_phase phase);
-     super.build_phase(phase);
      // Build the analysis ports
      port_0_ap=new( "port_0_ap", this );
      port_1_ap=new( "port_1_ap", this );

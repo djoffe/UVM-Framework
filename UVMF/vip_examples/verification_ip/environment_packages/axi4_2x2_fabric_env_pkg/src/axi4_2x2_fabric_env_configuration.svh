@@ -1,57 +1,45 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_5
 //----------------------------------------------------------------------
-// Created by      : daerne
-// Creation Date   : 2017 Nov 02
-// Created with uvmf_gen version 3.6g
+// Created by: Vijay Gill
+// E-mail:     vijay_gill@mentor.com
+// Date:       2019/11/05
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : axi4_2x2_fabric Environment 
-// Unit            : Environment configuration
-// File            : axi4_2x2_fabric_env_configuration.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: THis is the configuration for the axi4_2x2_fabric environment.
 //  it contains configuration classes for each agent.  It also contains
 //  environment level configuration variables.
 //
-//
-//
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 class axi4_2x2_fabric_env_configuration 
-            #(
-             int AXI4_ADDRESS_WIDTH = 32,                                
-             int AXI4_RDATA_WIDTH = 32,                                
-             int AXI4_WDATA_WIDTH = 32,                                
-             int AXI4_MASTER_ID_WIDTH = 4,                                
-             int AXI4_SLAVE_ID_WIDTH = 5,                                
-             int AXI4_USER_WIDTH = 4,                                
-             int AXI4_REGION_MAP_SIZE = 16                                
-             )
 extends uvmf_environment_configuration_base;
 
-  `uvm_object_param_utils( axi4_2x2_fabric_env_configuration #(
-                           AXI4_ADDRESS_WIDTH,
-                           AXI4_RDATA_WIDTH,
-                           AXI4_WDATA_WIDTH,
-                           AXI4_MASTER_ID_WIDTH,
-                           AXI4_SLAVE_ID_WIDTH,
-                           AXI4_USER_WIDTH,
-                           AXI4_REGION_MAP_SIZE
-                         ))
+  `uvm_object_utils( axi4_2x2_fabric_env_configuration )
 
 
 //Constraints for the configuration variables:
 
 
   covergroup axi4_2x2_fabric_configuration_cg;
+    // pragma uvmf custom covergroup begin
     option.auto_bin_max=1024;
+    // pragma uvmf custom covergroup end
   endgroup
 
 
 
-    axi4_2x2_fabric_qvip_env_configuration            qvip_env_config;
+
+    axi4_2x2_fabric_qvip_env_configuration     axi4_qvip_subenv_config;
+    string                                   axi4_qvip_subenv_interface_names[];
+    uvmf_active_passive_t                    axi4_qvip_subenv_interface_activity[];
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // FUNCTION : new()
@@ -63,8 +51,9 @@ extends uvmf_environment_configuration_base;
 
 
 
-    qvip_env_config = axi4_2x2_fabric_qvip_env_configuration::type_id::create("qvip_env_config");
-
+    axi4_qvip_subenv_config = axi4_2x2_fabric_qvip_env_configuration::type_id::create("axi4_qvip_subenv_config");
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
   endfunction
 
 // ****************************************************************************
@@ -74,8 +63,9 @@ extends uvmf_environment_configuration_base;
 //
   function void post_randomize();
     super.post_randomize();
+    // pragma uvmf custom post_randomize begin
 
-
+    // pragma uvmf custom post_randomize end
 
   endfunction
   
@@ -86,13 +76,14 @@ extends uvmf_environment_configuration_base;
 // each agent configuration in this configuration class.
 //
   virtual function string convert2string();
+    // pragma uvmf custom convert2string begin
     return {
      
 
 
-     "\n", qvip_env_config.convert2string
+     "\n", axi4_qvip_subenv_config.convert2string
        };
-
+    // pragma uvmf custom convert2string end
   endfunction
 // ****************************************************************************
 // FUNCTION: initialize();
@@ -108,26 +99,28 @@ extends uvmf_environment_configuration_base;
                                       string environment_path,
                                       string interface_names[],
                                       uvm_reg_block register_model = null,
-                                      uvmf_active_passive_t interface_activity[] = null
+                                      uvmf_active_passive_t interface_activity[] = {}
                                      );
-
-    string                qvip_env_interface_names[];
-    uvmf_active_passive_t qvip_env_interface_activity[];
 
     super.initialize(sim_level, environment_path, interface_names, register_model, interface_activity);
 
 
-    qvip_env_interface_names    = new[4];
-    qvip_env_interface_activity = new[4];
+  // Interface initialization for QVIP sub-environments
+    axi4_qvip_subenv_interface_names    = new[4];
+    axi4_qvip_subenv_interface_activity = new[4];
 
-    qvip_env_interface_names     = interface_names[0:3];
-    qvip_env_interface_activity  = interface_activity[0:3];
+    axi4_qvip_subenv_interface_names     = interface_names[0:3];
+    axi4_qvip_subenv_interface_activity  = interface_activity[0:3];
 
 
 
 
-     qvip_env_config.initialize( NA, {environment_path,".qvip_env"}, qvip_env_interface_names, null,   qvip_env_interface_activity);
 
+     axi4_qvip_subenv_config.initialize( sim_level, {environment_path,".axi4_qvip_subenv"}, axi4_qvip_subenv_interface_names, null,   axi4_qvip_subenv_interface_activity);
+
+
+  // pragma uvmf custom initialize begin
+  // pragma uvmf custom initialize end
 
   endfunction
 

@@ -1,13 +1,12 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_5
 //----------------------------------------------------------------------
-// Created by      : daerne
-// Creation Date   : 2016 Oct 16
+// Created by: Vijay Gill
+// E-mail:     vijay_gill@mentor.com
+// Date:       2019/11/05
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : axi4_2x2_fabric Simulation Bench 
-// Unit            : Top level UVM test
-// File            : test_top.svh
 //----------------------------------------------------------------------
 // Description: This top level UVM test is the base class for all
 //     future tests created for this project.
@@ -16,7 +15,8 @@
 //          Configuration:  The top level configuration for the project.
 //          Environment:    The top level environment for the project.
 //          Top_level_sequence:  The top level sequence for the project.
-//                                          
+//                                        
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 
@@ -30,37 +30,49 @@ class test_top extends uvmf_test_base #(.CONFIG_T(axi4_2x2_fabric_env_configurat
   `uvm_component_utils( test_top );
 
 
-// ****************************************************************************
-// FUNCTION: new()
-// This is the standard system verilog constructor.  All components are 
-// constructed in the build_phase to allow factory overriding.
-//
+  string interface_names[] = {
+    uvm_test_top_environment_axi4_qvip_subenv_mgc_axi4_m0 /* mgc_axi4_m0     [0] */ , 
+    uvm_test_top_environment_axi4_qvip_subenv_mgc_axi4_m1 /* mgc_axi4_m1     [1] */ , 
+    uvm_test_top_environment_axi4_qvip_subenv_mgc_axi4_s0 /* mgc_axi4_s0     [2] */ , 
+    uvm_test_top_environment_axi4_qvip_subenv_mgc_axi4_s1 /* mgc_axi4_s1     [3] */ 
+};
+
+uvmf_active_passive_t interface_activities[] = { 
+    ACTIVE /* mgc_axi4_m0     [0] */ , 
+    ACTIVE /* mgc_axi4_m1     [1] */ , 
+    ACTIVE /* mgc_axi4_s0     [2] */ , 
+    ACTIVE /* mgc_axi4_s1     [3] */   };
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+
+  // ****************************************************************************
+  // FUNCTION: new()
+  // This is the standard system verilog constructor.  All components are 
+  // constructed in the build_phase to allow factory overriding.
+  //
   function new( string name = "", uvm_component parent = null );
      super.new( name ,parent );
   endfunction
 
 
 
-
-// ****************************************************************************
-// FUNCTION: build_phase()
-// The construction of the configuration and environment classes is done in
-// the build_phase of uvmf_test_base.  Once the configuraton and environment
-// classes are built then the initialize call is made to perform the
-// following: 
-//     Monitor and driver BFM virtual interface handle passing into agents
-//     Set the active/passive state for each agent
-// Once this build_phase completes, the build_phase of the environment is
-// executed which builds the agents.
-//
+  // ****************************************************************************
+  // FUNCTION: build_phase()
+  // The construction of the configuration and environment classes is done in
+  // the build_phase of uvmf_test_base.  Once the configuraton and environment
+  // classes are built then the initialize call is made to perform the
+  // following: 
+  //     Monitor and driver BFM virtual interface handle passing into agents
+  //     Set the active/passive state for each agent
+  // Once this build_phase completes, the build_phase of the environment is
+  // executed which builds the agents.
+  //
   virtual function void build_phase(uvm_phase phase);
-
     super.build_phase(phase);
-    configuration.initialize(BLOCK, "uvm_test_top.environment", axi4_2x2_fabric_parameters_pkg::interface_names, null, axi4_2x2_fabric_parameters_pkg::interface_activities);
-
-
-
+    // pragma uvmf custom configuration_settings_post_randomize begin
+    // pragma uvmf custom configuration_settings_post_randomize end
+    configuration.initialize(NA, "uvm_test_top.environment", interface_names, null, interface_activities);
   endfunction
 
 endclass
-

@@ -3,12 +3,12 @@
 onerror {resume}
 quietly WaveActivateNextPane {} 0
 
-add wave -noupdate -divider ahb 
-add wave -noupdate /uvm_root/uvm_test_top/environment/ahb/ahb_monitor/txn_stream
-add wave -noupdate -group ahb_bus /hdl_top/ahb_bus/*
 add wave -noupdate -divider wb 
 add wave -noupdate /uvm_root/uvm_test_top/environment/wb/wb_monitor/txn_stream
 add wave -noupdate -group wb_bus /hdl_top/wb_bus/*
+add wave -noupdate -divider ahb 
+add wave -noupdate /uvm_root/uvm_test_top/environment/ahb/ahb_monitor/txn_stream
+add wave -noupdate -group ahb_bus /hdl_top/ahb_bus/*
 
 TreeUpdate [SetDefaultTree]
 quietly wave cursor active 0

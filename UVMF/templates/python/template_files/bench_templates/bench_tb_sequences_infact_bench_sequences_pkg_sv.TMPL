@@ -3,11 +3,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : inFact Sequences Package
-// File            : {{name}}_infact_sequences_pkg.sv
 //----------------------------------------------------------------------
 //
 // DESCRIPTION: This package brings in inFact-specific 
@@ -45,6 +40,10 @@ package {{name}}_infact_sequences_pkg;
   import reset_pkg::*;
 {% endif %}
   `include "uvm_macros.svh"
+
+  // pragma uvmf custom package_imports_additional begin 
+  // pragma uvmf custom package_imports_additional end
+
 {% if inFactQSO %}
 {% for bfm in bfms %}
 {% if bfm.activity == 'ACTIVE' %}
@@ -60,10 +59,12 @@ package {{name}}_infact_sequences_pkg;
 {% endif %}
   `include "src/infact_{{name}}_bench_sequence_base.svh"
 
-// UVMF_CHANGE_ME : When adding new sequences to the src directory
-//    be sure to add the sequence file here so that it will be
-//    compiled as part of the sequence package.  Be sure to place
-//    the new sequence after any base sequences of the new sequence.
+  // pragma uvmf custom package_item_additional begin
+  // UVMF_CHANGE_ME : When adding new sequences to the src directory
+  //    be sure to add the sequence file here so that it will be
+  //    compiled as part of the sequence package.  Be sure to place
+  //    the new sequence after any base sequences of the new sequence.
+  // pragma uvmf custom package_item_additional end
 
 endpackage
 {% endblock %}

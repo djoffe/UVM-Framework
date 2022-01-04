@@ -2,7 +2,48 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
-2019.1    10/18/218   General Updates:
+2019.4_5  11/12/2019  General Updates:
+                        - Support for relative paths in test list INCLUDE directives.
+                        - Support for windows Tcl-based flow
+                        - VRM ini variables now case insensitive
+                        - Added RMDB INI variables to control email status updates
+                        - Added support for timeout INI variables in VRM
+                      
+                      Generator Updates:
+                        - Support for auto-merge of custom content into newly generated source.  
+                          See documentation for details.
+                        - Support for Python 2.x and 3
+
+                      Resolved enhancement and service request Jira items:
+                        UVM-1272, UVM-1328, UVM-1350, UVM-1343, UVM-1338, UVM-1305, UVM-1351, UVM-1329, UVM-1335, UVM-1289
+                        
+2019.4    06/25/2019  General Updates:
+                        - Now using packed structs to pass data between HDL and HVL
+                        - Refactored method calls for HDL/HVL communication for better clarity
+                          and support for data passed using packed structs
+                        - Added support for regression test suites that include InFact
+                        - Shipping reference YAML for base examples
+                        - Can now enable and disable scoreboard comparisons during simulation
+                        - Now generates bench level register test and sequence classes 
+                          - Sequence class uses built-in uvm register test sequences if uvm register model used
+                        - Added ability to map block-level code coverage to upper-level UCDB
+                          as part of a VRM-based regression
+                      
+                      Generator Updates:
+                        - QVIP TLM connections now accept standard "dot" hierarchy references
+                        - Added checks to help ensure correct parameterization of components
+                        - Added support for parameterized utility components
+                        - Added 'scoreboard' type to YAML util_components label to support generation of 
+                          custom, non UVMF, scoreboard classes.
+                        - Archiving YAML during generation for documentation and reuse
+                        - Improved error messages caused by invalid YAML content
+                        - Added support for QVIP TLM connections to utility components
+                          Automatic casting from mvc_sequence_item_base to specified sequence item type
+
+                      Resolved enhancement and service request Jira items:
+                        UVM-1304, UVM-1302, UVM-1295, UVM-1292, UVM-1291, UVM-1287, UVM-1278, UVM-1277, UVM-1262, UVM-1247, UVM-1220, UVM-1179, UVM-1174
+
+2019.1    10/18/2018  General Updates:
                         - General performance and reusability improvements.
                           o Added null checks before config_db use and construction of objects to allow for 
                             direct handle assignment by parent

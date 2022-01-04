@@ -1,31 +1,12 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
-//   All Rights Reserved Worldwide
-//
-//   Licensed under the Apache License, Version 2.0 (the
-//   "License"); you may not use this file except in
-//   compliance with the License.  You may obtain a copy of
-//   the License at
-//
-//       http://www.apache.org/licenses/LICENSE-2.0
-//
-//   Unless required by applicable law or agreed to in
-//   writing, software distributed under the License is
-//   distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
-//   CONDITIONS OF ANY KIND, either express or implied.  See
-//   the License for the specific language governing
-//   permissions and limitations under the License.
+// Created with uvmf_gen version 2019.4_1
+//----------------------------------------------------------------------
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
-//                   Mentor Graphics Inc
-//----------------------------------------------------------------------
-// Project         : spi interface agent
-// Unit            : Signal bundle interface
-// File            : spi_if.sv
-//----------------------------------------------------------------------
-// Creation Date   : 05.12.2011
-//----------------------------------------------------------------------
-// Description: This interface contains the spi interface singals.
+//     
+// DESCRIPTION: This interface contains the spi interface signals.
 //      It is instantiated once per spi bus.  Bus Functional Models, 
 //      BFM's named spi_driver_bfm, are used to drive signals on the bus.
 //      BFM's named spi_monitor_bfm are used to monitor signals on the 
@@ -34,15 +15,52 @@
 //      interface.
 //
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
 //
+// This template can be used to connect a DUT to these signals
+//
+// .dut_signal_port(spi_bus.mosi), // Agent output 
+// .dut_signal_port(spi_bus.miso), // Agent input 
 
 import uvmf_base_pkg_hdl::*;
 import spi_pkg_hdl::*;
 
-interface spi_if(sck, mosi, miso);
+interface  spi_if 
 
-   inout tri   sck;
-   inout tri   mosi;
-   inout tri   miso;
+  (
+  input tri sck, 
+  input tri rst,
+  inout tri  mosi,
+  inout tri  miso
+  );
+
+modport monitor_port 
+  (
+  input sck,
+  input rst,
+  input mosi,
+  input miso
+  );
+
+modport initiator_port 
+  (
+  input sck,
+  input rst,
+  output mosi,
+  input miso
+  );
+
+modport responder_port 
+  (
+  input sck,
+  input rst,  
+  input mosi,
+  output miso
+  );
+  
+
+// pragma uvmf custom interface_item_additional begin
+// pragma uvmf custom interface_item_additional end
 
 endinterface
+

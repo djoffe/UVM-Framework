@@ -63,8 +63,6 @@
 package uvmf_base_pkg;
 
    import uvm_pkg::*;
-   import mti_fli::*;
-   import fli_pkg::*;
    import uvmf_base_pkg_hdl::*;
    `include "uvm_macros.svh"
 

@@ -53,7 +53,7 @@ class uvmf_environment_configuration_base extends uvm_object;
                                     string environment_path,
                                     string interface_names [],
                                     uvm_reg_block register_model = null,
-                                    uvmf_active_passive_t interface_activity[] = null
+                                    uvmf_active_passive_t interface_activity[] = {}
                                     );
 
       `uvm_info("CFG", 

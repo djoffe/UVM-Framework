@@ -15,6 +15,8 @@ uvmf:
 #          type: "transaction_type_including_any_parameters"
   environments:
     "environment_name" :
+      ## Set this flag to disable generation of this environment
+#      existing_library_component : "True"
       ## Parameters for the environment
 #      parameters:
 #        - name: "ENV_PARAMETER"

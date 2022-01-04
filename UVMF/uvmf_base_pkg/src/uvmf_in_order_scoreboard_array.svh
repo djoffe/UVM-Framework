@@ -114,6 +114,11 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
          else 
             begin : item_exists_in_selected_q
             expected_transaction = expected_results_q[t.get_key()].pop_front();
+            // Exit function if comparison is disabled
+            if ( disable_entry_compare ) begin : comparison_disabled
+                  `uvm_warning("SCBD", "COMPARISONS DISABLED")
+                  return;
+                end : comparison_disabled
             // Compare actual transaction to expected transaction
             if (t.compare(expected_transaction)) 
                begin : compare_passed

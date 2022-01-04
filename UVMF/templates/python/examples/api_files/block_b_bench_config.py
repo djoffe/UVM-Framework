@@ -47,6 +47,11 @@ ben.addBfm('unsecure_data_plane_out','pkt', 'pclk', 'prst','ACTIVE', agentInstNa
 ben.addVinfoDependency('comp_pkt_pkg_c_files')
 ben.addVinfoDependency('comp_block_b_env_pkg_c_files')
 
+# Identify scoreboards to disable during register test
+ben.addScoreboard("environment.control_plane_sb")
+ben.addScoreboard("environment.unsecure_data_plane_sb")
+
+
 ## This will prompt the creation of all bench files in their specified
 ##  locations
 ## ben.useCoEmuClkRstGen = True

@@ -58,12 +58,13 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
 
   // Variables used for report_phase summary output formatting using report_message()
   int report_variables[];
-  string report_header = "SCOREBOARD_RESULTS: ";
+  string report_hdr = "SCOREBOARD_RESULTS: ";
 
   // Variable used to enable/disable scoreboard
   bit scoreboard_enabled=1;
   bit enable_expected_port=1;
   bit enable_actual_port=1;
+  bit disable_entry_compare=0;
 
   // Variable used to select use of convert2string() or sprint() in display of
   // transaction compare results.
@@ -94,13 +95,16 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
    // FUNCTION: build
    // Construct the analysis fifo and non-blocking get port
    function void build_phase(uvm_phase phase);
-      super.build_phase(phase);
-      // Checking for command line disable of scoreboard empty check.  
+      // Checking for command line disable of scoreboard activity & empty check.  
       // This is only added for QA testing of UVMF code generators.
       // This is NOT recommended for use when verifying a design.
       void'(uvm_config_db #(uvm_bitstream_t)::get(this,"","end_of_test_empty_check",end_of_test_empty_check));
       if (end_of_test_empty_check==0) begin
         `uvm_warning("SCBD","end_of_test_empty_check has been turned off")
+      end
+      void'(uvm_config_db #(uvm_bitstream_t)::get(this,"","end_of_test_activity_check",end_of_test_activity_check));
+      if (end_of_test_activity_check==0) begin
+        `uvm_warning("SCBD","end_of_test_activity_check has been turned off")
       end
    endfunction
 
@@ -114,6 +118,18 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
   // Used to disable the scoreboard.
   function void disable_scoreboard();
      scoreboard_enabled=0;
+  endfunction
+
+  // FUNCTION: enable_entry_comparison
+  // Used to enable comparison of expected and actual sequence items.
+  function void enable_entry_comparison();
+     disable_entry_compare=0;
+  endfunction
+
+  // FUNCTION: disable_entry_comparison
+  // Used to disable comparison of expected and actual sequence items.
+  function void disable_entry_comparison();
+     disable_entry_compare=1;
   endfunction
 
   // FUNCTION: disable_end_of_test_empty_check
@@ -234,7 +250,7 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
   // Display the transaction comparison summary during the UVM report_phase
   virtual function void report_phase(uvm_phase phase);
      super.report_phase(phase);
-     `uvm_info("SCBD", report_message(report_header, report_variables),UVM_LOW)
+     `uvm_info("SCBD", report_message(report_hdr, report_variables),UVM_LOW)
   endfunction
 
   // TASK: wait_for_scoreboard_drain

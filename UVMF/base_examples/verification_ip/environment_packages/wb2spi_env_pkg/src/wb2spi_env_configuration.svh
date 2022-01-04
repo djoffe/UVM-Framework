@@ -1,39 +1,56 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 09
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : wb2spi Environment 
-// Unit            : Environment configuration
-// File            : wb2spi_env_configuration.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: THis is the configuration for the wb2spi environment.
 //  it contains configuration classes for each agent.  It also contains
 //  environment level configuration variables.
 //
-//
-//
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
-class wb2spi_env_configuration #(int WB_DATA_WIDTH = 16, int WB_ADDR_WIDTH = 32) extends uvmf_environment_configuration_base;
+class wb2spi_env_configuration #(
+             int WB_DATA_WIDTH = 16,
+             int WB_ADDR_WIDTH = 32
+             )
+extends uvmf_environment_configuration_base;
 
-  `uvm_object_param_utils( wb2spi_env_configuration#(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH)) );
+  `uvm_object_param_utils( wb2spi_env_configuration #(
+                           WB_DATA_WIDTH,
+                           WB_ADDR_WIDTH
+                           ))
 
 
 //Constraints for the configuration variables:
 
+// Instantiate the register model
+  wb2spi_reg_model  wb2spi_rm;
+
   covergroup wb2spi_configuration_cg;
+    // pragma uvmf custom covergroup begin
     option.auto_bin_max=1024;
+  // pragma uvmf custom covergroup end
   endgroup
 
 
-    wb_configuration #(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH)) wb_config;
-    spi_configuration spi_config;
+    typedef wb_configuration#(
+                .WB_DATA_WIDTH(WB_DATA_WIDTH),
+                .WB_ADDR_WIDTH(WB_ADDR_WIDTH)
+                ) wb_config_t;
+    wb_config_t wb_config;
 
-  wb2spi_reg_block  reg_model;
+    typedef spi_configuration spi_config_t;
+    spi_config_t spi_config;
+
+
+
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
 
 // ****************************************************************************
 // FUNCTION : new()
@@ -44,15 +61,29 @@ class wb2spi_env_configuration #(int WB_DATA_WIDTH = 16, int WB_ADDR_WIDTH = 32)
     super.new( name );
 
 
-    wb_config = wb_configuration#(.WB_DATA_WIDTH(WB_DATA_WIDTH),.WB_ADDR_WIDTH(WB_ADDR_WIDTH))::type_id::create("wb_config");
-    wb_config.initiator_responder = INITIATOR;
+    wb_config = wb_config_t::type_id::create("wb_config");
+    spi_config = spi_config_t::type_id::create("spi_config");
 
-    spi_config = spi_configuration::type_id::create("spi_config");
-    spi_config.master_slave = SLAVE;
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
+  endfunction
 
+// ****************************************************************************
+// FUNCTION: post_randomize()
+// This function is automatically called after the randomize() function 
+// is executed.
+//
+  function void post_randomize();
+    super.post_randomize();
+    // pragma uvmf custom post_randomize begin
 
+    if(!wb_config.randomize()) `uvm_fatal("RAND","wb randomization failed");
+    if(!spi_config.randomize()) `uvm_fatal("RAND","spi randomization failed");
+
+    // pragma uvmf custom post_randomize end
 
   endfunction
+  
 // ****************************************************************************
 // FUNCTION: convert2string()
 // This function converts all variables in this class to a single string for
@@ -60,6 +91,7 @@ class wb2spi_env_configuration #(int WB_DATA_WIDTH = 16, int WB_ADDR_WIDTH = 32)
 // each agent configuration in this configuration class.
 //
   virtual function string convert2string();
+    // pragma uvmf custom convert2string begin
     return {
      
      "\n", wb_config.convert2string,
@@ -68,6 +100,9 @@ class wb2spi_env_configuration #(int WB_DATA_WIDTH = 16, int WB_ADDR_WIDTH = 32)
 
        };
 
+
+
+    // pragma uvmf custom convert2string end
   endfunction
 // ****************************************************************************
 // FUNCTION: initialize();
@@ -83,28 +118,37 @@ class wb2spi_env_configuration #(int WB_DATA_WIDTH = 16, int WB_ADDR_WIDTH = 32)
                                       string environment_path,
                                       string interface_names[],
                                       uvm_reg_block register_model = null,
-                                      uvmf_active_passive_t interface_activity[] = null
+                                      uvmf_active_passive_t interface_activity[] = {}
                                      );
-
 
     super.initialize(sim_level, environment_path, interface_names, register_model, interface_activity);
 
 
+
+  // Interface initialization for local agents
      wb_config.initialize( interface_activity[0], {environment_path,".wb"}, interface_names[0]);
+     wb_config.initiator_responder = INITIATOR;
      spi_config.initialize( interface_activity[1], {environment_path,".spi"}, interface_names[1]);
+     spi_config.initiator_responder = RESPONDER;
 
+    // pragma uvmf custom reg_model_config_initialize begin
+    // Register model creation and configuation
     if (register_model == null) begin
-      reg_model = wb2spi_reg_block::type_id::create("reg_model");
-      reg_model.build();
-
+      wb2spi_rm = wb2spi_reg_model
+      ::type_id::create("wb2spi_rm");
+      wb2spi_rm.build();
       enable_reg_adaptation = 1;
       enable_reg_prediction = 1;
     end else begin
-      $cast(reg_model,register_model);
-      
+      $cast(wb2spi_rm,register_model);
       enable_reg_prediction = 1;
     end
+    // pragma uvmf custom reg_model_config_initialize end
 
+
+
+  // pragma uvmf custom initialize begin
+  // pragma uvmf custom initialize end
 
   endfunction
 

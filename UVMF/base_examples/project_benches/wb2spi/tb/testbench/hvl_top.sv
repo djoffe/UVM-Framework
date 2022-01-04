@@ -1,26 +1,30 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 26
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
 //
-//----------------------------------------------------------------------
-// Project         : wb2spi Simulation Bench 
-// Unit            : Top level HVL module
-// File            : hvl_top.sv
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This module loads the test package and starts the UVM phases.
 //
 //----------------------------------------------------------------------
+//----------------------------------------------------------------------
 //
 
 import uvm_pkg::*;
-import wb2spi_test_pkg::*;
+import wb2spi_tests_pkg::*;
 
 module hvl_top;
 
-initial run_test();
+  // pragma uvmf custom module_item_additional begin
+  // pragma uvmf custom module_item_additional end
+
+  initial begin
+    $timeformat(-9,3,"ns",5);
+    run_test();
+  end
 
 endmodule
 

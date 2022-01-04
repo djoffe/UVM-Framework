@@ -2,50 +2,40 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface Sequence Base
-// File            : {{name}}_sequence_base.svh
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: 
 // This file contains the class used as the base class for all sequences
 // for this interface.
 //
-// ****************************************************************************
-// ****************************************************************************
-class {{name}}_sequence_base {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}                                
-{% endfor %}      ) {% endif %}
-  extends uvmf_sequence_base #(
-                             .REQ({{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                                 .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %}),
-                             .RSP({{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                                 .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                             ) {% endif %}));
+//----------------------------------------------------------------------
+{% endblock %}
+{% block contents %}
+class {{name}}_sequence_base {{macro.paramDeclare(paramDefs)|indent(6)}}   extends uvmf_sequence_base #(
+                             .REQ({{name}}_transaction  {{macro.paramUse(paramDefs)|indent(33)}}),
+                             .RSP({{name}}_transaction  {{macro.paramUse(paramDefs)|indent(33)}}));
 
-{%if paramDefs|length > 0%}
-  `uvm_object_param_utils( {{name}}_sequence_base #(
-{% for param in paramDefs %}                            {{param.name}}{% if not loop.last %},{% endif %}
+{{macro.objUtils([name,'_sequence_base']|join(""),paramDefs)}}
 
-{% endfor %}                          ))
-{% else %}
-  `uvm_object_utils( {{name}}_sequence_base )
-{% endif %}
   // variables
-  typedef {{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                     ) {% endif %} {{name}}_transaction_req_t;
+  typedef {{name}}_transaction {{macro.paramUse(paramDefs)|indent(21)}} {{name}}_transaction_req_t;
   {{name}}_transaction_req_t req;
-  typedef {{name}}_transaction {%if paramDefs|length > 0%} #(
-{% for param in paramDefs %}                     .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}                                
-{% endfor %}                     ) {% endif %} {{name}}_transaction_rsp_t;
+  typedef {{name}}_transaction {{macro.paramUse(paramDefs)|indent(21)}} {{name}}_transaction_rsp_t;
   {{name}}_transaction_rsp_t rsp;
 
   // Event for identifying when a response was received from the sequencer
   event new_rsp;
+
+{% if DPIImports|length > 0 %}
+  // System Verilog variables for C functions 
+{% for txn in DPITransDecl %}
+  {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+{% endfor %}
+{% endif %}
+
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+
   // ****************************************************************************
   // TASK : get_responses()
   // This task recursively gets sequence item responses from the sequencer.
@@ -70,7 +60,20 @@ class {{name}}_sequence_base {%if paramDefs|length > 0%} #(
   // processing response transactions.
   //
   virtual task pre_body();
+    // pragma uvmf custom pre_body begin
     get_responses();
+{% if DPIImports|length > 0 %}
+    // Example use of C functions using DPI-C
+{% for DPIImport in DPIImports %}
+    // Calling C function {{DPIImport.name}}
+    {{DPIImport.name}}
+            (
+{% for argument in DPIImport.arguments %}
+            {{argument['name']}}{{macro.commalist(loop)}}{% endfor %}
+
+            );
+{% endfor %} {% endif %}
+    // pragma uvmf custom pre_body end
   endtask
 
   // ****************************************************************************
@@ -80,8 +83,10 @@ class {{name}}_sequence_base {%if paramDefs|length > 0%} #(
   // to start.
   //
   virtual task body();
+    // pragma uvmf custom body begin
   	start_item(req);
   	finish_item(req);
+    // pragma uvmf custom body end
   endtask
 
   // ****************************************************************************
@@ -90,8 +95,10 @@ class {{name}}_sequence_base {%if paramDefs|length > 0%} #(
   //
   function new( string name ="");
     super.new( name );
+    // pragma uvmf custom new begin
     req = {{name}}_transaction_req_t::type_id::create("req");
     rsp = {{name}}_transaction_rsp_t::type_id::create("rsp");
+    // pragma uvmf custom new end
   endfunction
 
 endclass

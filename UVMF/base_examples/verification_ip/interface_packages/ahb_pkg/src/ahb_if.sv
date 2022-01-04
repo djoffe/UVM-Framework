@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Sep 15
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : ahb interface agent
-// Unit            : Interface Signal Bundle
-// File            : ahb_if.sv
 //----------------------------------------------------------------------
 //     
 // DESCRIPTION: This interface contains the ahb interface signals.
@@ -18,8 +14,7 @@
 //      the BFM in order to give the BFM access to the signals in this
 //      interface.
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 //----------------------------------------------------------------------
 //
 // This template can be used to connect a DUT to these signals
@@ -38,40 +33,74 @@
 import uvmf_base_pkg_hdl::*;
 import ahb_pkg_hdl::*;
 
-interface ahb_if ( 
+interface  ahb_if 
+
+  (
   input tri hclk, 
-  input tri hresetn
-  ,output tri [31:0] haddr
-  ,output tri [15:0] hwdata
-  ,output tri [1:0] htrans
-  ,output tri [2:0] hburst
-  ,output tri [2:0] hsize
-  ,output tri  hwrite
-  ,output tri  hsel
-  ,input tri  hready
-  ,input tri [15:0] hrdata
-  ,input tri [1:0] hresp
-);
+  input tri hresetn,
+  inout tri [31:0] haddr,
+  inout tri [15:0] hwdata,
+  inout tri [1:0] htrans,
+  inout tri [2:0] hburst,
+  inout tri [2:0] hsize,
+  inout tri  hwrite,
+  inout tri  hsel,
+  inout tri  hready,
+  inout tri [15:0] hrdata,
+  inout tri [1:0] hresp
+  );
 
-property ahb_hready_follows_hsel;
-@(posedge hclk) disable iff (!hresetn) $rose(hsel)  |=> (hsel & !hready)[*1:4] ##1 (hsel & hready) ##1 (!hsel & !hready);
-endproperty
+modport monitor_port 
+  (
+  input hclk,
+  input hresetn,
+  input haddr,
+  input hwdata,
+  input htrans,
+  input hburst,
+  input hsize,
+  input hwrite,
+  input hsel,
+  input hready,
+  input hrdata,
+  input hresp
+  );
 
-property ahb_address_stable_throughout_transfer;
-@(posedge hclk) disable iff (!hresetn) $rose(hsel)  |=> $stable(haddr)[*1:4] ##1 !hsel;
-endproperty
+modport initiator_port 
+  (
+  input hclk,
+  input hresetn,
+  output haddr,
+  output hwdata,
+  output htrans,
+  output hburst,
+  output hsize,
+  output hwrite,
+  output hsel,
+  input hready,
+  input hrdata,
+  input hresp
+  );
 
-property ahb_wdata_stable_throughout_write;
-@(posedge hclk) disable iff (!hresetn) $rose(hwrite)  |=> $stable(hwdata)[*1:4] ##1 !hwrite;
-endproperty
+modport responder_port 
+  (
+  input hclk,
+  input hresetn,  
+  input haddr,
+  input hwdata,
+  input htrans,
+  input hburst,
+  input hsize,
+  input hwrite,
+  input hsel,
+  output hready,
+  output hrdata,
+  output hresp
+  );
+  
 
-assert property(ahb_hready_follows_hsel) else $error("The AHB hsel was not terminated with a hready");
-assert property(ahb_address_stable_throughout_transfer) else $error("The AHB address did not remain stable throughout the transfer");
-assert property(ahb_wdata_stable_throughout_write) else $error("The AHB write data did not remain stable throughout the write transfer");
-
-cover property(ahb_hready_follows_hsel);
-cover property(ahb_address_stable_throughout_transfer);
-cover property(ahb_wdata_stable_throughout_write);
+// pragma uvmf custom interface_item_additional begin
+// pragma uvmf custom interface_item_additional end
 
 endinterface
 

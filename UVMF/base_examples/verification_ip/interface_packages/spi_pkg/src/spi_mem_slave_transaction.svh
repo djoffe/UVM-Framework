@@ -81,17 +81,17 @@ class spi_mem_slave_transaction extends spi_transaction;
 
 // ****************************************************************************
    virtual function void unpack_fields();
-      if (spi_data[7]== 1) op = SPI_SLAVE_WRITE;
+      if (mosi_data[7]== 1) op = SPI_SLAVE_WRITE;
       else                 op = SPI_SLAVE_READ;
-      command = spi_data[7];
-      addr = spi_data[6:4];
-      data = spi_data[3:0];
+      command = mosi_data[7];
+      addr = mosi_data[6:4];
+      data = mosi_data[3:0];
    endfunction
 
 // ****************************************************************************
    virtual function void pack_fields();
-      if ( dir == MOSI) spi_data = { command, addr, data};
-      else              spi_data = { status,  addr, data};
+      //mosi_data = { command, addr, data};
+      miso_data = { status,  addr, data};
    endfunction
 
 // ****************************************************************************
@@ -107,19 +107,4 @@ class spi_mem_slave_transaction extends spi_transaction;
     $free_transaction(transaction_view_h);
   endfunction
 
-// ****************************************************************************
-   function spi_mem_slave_transaction_s to_struct();
-     spi_mem_slave_transaction_s s;
-     s.spi_txn = super.to_struct();
-     {s.op, s.addr, s.data, s.status, s.command} = 
-       {this.op, this.addr, this.data, this.status, this.command};
-     return s;
-   endfunction
- 
-// ****************************************************************************
-   function void from_struct(spi_mem_slave_transaction_s s);
-     super.from_struct(s.spi_txn);
-     {this.op, this.addr, this.data, this.status, this.command} = 
-       {s.op, s.addr, s.data, s.status, s.command};
-   endfunction
 endclass

@@ -1,13 +1,9 @@
 //----------------------------------------------------------------------
+// Created with uvmf_gen version 2019.4_1
 //----------------------------------------------------------------------
-// Created by      : boden
-// Creation Date   : 2016 Nov 30
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 //----------------------------------------------------------------------
-//
-//----------------------------------------------------------------------
-// Project         : gpio_example Simulation Bench 
-// Unit            : Sequences Package
-// File            : gpio_example_sequences_pkg.sv
 //----------------------------------------------------------------------
 //
 // DESCRIPTION: This package includes all high level sequence classes used 
@@ -24,22 +20,31 @@
 //
 
 package gpio_example_sequences_pkg;
+  import uvm_pkg::*;
+  import uvmf_base_pkg::*;
+  import gpio_pkg::*;
+  import gpio_pkg_hdl::*;
+  import gpio_example_parameters_pkg::*;
+  import gpio_example_env_pkg::*;
+  `include "uvm_macros.svh"
 
-   import uvm_pkg::*;
-   import uvmf_base_pkg::*;
-   import gpio_pkg::*;
-   import gpio_example_parameters_pkg::*;
+  // pragma uvmf custom package_imports_additional begin 
+  `include "src/gpio_gpio_sequence.svh"
+  // pragma uvmf custom package_imports_additional end
 
-   import clock_pkg::*;
-   import reset_pkg::*;
+  `include "src/gpio_example_bench_sequence_base.svh"
+  `include "src/register_test_sequence.svh"
+  `include "src/example_derived_test_sequence.svh"
 
-  
-   `include "uvm_macros.svh"
-
-   `include "src/gpio_gpio_sequence.svh"
-   `include "src/gpio_example_bench_sequence_base.svh"
-   `include "src/infact_bench_sequence.svh"
-   `include "src/example_derived_test_sequence.svh"
+  // pragma uvmf custom package_item_additional begin
+  // UVMF_CHANGE_ME : When adding new sequences to the src directory
+  //    be sure to add the sequence file here so that it will be
+  //    compiled as part of the sequence package.  Be sure to place
+  //    the new sequence after any base sequences of the new sequence.
+  // pragma uvmf custom package_item_additional end
 
 endpackage
+
+
+
 

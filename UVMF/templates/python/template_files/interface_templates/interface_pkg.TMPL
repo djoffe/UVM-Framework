@@ -2,11 +2,6 @@
 {% extends "base_template.TMPL" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} interface agent
-// Unit            : Interface HVL package
-// File            : {{name}}_pkg.sv
 //----------------------------------------------------------------------
 //     
 // PACKAGE: This file defines all of the files contained in the
@@ -28,8 +23,7 @@
 //    - <{{name}}_responder_sequence.svh>
 //    - <{{name}}2reg_adapter.svh>
 //
-// ****************************************************************************
-// ****************************************************************************
+//----------------------------------------------------------------------
 {% endblock %}
 
 {% block contents %}
@@ -48,6 +42,11 @@ package {{name}}_pkg;
 {% endif %}
 
    `include "uvm_macros.svh"
+
+   // pragma uvmf custom package_imports_additional begin 
+   // pragma uvmf custom package_imports_additional end
+
+   `include "src/{{name}}_macros.svh"
    
    export {{name}}_pkg_hdl::*;
    
@@ -72,6 +71,9 @@ package {{name}}_pkg;
 {% endif %}
    `include "src/{{name}}_configuration.svh"
    `include "src/{{name}}_driver.svh"
+{%if genInBoundStreamingDriver %}
+   `include "src/{{name}}_ibs_driver.svh"
+{% endif %}
    `include "src/{{name}}_monitor.svh"
 
    `include "src/{{name}}_transaction_coverage.svh"
@@ -93,10 +95,12 @@ package {{name}}_pkg;
    endfunction  
 {% endif %}
 
-// UVMF_CHANGE_ME : When adding new interface sequences to the src directory
-//    be sure to add the sequence file here so that it will be
-//    compiled as part of the interface package.  Be sure to place
-//    the new sequence after any base sequences of the new sequence.
+   // pragma uvmf custom package_item_additional begin
+   // UVMF_CHANGE_ME : When adding new interface sequences to the src directory
+   //    be sure to add the sequence file here so that it will be
+   //    compiled as part of the interface package.  Be sure to place
+   //    the new sequence after any base sequences of the new sequence.
+   // pragma uvmf custom package_item_additional end
 
 endpackage
 

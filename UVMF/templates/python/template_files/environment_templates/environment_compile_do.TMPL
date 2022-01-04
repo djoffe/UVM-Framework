@@ -1,6 +1,9 @@
 {% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/compile.do" %}
 # Tcl do file for compile of {{name}} interface
 
+# pragma uvmf custom additional begin
+# pragma uvmf custom additional end
+
 {% if DPIFiles|length > 0 %}
 # Build from associated DPI C source
 if {$tcl_platform(pointerSize)==8} {

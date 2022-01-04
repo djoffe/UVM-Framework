@@ -3,11 +3,6 @@
 {% set conditional = "infact_ready" %}
 
 {% block description %}
-//
-//----------------------------------------------------------------------
-// Project         : {{name}} Simulation Bench 
-// Unit            : inFact Transaction Classes
-// File            : infact_{{name}}_bench_transactions.svh
 //----------------------------------------------------------------------
 //
 // DESCRIPTION: This package includes definitions for all transactions
@@ -15,14 +10,13 @@
 //   avoiding parameterized classes
 //
 //----------------------------------------------------------------------
-//
 {% endblock %}
 
 {% block contents %}
 
 {% for bfm in bfms %}
 {% if bfm.activity == 'ACTIVE' %}
-class {{bfm.name}}_{{bfm.ifPkg}}_transaction extends {{bfm.ifPkg}}_transaction {% if bfm.parameters|length > 0%}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0%}) {% endif %};
+class {{bfm.name}}_{{bfm.ifPkg}}_transaction extends {{bfm.ifPkg}}_transaction{{macro.paramUseNested(bfm.parameters)|indent(8)}};
   `uvm_object_utils({{bfm.name}}_{{bfm.ifPkg}}_transaction)
 endclass
 {% endif %}
