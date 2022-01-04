@@ -1,0 +1,4 @@
+
+//UVMF_CHANGE_ME: Add your hdl source files, or a pkg reference to them below
++incdir+@vinfodir
+verilog/qvip_ethernet_serial.v

@@ -1,0 +1,4 @@
+
++incdir+@vinfodir
+@use ../tests/qvip_ethernet_serial_test_pkg.vinfo
+hvl_top.sv

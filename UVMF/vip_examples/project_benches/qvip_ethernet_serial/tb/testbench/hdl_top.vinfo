@@ -1,0 +1,6 @@
+
++incdir+@vinfodir
+@use ../parameters/qvip_ethernet_serial_parameters_pkg.vinfo
+@use ../../../../verification_ip/uvmf_base_pkg/uvmf_base_pkg_hdl.vinfo
+@use ../../rtl/rtl.vinfo
+hdl_top.sv

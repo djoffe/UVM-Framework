@@ -1,0 +1,21 @@
+uvmf:
+  interfaces:
+    "dma":
+      clock: "clock"
+      reset: "reset"
+      parameters:
+        - { name: "DATA_WIDTH", type: "int", value: "16" }
+        - { name: "ADDR_WIDTH", type: "int", value: "8" }
+      ports: 
+        - { name: "rd_en", width: "1", dir: "output" }
+        - { name: "wr_en", width: "1", dir: "output" }
+        - { name: "addr" , width: "ADDR_WIDTH", dir: "output" }
+        - { name: "wdata", width: "DATA_WIDTH", dir: "output" }
+        - { name: "rdata", width: "DATA_WIDTH", dir: "input" }
+      transaction_vars:
+        - { name: "addr" , type: "bit [ADDR_WIDTH-1:0]", isrand: "True", iscompare: "True" }
+        - { name: "data" , type: "bit [DATA_WIDTH-1:0]", isrand: "True", iscompare: "True" }
+        - { name: "wr"   , type: "bit", isrand: "True", iscompare: "True" }
+      response_info:
+        operation : "~txn.wr"
+        data : ["data"]

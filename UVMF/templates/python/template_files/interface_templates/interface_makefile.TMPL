@@ -1,0 +1,57 @@
+{% set fname = "verification_ip/interface_packages/{{name}}_pkg/Makefile" %}
+# {{name}} interface packages source
+{{name}}_PKG         = \
+	+incdir+$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_pkg \
+	-F $(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_pkg/{{name}}_filelist_hvl.f 
+
+{{name}}_PKG_HDL         = \
+	+incdir+$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_pkg \
+	-F $(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_pkg/{{name}}_filelist_hdl.f 
+
+COMP_{{name}}_PKG_TGT_0 = q_comp_{{name}}_pkg
+COMP_{{name}}_PKG_TGT_1 = v_comp_{{name}}_pkg
+COMP_{{name}}_PKG_TGT = $(COMP_{{name}}_PKG_TGT_$(USE_VELOCE))
+
+comp_{{name}}_pkg: $(COMP_{{name}}_PKG_TGT) {% if DPIFiles|length > 0 %} comp_{{name}}_pkg_c_files {% endif %}
+
+	$(HDL_COMP_CMD) $({{name}}_PKG_HDL)
+
+q_comp_{{name}}_pkg:
+	$(HVL_COMP_CMD) $({{name}}_PKG) {% if inFactReady %} +incdir+$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_infact_proj/{{name}}_infact_sequence {% endif %}
+
+v_comp_{{name}}_pkg: q_comp_{{name}}_pkg
+	$(VELANALYZE_HVL_CMD) $({{name}}_PKG) {% if inFactReady %} +incdir+$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_infact_proj/{{name}}_infact_sequence {% endif %}
+
+
+{%if DPIFiles != ""%}
+ifeq ($(MTI_VCO_MODE),64)
+  GCC_COMP_ARCH = -m64
+else
+  GCC_COMP_ARCH = -m32
+endif
+
+C_FILE_COMPILE_LIST_{{name}}_pkg	= \
+{% for cFile in DPIFiles %}
+	$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_pkg/dpi/{{cFile}} \
+{% endfor %}
+
+O_FILE_COMPILE_LIST_{{name}}_pkg = $(notdir $(C_FILE_COMPILE_LIST_{{name}}_pkg:.c=.o))
+
+GCC_COMP_ARGS_{{name}}_pkg	+= -I$(UVMF_VIP_LIBRARY_HOME)/interface_packages/{{name}}_pkg/dpi \
+	{{DPICompArgs}}
+
+GCC_LINK_ARGS_{{name}}_pkg	+= \
+	{{DPILinkArgs}} \
+ 	-o {{soName}}.so
+
+comp_{{name}}_pkg_c_files:
+	@echo "--------------------------------"
+	@echo "Compiling Interface C source"
+	@echo "--------------------------------"
+	gcc $(GCC_COMP_ARCH) $(GCC_COMP_ARGS_{{name}}_pkg) $(C_FILE_COMPILE_LIST_{{name}}_pkg)
+	@echo "--------------------------------"
+	@echo "Linking Interface C objects into a shared object"
+	@echo "--------------------------------"
+	gcc $(GCC_COMP_ARCH) $(GCC_LINK_ARGS_{{name}}_pkg) $(O_FILE_COMPILE_LIST_{{name}}_pkg)
+	@echo "--------------------------------"
+{% endif %}

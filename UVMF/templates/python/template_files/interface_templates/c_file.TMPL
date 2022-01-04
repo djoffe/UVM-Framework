@@ -1,0 +1,21 @@
+{% set fname = "verification_ip/interface_packages/{{name}}_pkg/dpi/{{fileName}}" %}
+{% set conditional = "c_file" %}
+{% block description %}
+/*
+**********************************************************************
+  Placeholder for complete C file.  This placeholder allows
+  compilation of generated environment without modification.
+**********************************************************************
+*/
+{% endblock %}
+{% block contents %}
+#include <stdio.h>
+
+{% for DPIImport in DPIImports %}
+{{DPIImport.type}} {{DPIImport.name}} {{DPIImport.cArgs}}
+{
+        printf("Inside {{DPIImport.name}}\n");
+}
+{% endfor %} 
+{% endblock %}
+

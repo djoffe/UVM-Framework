@@ -1,0 +1,62 @@
+{% set fname = "verification_ip/environment_packages/{{env_name}}_env_pkg/registers/{{env_name}}_reg_pkg.sv" %}
+{% set conditional = "reg_model" %}
+{% extends "base_template.TMPL" %}
+
+{% block description %}
+//
+//----------------------------------------------------------------------
+// Placeholder for complete register model.  This placeholder allows
+//  compilation of generated environment without modification.
+//----------------------------------------------------------------------
+{% endblock %}
+{% block contents %}
+
+package {{env_name}}_reg_pkg;
+
+   import uvm_pkg::*;
+{% for sub_env in subEnvironments %}
+{% if sub_env.regSubBlock != None %}
+    import {{sub_env.envPkg}}_reg_pkg::*;
+{% endif %}
+{% endfor %}
+
+   `include "uvm_macros.svh"
+
+   class {{env_name}}_reg_model extends uvm_reg_block;
+      `uvm_object_utils({{env_name}}_reg_model)
+
+{% if busMap != None %}
+      uvm_reg_map {{busMap}}; 
+{% endif %}
+{% for sub_env in subEnvironments %}
+{% if sub_env.regSubBlock != None %}
+      {{sub_env.envPkg}}_reg_model {{sub_env.regSubBlock}};
+{% endif %}
+{% endfor %}
+
+      // Function: new
+      // 
+      function new(string name = "{{className}}");
+         super.new(name, build_coverage(UVM_CVR_ALL));
+      endfunction
+
+      // Function: build
+      // 
+      virtual function void build();
+{% if busMap != None %}
+         {{busMap}} = new("{{busMap}}");
+{% endif %}
+{% for sub_env in subEnvironments %}
+{% if sub_env.regSubBlock != None %}
+         {{sub_env.regSubBlock}} = new("{{sub_env.regSubBlock}}");
+{% endif %}
+{% endfor %}
+ 
+      endfunction
+
+   endclass
+
+endpackage
+
+{% endblock %}
+
