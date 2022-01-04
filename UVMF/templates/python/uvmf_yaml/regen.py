@@ -28,9 +28,26 @@ class Merge:
     self.new_directories = []
     self.yaml_imported = False
 
+  # Replace the base directory structure with something new, maintaining the top-most path
   def replace_basedir(self, p, old_basedir, new_basedir):
-    r = re.sub(r"^"+old_basedir+os.sep+r"(.*)",r"{0}{1}\1".format(new_basedir,os.sep),p)
-    return os.path.normpath(r)
+    # Unfortunately we can't use a nice simple regex here safely due to OS differences (windows os.sep backslashes cause problems)
+    # r = re.sub(r"^"+old_basedir+os.sep+r"(.*)",r"{0}{1}\1".format(new_basedir,os.sep),p)
+    # Instead, we iteratively pull stuff off the end of the full path variable 'p' until we reveal
+    # the 'old_basedir'.  Then prepend 'new_basedir' in its place
+    p_begin = p
+    p_end = ''
+    while True:
+      # Jump out once we've extracted all of the special stuff at the end of path 'p'
+      if p_begin == old_basedir:
+        break
+      # Break out last item on p_begin
+      p_split = os.path.split(p_begin)
+      # And move it over to p_end
+      p_end = os.path.join(p_split[1],p_end)
+      # And save what is left as p_begin
+      p_begin = p_split[0]
+     # At this point we can concatenate new_basedir and p_end to produce the new full path
+    return os.path.normpath(os.path.join(new_basedir,p_end))
 
   def load_yaml(self,fname):
     self.yaml_imported = True

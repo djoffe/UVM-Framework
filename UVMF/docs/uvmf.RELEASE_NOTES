@@ -2,6 +2,9 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
+2020.3_1  09/01/2020  Patch:
+                        - Fixed UVM-1449: Bug in regeneration routine when running on Windows OS
+
 2020.3    08/20/2020  General Updates:
                         - Replaced VMW_HOME with VELOCE_HOME for referencing Veloce SW.
                         - Removed import of fli_pkg for uvmf_base_pkg.  Fli_pkg remains in UVMF
