@@ -1,0 +1,53 @@
+
+
+// ------- alu_parameters_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/tb/parameters
+/work/framework/base_examples/project_benches/alu/tb/parameters/alu_parameters_pkg.sv
+
+
+// ------- fli_pkg.vinfo --------
++incdir+/work/framework/common/fli_pkg
+/work/framework/common/fli_pkg/fli_pkg.sv
+
+
+// ------- uvmf_base_pkg_hdl.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg_hdl.sv
+
+
+// ------- uvmf_base_pkg.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg.sv
+
+
+// ------- alu_out_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/alu_out_pkg
+/work/framework/base_examples/verification_ip/interface_packages/alu_out_pkg/alu_out_pkg.sv
+
+
+// ------- alu_in_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/alu_in_pkg
+/work/framework/base_examples/verification_ip/interface_packages/alu_in_pkg/alu_in_pkg.sv
+
+
+// ------- alu_env_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/environment_packages/alu_env_pkg
+/work/framework/base_examples/verification_ip/environment_packages/alu_env_pkg/alu_env_pkg.sv
+
+
+// ------- alu_sequences_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/tb/sequences
+/work/framework/base_examples/project_benches/alu/tb/sequences/alu_sequences_pkg.sv
+
+
+// ------- alu_test_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/tb/tests
+/work/framework/base_examples/project_benches/alu/tb/tests/alu_test_pkg.sv
+
+
+// ------- hvl_top.vinfo --------
++incdir+/work/framework/base_examples/project_benches/alu/tb/testbench
+/work/framework/base_examples/project_benches/alu/tb/testbench/hvl_top.sv
+
+
+// ------- hvl.vinfo --------

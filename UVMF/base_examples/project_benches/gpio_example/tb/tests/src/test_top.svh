@@ -47,8 +47,8 @@ uvmf_active_passive_t interface_activities[] = {
   // Must be extended clock_ctrl object and not clock_ctrl_base because
   // bfm is set here.  Usage elsewhere in testbench can just use a
   // clock_ctrl_base handle.
-  clock_ctrl #(.PHASE_OFFSET_IN_PS(9000),
-               .INIT_CLOCK_HALF_PERIOD(2500)) clk_ctrl;
+  clock_ctrl #(.INIT_CLOCK_HALF_PERIOD(2500),
+               .PHASE_OFFSET_IN_PS(9000)) clk_ctrl;
   
   //variable: reset_ctrl
   //Reset Proxy Object used to control Reset
@@ -74,13 +74,13 @@ uvmf_active_passive_t interface_activities[] = {
 // 
 //
   function void setup_clock_reset_controllers();
-      virtual clock_bfm #(.PHASE_OFFSET_IN_PS(9000), .INIT_CLOCK_HALF_PERIOD(2500)) clk_bfm;
+      virtual clock_bfm #(.INIT_CLOCK_HALF_PERIOD(2500), .PHASE_OFFSET_IN_PS(9000)) clk_bfm;
       virtual async_reset_bfm #(.RESET_POLARITY(0), .INITIAL_IDLE_TIME_IN_PS(1000), .RESET_ACTIVE_TIME_IN_PS(200000)) async_rst_bfm;
 
       // Construct the clock controller proxy
-      clk_ctrl = clock_ctrl #(.PHASE_OFFSET_IN_PS(9000), .INIT_CLOCK_HALF_PERIOD(2500))::type_id::create("clk_ctrl");
+      clk_ctrl = clock_ctrl #(.INIT_CLOCK_HALF_PERIOD(2500), .PHASE_OFFSET_IN_PS(9000))::type_id::create("clk_ctrl");
       //Set the bfm handle in the clk_ctrl
-      if (!uvm_config_db#(virtual clock_bfm #(.PHASE_OFFSET_IN_PS(9000), .INIT_CLOCK_HALF_PERIOD(2500)) )::get(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_bfm)) begin
+      if (!uvm_config_db#(virtual clock_bfm #(.INIT_CLOCK_HALF_PERIOD(2500), .PHASE_OFFSET_IN_PS(9000)) )::get(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_bfm)) begin
         `uvm_fatal("TEST", "Could not get the Clock BFM Interface")
       end
       clk_ctrl.set_bfm(clk_bfm);

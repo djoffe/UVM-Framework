@@ -40,7 +40,7 @@
 package qvip_axi4_bench_sequences_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
+   
    import uvmf_base_pkg::*;
 
    import mvc_pkg::*;

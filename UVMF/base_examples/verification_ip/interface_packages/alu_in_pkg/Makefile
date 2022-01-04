@@ -15,7 +15,7 @@ comp_alu_in_pkg: $(COMP_ALU_IN_PKG_TGT)
 	$(HDL_COMP_CMD) $(ALU_IN_PKG_HDL)
 
 q_comp_alu_in_pkg:
-	$(HVL_COMP_CMD) $(ALU_IN_PKG)
+	$(HVL_COMP_CMD) $(UVM_INCDIR) $(ALU_IN_PKG)
 
 v_comp_alu_in_pkg: q_comp_alu_in_pkg
 	$(VELANALYZE_HVL_CMD) $(ALU_IN_PKG)

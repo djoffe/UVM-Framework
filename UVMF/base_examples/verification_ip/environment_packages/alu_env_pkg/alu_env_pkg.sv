@@ -34,7 +34,6 @@
 package alu_env_pkg;
 
 import uvm_pkg::*;
-import questa_uvm_pkg::*;
 `include "uvm_macros.svh"
 
 import uvmf_base_pkg::*;

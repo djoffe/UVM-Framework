@@ -6,8 +6,8 @@
 //
 //----------------------------------------------------------------------
 // Project         : gpio_example Simulation Bench 
-// Unit            : rdo configuration
-// File            : gpio_example_rdo.svh
+// Unit            : Test package
+// File            : example_derived_test.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This test extends test_top and makes the following

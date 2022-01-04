@@ -36,11 +36,17 @@
 ##
 ##############################################################################
 
+import sys
+
+# Check version of Python in use - fatal error if not 2.x (don't support Python3 yet)
+if (sys.version_info[0] >= 3):
+  print "ERROR : yaml2uvmf only supported on Python2 - version in use is "+str(sys.version_info[0])+"."+str(sys.version_info[1])+"."+str(sys.version_info[2])
+  sys.exit(1)
+
 import os
 import time
 import re
 import inspect
-import sys
 from optparse import OptionParser
 from fnmatch import fnmatch
 
@@ -55,7 +61,7 @@ from uvmf_gen import (UVMFCommandLineParser,PassThroughOptionParser,UserError,In
 from voluptuous import MultipleInvalid
 from voluptuous.humanize import humanize_error
 
-__version__ = '1.2'
+__version__ = '2019.1'
 
 try:
   import yaml
@@ -211,7 +217,7 @@ class DataClass:
   ## is required. Removes final entry in component hierarchy too.
   def getUniqueID(self,val):
     l = val.split(".")
-    return '_'.join(l[:-1])+"_"
+    return "uvm_test_top."+'.'.join(l[:-1])+"."
 
   ## This method returns an ordered list of information on ALL BFMs from a given top-level environment, down. 
   ## The list entries all have the following structure:
@@ -262,7 +268,12 @@ class DataClass:
         except KeyError:
           env_var_name = 'UVMF_VIP_LIBRARY_HOME'
           pass
-        alist = alist + [{ 'bfm_name': a['name'], 'bfm_type': a['type'], 'parent_type': env_type, 'env_path': envPath+"."+a['name'],'lib_env_var_name':env_var_name, 'is_qvip': 0 }]
+        try:
+          init_resp = a['initiator_responder']
+        except KeyError:
+          init_resp = 'INITIATOR'
+          pass
+        alist = alist + [{ 'bfm_name': a['name'], 'bfm_type': a['type'], 'parent_type': env_type, 'env_path': envPath+"."+a['name'],'lib_env_var_name':env_var_name, 'is_qvip': 0, 'initiator_responder':init_resp }]
     except KeyError: pass
     return alist
 
@@ -300,9 +311,15 @@ class DataClass:
     return structure
 
   def dataExtract(self,keys,dictionary):
+    ## Pull the specified keys out of the given structure. If the key
+    ## does not exist return None for the given value
     ret = []
     for key in keys:
-      ret = ret + [dictionary[key]]
+      try:
+        ret = ret + [dictionary[key]]
+      except KeyError:
+        ret = ret + [None]
+        pass
     return ret
 
   def generateEnvironment(self,name):
@@ -313,6 +330,11 @@ class DataClass:
       for param in struct['parameters']:
         pname,ptype,pval = self.dataExtract(['name','type','value'],param)
         env.addParamDef(pname,ptype,pval)
+    except KeyError: pass
+    try:
+      for param in struct['hvl_pkg_parameters']:
+        pname,ptype,pval = self.dataExtract(['name','type','value'],param)
+        env.addHvlPkgParamDef(pname,ptype,pval)
     except KeyError: pass
     ## Drill down into any QVIP subenvironments for import information, that'll be needed here
     qstruct = self.getQVIPAgents(name)
@@ -328,6 +350,34 @@ class DataClass:
     try:
       for impdecl in struct ['imp_decls']:
         env.addImpDecl(impdecl['name'])
+    except KeyError: pass
+    try:
+      for nonUvmfComps in struct ['non_uvmf_components']:
+        cname,ctype = self.dataExtract(['name', 'type'],nonUvmfComps)
+        try:
+          cparams_array = nonUvmfComps['parameters']
+        except KeyError:
+          cparams_array = {}
+          pass
+        cparams = {}
+        for item in cparams_array:
+          n,v = self.dataExtract(['name','value'],item)
+          cparams[n] = v
+        env.addNonUvmfComponent(cname,ctype,cparams)
+    except KeyError: pass
+    try:
+      for qvipMemAgents in struct ['qvip_memory_agents']:
+        qmaname,qmatype,qmaqenv = self.dataExtract(['name', 'type','qvip_environment'],qvipMemAgents)
+        try:
+          qmaparams_array = qvipMemAgents['parameters']
+        except KeyError:
+          qmaparams_array = {}
+          pass
+        qmaparams = {}
+        for item in qmaparams_array:
+          n,v = self.dataExtract(['name','value'],item)
+          qmaparams[n] = v
+        env.addQvipMemoryAgent(qmaname,qmatype,qmaqenv,qmaparams)
     except KeyError: pass
     ## The order of the following loops is important. The order in which local agents, sub-environments and QVIP
     ## sub-environments are added must match the order in which they will be added at the bench level, otherwise
@@ -458,7 +508,16 @@ class DataClass:
       pass
     for sb_item in sb_items:
       sb_name,sb_type,trans_type = self.dataExtract(['name','sb_type','trans_type'],sb_item)
-      env.addUvmfScoreboard(sb_name,sb_type,trans_type)
+      try:
+        sb_params_list = sb_item['parameters']
+      except KeyError:
+        sb_params_list = []
+        pass
+      sb_params = {}
+      for item in sb_params_list:
+        n,v = self.dataExtract(['name','value'],item)
+        sb_params[n] = v;
+      env.addUvmfScoreboard(sb_name,sb_type,trans_type,sb_params)
     try:
       for item in struct['analysis_ports']:
         n,t,c = self.dataExtract(['name','trans_type','connected_to'],item)
@@ -491,7 +550,11 @@ class DataClass:
         except KeyError: 
           crand = False
           pass
-        env.addConfigVar(n,t,crand)
+        cval = ''
+        try:
+          cval = cfg_item['value']
+        except KeyError: pass
+        env.addConfigVar(n,t,crand,cval)
     except KeyError: pass
     try:
       for item in struct['config_constraints']:
@@ -650,7 +713,12 @@ class DataClass:
       for param in struct['parameters']:
         pname,ptype,pval = self.dataExtract(['name','type','value'],param)
         ben.addParamDef(pname,ptype,pval)
-    except KeyError: pass    
+    except KeyError: pass 
+    ## Drill down into any QVIP subenvironments for import information, that'll be needed here
+    qstruct = self.getQVIPAgents(top_env)
+    ilist = qstruct['ilist']
+    for i in ilist:
+      ben.addImport(i)   
     ## Imports
     try:
       for imp in struct['imports']:
@@ -677,6 +745,17 @@ class DataClass:
       ifp_dict[bfm_name] = {}
       for p in param_list:
         ifp_dict[bfm_name][p['name']] = p['value']
+    ## Determine if top_env has a register model associated with it
+    try:
+      e = self.data['environments'][top_env]
+    except KeyError:
+      raise UserError("Top-level env \""+top_env+"\" is not defined")
+    try:
+      rm = e['register_model']
+      ben.topEnvHasRegisterModel = True
+    except KeyError:
+      ben.topEnvHasRegisterModel = False
+      pass
     ## Find BFMs and add those - order is important, must match how we instantiated the components
     ## within the environment. Traverse the environment topology in the order in which sub-envs were 
     ## called out in the YAML. Use getAllAgents to intelligently traverse the topology and build up a list
@@ -687,6 +766,7 @@ class DataClass:
     ##   - Environment Path
     ##   - QVIP/Non-QVIP flag
     ##   - Active/Passive flag
+    ##   - Initiator/Responder flag
     alist = self.getAllAgents(top_env,'environment',0,'environment')
     valid_bfm_names = []
     ## Now that we have an ordered list of BFMs we can call the appropriate API call for each
@@ -720,12 +800,15 @@ class DataClass:
         except KeyError:
           aParams = {}
           pass
-        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'])
+        ben.addBfm(name=bfm_name,ifPkg=a['bfm_type'],clk=agentDef['clock'],rst=agentDef['reset'],activity=active_passive,parametersDict=aParams,sub_env_path=debugpath,agentInstName=a['bfm_name'],vipLibEnvVariable=a['lib_env_var_name'],initResp=a['initiator_responder'])
     ## Check that all keys in the ifp_dict and ap_dict match something in the valid_bfm_names list that 
     ## was based on the actual UVM component hierarchy elements. If not, it probably means we have a typo somewhere in the bench YAML
     for k in ifp_dict.keys():
       if (k not in valid_bfm_names):
-        raise UserError("BFM name entry \""+k+"\" listed in interface_params structure for bench \""+name+"\" but not a valid BFM name")
+        mess = "BFM name entry \""+k+"\" listed in interface_params structure for bench \""+name+"\" but not a valid BFM name. Valid BFM names:"
+        for b in valid_bfm_names:
+          mess = mess+"\n  "+b
+        raise UserError(mess)
     for k in ap_dict.keys():
       if (k not in valid_bfm_names):
         raise UserError("BFM name entry \""+k+"\" listed in active_passive structure for bench \""+name+"\" but not a valid BFM name")
@@ -759,6 +842,9 @@ class DataClass:
       ben.addVinfoDependency("comp_"+d+"_pkg_c_files")
     for d in vinfo_environment_dpi_dependencies:
       ben.addVinfoDependency("comp_"+d+"_env_pkg_c_files")
+    try:
+      ben.veloceReady = (struct['veloce_ready'] == "True")
+    except KeyError: pass
     ben.create(parser=self.parser)
     return ben
 
@@ -786,6 +872,16 @@ class DataClass:
         intf.addParamDef(n,t,v)
     except KeyError: pass
     try:
+      for item in struct['hdl_pkg_parameters']:
+        n,t,v = self.dataExtract(['name','type','value'],item)
+        intf.addHdlPkgParamDef(n,t,v)
+    except KeyError: pass
+    try:
+      for item in struct['hvl_pkg_parameters']:
+        n,t,v = self.dataExtract(['name','type','value'],item)
+        intf.addHvlPkgParamDef(n,t,v)
+    except KeyError: pass
+    try:
       for item in struct['hdl_typedefs']:
         n,t = self.dataExtract(['name','type'],item)
         intf.addHdlTypedef(n,t)
@@ -800,7 +896,11 @@ class DataClass:
         n,w,d = self.dataExtract(['name','width','dir'],port)
         if not re.search(r"^(input|output|inout)$",d):
           raise UserError("Direction \""+d+"\" invalid for port \""+n+"\" in interface \""+name+"\"")
-        intf.addPort(n,w,d)
+        try:
+          r = (port['reset_value'])
+        except KeyError:
+          r = "'bz"
+        intf.addPort(n,w,d,r)
     except KeyError: pass
     try:
       for trans in struct['transaction_vars']:
@@ -830,7 +930,11 @@ class DataClass:
         except KeyError: 
           crand = False
           pass
-        intf.addConfigVar(n,t,crand)
+        cval = ''
+        try:
+          cval = cfg['value']
+        except KeyError: pass
+        intf.addConfigVar(n,t,crand,cval)
     except KeyError: pass
     try:
       for item in struct['transaction_constraints']:
@@ -874,6 +978,12 @@ class DataClass:
         for exp in dpi_def['exports']:
           intf.addDPIExport(exp)
       except KeyError: pass
+    except KeyError: pass
+    try:
+      intf.veloceReady = (struct['veloce_ready'] == "True")
+    except KeyError: pass
+    try:
+      intf.enableFunctionalCoverage = (struct['enable_functional_coverage'] == "True")
     except KeyError: pass
     intf.create(parser=self.parser)
     return intf

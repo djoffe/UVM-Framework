@@ -36,8 +36,8 @@ module hdl_top;
 
   bit rst;// = 0;
   bit clk;
-  clock_bfm #(.PHASE_OFFSET_IN_PS(9000),
-              .INIT_CLOCK_HALF_PERIOD(2500)) clk_if_h(clk);
+  clock_bfm #(.INIT_CLOCK_HALF_PERIOD(2500),
+              .PHASE_OFFSET_IN_PS(9000)) clk_if_h(clk);
   async_reset_bfm #(.RESET_POLARITY(0),
                     .INITIAL_IDLE_TIME_IN_PS(1000),
                     .RESET_ACTIVE_TIME_IN_PS(200000)) rst_if_h(clk, rst);
@@ -102,7 +102,7 @@ uvm_config_db #( virtual gpio_monitor_bfm #(.WRITE_PORT_WIDTH(16),.READ_PORT_WID
 uvm_config_db #( virtual gpio_driver_bfm #(.WRITE_PORT_WIDTH(32),.READ_PORT_WIDTH(16))  )::set( null , UVMF_VIRTUAL_INTERFACES , gpio_pkg_gpio_a_BFM , gpio_a_drv_bfm  );
 uvm_config_db #( virtual gpio_driver_bfm #(.WRITE_PORT_WIDTH(16),.READ_PORT_WIDTH(32))  )::set( null , UVMF_VIRTUAL_INTERFACES , gpio_pkg_gpio_b_BFM , gpio_b_drv_bfm  );
 
-  uvm_config_db #(virtual clock_bfm #(.PHASE_OFFSET_IN_PS(9000), .INIT_CLOCK_HALF_PERIOD(2500)))::set(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_if_h);
+  uvm_config_db #(virtual clock_bfm #(.INIT_CLOCK_HALF_PERIOD(2500), .PHASE_OFFSET_IN_PS(9000)))::set(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_if_h);
   uvm_config_db #(virtual async_reset_bfm #(.RESET_POLARITY(0), .INITIAL_IDLE_TIME_IN_PS(1000), .RESET_ACTIVE_TIME_IN_PS(200000)))::set(null, UVMF_VIRTUAL_INTERFACES, RESET_CONTROLLER, rst_if_h);
 
   end

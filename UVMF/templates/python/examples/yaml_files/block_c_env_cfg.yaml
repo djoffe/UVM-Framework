@@ -1,10 +1,12 @@
+# The block_c environment YAML example shows what a YAML configuration
+# file looks like that incorporates QVIP in addition to custom non-QVIP
+# interfaces. The "qvip_subenvs" section instantiates a "qvip_agents"
+# sub-environment that was produced by the QVIP Configurator utility.
+# The command file to produce this QVIP sub-environment is located
+# in $UVMF_HOME/templates/qvip_configurator.
 uvmf:
   environments:
     "block_c":
-      imports:
-        - name: "mgc_apb3_v1_0_pkg"
-        - name: "mgc_pcie_v2_0_pkg"
-        - name: "mgc_axi4_v1_0_pkg"
       agents:
         - name: "mem_in"
           type: "mem"

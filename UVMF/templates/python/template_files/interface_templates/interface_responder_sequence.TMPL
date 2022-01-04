@@ -20,10 +20,10 @@
 
 {% block contents %}
 class {{name}}_responder_sequence {%if paramDefs|length > 0 %} #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}
+{% for param in paramDefs %}      {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% endif %}
 {% endfor %}     )
 {% endif %}
-extends {{name}}_sequence_base {%if paramDefs|length > 0 %} #(
+  extends {{name}}_sequence_base {%if paramDefs|length > 0 %} #(
 {% for param in paramDefs %}          .{{param.name}}({{param.name}}){% if not loop.last %},{% endif %}
 {% endfor %}       ) {% endif %};
 

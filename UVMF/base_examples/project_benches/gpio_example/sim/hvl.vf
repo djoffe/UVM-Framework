@@ -1,0 +1,69 @@
+
+
+// ------- fli_pkg.vinfo --------
++incdir+/work/framework/common/fli_pkg
+/work/framework/common/fli_pkg/fli_pkg.sv
+
+
+// ------- clock_pkg.vinfo --------
++incdir+/work/framework/common/uvm_co_emulation_utilities/clock
+/work/framework/common/uvm_co_emulation_utilities/clock/clock_pkg.sv
+/work/framework/common/uvm_co_emulation_utilities/clock/./src/clock_bfm.sv
+
+
+// ------- reset_pkg.vinfo --------
++incdir+/work/framework/common/uvm_co_emulation_utilities/reset
+/work/framework/common/uvm_co_emulation_utilities/reset/reset_pkg.sv
+/work/framework/common/uvm_co_emulation_utilities/reset/./src/sync_reset_bfm.sv
+/work/framework/common/uvm_co_emulation_utilities/reset/./src/async_reset_bfm.sv
+
+
+// ------- uvmf_base_pkg_hdl.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg_hdl.sv
+
+
+// ------- uvmf_base_pkg.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg.sv
+
+
+// ------- gpio_example_parameters_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/gpio_example/tb/parameters
+/work/framework/base_examples/project_benches/gpio_example/tb/parameters/gpio_example_parameters_pkg.sv
+
+
+// ------- gpio_pkg_hdl.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg
+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg/gpio_pkg_hdl.sv
+
+
+// ------- gpio_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg
+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg/gpio_pkg.sv
+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg/./src/gpio_if.sv
+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg/./src/gpio_monitor_bfm.sv
+/work/framework/base_examples/verification_ip/interface_packages/gpio_pkg/./src/gpio_driver_bfm.sv
+
+
+// ------- gpio_example_env_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/environment_packages/gpio_example_env_pkg
+/work/framework/base_examples/verification_ip/environment_packages/gpio_example_env_pkg/gpio_example_env_pkg.sv
+
+
+// ------- gpio_example_sequences_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/gpio_example/tb/sequences
+/work/framework/base_examples/project_benches/gpio_example/tb/sequences/gpio_example_sequences_pkg.sv
+
+
+// ------- gpio_example_test_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/gpio_example/tb/tests
+/work/framework/base_examples/project_benches/gpio_example/tb/tests/gpio_example_test_pkg.sv
+
+
+// ------- hvl_top.vinfo --------
++incdir+/work/framework/base_examples/project_benches/gpio_example/tb/testbench
+/work/framework/base_examples/project_benches/gpio_example/tb/testbench/hvl_top.sv
+
+
+// ------- hvl.vinfo --------

@@ -57,7 +57,7 @@ class uvmf_catapult_scoreboard #(type T = uvmf_transaction_base) extends uvmf_in
    // (Replaces report_phase from base class)
    virtual function void report_phase(uvm_phase phase);
       // super.report_phase(phase);
-      int actual_count = match_count + mismatch_count + actual_results_af.used();
+      int actual_count = match_count + mismatch_count + actual_results_q.size();
       `uvm_info("SCBD",$sformatf(" Predictor  transaction count %d",transaction_count),UVM_LOW)
       `uvm_info("SCBD",$sformatf(" Actual DUT transaction count %d",actual_count),UVM_LOW)
       if (mismatch_count > 0)

@@ -30,115 +30,93 @@ import {{name}}_parameters_pkg::*;
 import {{agent}}_params_pkg::*;
 {% endfor %}
 import uvmf_base_pkg_hdl::*;
-{% for ext_import in external_imports %}
-import {{ext_import}}::*;
-{% endfor %}
-
-
 
 module hdl_top;
 {% if veloceReady %}
-// pragma attribute hdl_top partition_module_xrtl                                            
+  // pragma attribute hdl_top partition_module_xrtl                                            
 {% endif %}
-
 {% for qvip_hdl in qvip_hdl_modules %}
-hdl_{{qvip_hdl.envPkg}} #(.UNIQUE_ID("{{qvip_hdl.unique_id}}")) /* RDO TEMP,.EXT_CLK_RESET(0))*/ {{qvip_hdl.unique_id}}qvip();
+  hdl_{{qvip_hdl.envPkg}} #(.UNIQUE_ID("{{qvip_hdl.unique_id}}") /*,.EXT_CLK_RESET(0) */ ) {{qvip_hdl.unique_id_with_underscores}}qvip_hdl();
 {% endfor %}
 {% if useCoEmuClkRstGen %}
-
-wire rst;
-wire clk;
-    clock_bfm #(CLK_PHASE_OFFSET_IN_PS,
-		            INIT_CLOCK_HALF_PERIOD) clk_if_h(clk);
-    sync_reset_bfm #(RST_POLARITY,
-                     INITIAL_IDLE_CYCLES,
-                     RESET_ACTIVE_CYCLES) rst_if_h(clk, rst);
-
+  wire rst;
+  wire clk;
+  clock_bfm #(INIT_CLOCK_HALF_PERIOD) clk_if_h(clk);
+  sync_reset_bfm #(RST_POLARITY,
+                   INITIAL_IDLE_CYCLES,
+                   RESET_ACTIVE_CYCLES) rst_if_h(clk, rst);
 {% else %}
-
-bit clk;
-   // Instantiate a clk driver 
+  bit clk;
+  // Instantiate a clk driver 
 {% if veloceReady %}
-   // tbx clkgen
+  // tbx clkgen
 {% endif %}
-   initial begin
-      clk = 0;
-      #{{ clockPhaseOffset }};
-      forever begin
-         clk = ~clk;
-         #{{ clockHalfPeriod }};
-       end
-   end
+  initial begin
+    clk = 0;
+    #{{ clockPhaseOffset }};
+    forever begin
+      clk = ~clk;
+      #{{ clockHalfPeriod }};
+    end
+  end
 
-bit rst;
-   // Instantiate a rst driver
+  bit rst;
+  // Instantiate a rst driver
 {% if veloceReady %}
-   // tbx clkgen
+  // tbx clkgen
 {% endif %}
-   initial begin
-      rst = {% if resetAssertionLevel %}1{% else %}0{% endif %}; 
-      #{{ resetDuration }};
-      rst =  {% if resetAssertionLevel %}0{% else %}1{% endif %}; 
-   end
-
+  initial begin
+    rst = {% if resetAssertionLevel %}1{% else %}0{% endif %}; 
+    #{{ resetDuration }};
+    rst =  {% if resetAssertionLevel %}0{% else %}1{% endif %}; 
+  end
 {% endif %}
 
-
-// Instantiate the signal bundle, monitor bfm and driver bfm for each interface.
-// The signal bundle, _if, contains signals to be connected to the DUT.
-// The monitor, monitor_bfm, observes the bus, _if, and captures transactions.
-// The driver, driver_bfm, drives transactions onto the bus, _if.
-
+  // Instantiate the signal bundle, monitor bfm and driver bfm for each interface.
+  // The signal bundle, _if, contains signals to be connected to the DUT.
+  // The monitor, monitor_bfm, observes the bus, _if, and captures transactions.
+  // The driver, driver_bfm, drives transactions onto the bus, _if.
 {% for bfm in bfms %}
-{{bfm.ifPkg}}_if {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_bus(.{{bfm.clk}}(clk), .{{bfm.rst}}(rst));
+  {{bfm.ifPkg}}_if {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_bus(.{{bfm.clk}}(clk), .{{bfm.rst}}(rst));
 {% endfor %}
-
 {% for bfm in bfms %}
-{{bfm.ifPkg}}_monitor_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_mon_bfm({{bfm.name}}_bus);
+  {{bfm.ifPkg}}_monitor_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_mon_bfm({{bfm.name}}_bus);
 {% endfor %}
-
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
-{{bfm.ifPkg}}_driver_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_drv_bfm({{bfm.name}}_bus);
+  {{bfm.ifPkg}}_driver_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} {{bfm.name}}_drv_bfm({{bfm.name}}_bus);
 {% endif %}
 {% endfor %}
 
+  // UVMF_CHANGE_ME : Add DUT and connect to signals in _bus interfaces listed above
+  // Instantiate your DUT here
+  // These DUT's instantiated to show verilog and vhdl instantiation
+  verilog_dut         dut_verilog(.clk(clk), .rst(rst), .in_signal(vhdl_to_verilog_signal), .out_signal(verilog_to_vhdl_signal));
+  \work.vhdl_dut(rtl) dut_vhdl(   .clk(clk), .rst(rst), .in_signal(verilog_to_vhdl_signal), .out_signal(vhdl_to_verilog_signal));
 
-// UVMF_CHANGE_ME : Add DUT and connect to signals in _bus interfaces listed above
-// Instantiate your DUT here
-// These DUT's instantiated to show verilog and vhdl instantiation
-verilog_dut         dut_verilog(.clk(clk), .rst(rst), .in_signal(vhdl_to_verilog_signal), .out_signal(verilog_to_vhdl_signal));
-\work.vhdl_dut(rtl) dut_vhdl(   .clk(clk), .rst(rst), .in_signal(verilog_to_vhdl_signal), .out_signal(vhdl_to_verilog_signal));
-
-initial begin  {% if veloceReady %} // tbx vif_binding_block {% endif %}
-
-import uvm_pkg::uvm_config_db;
-
+  initial begin  {% if veloceReady %}    // tbx vif_binding_block 
+{% endif %}
+    import uvm_pkg::uvm_config_db;
 {% if useDpiLink %}
 {% else %}
-// The monitor_bfm and driver_bfm for each interface is placed into the uvm_config_db.
-// They are placed into the uvm_config_db using the string names defined in the parameters package.
-// The string names are passed to the agent configurations by test_top through the top level configuration.
-// They are retrieved by the agents configuration class for use by the agent.
-
+    // The monitor_bfm and driver_bfm for each interface is placed into the uvm_config_db.
+    // They are placed into the uvm_config_db using the string names defined in the parameters package.
+    // The string names are passed to the agent configurations by test_top through the top level configuration.
+    // They are retrieved by the agents configuration class for use by the agent.
 {% for bfm in bfms %}
-uvm_config_db #( virtual {{bfm.ifPkg}}_monitor_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} )::set( null , UVMF_VIRTUAL_INTERFACES , {{bfm.name}}_BFM , {{bfm.name}}_mon_bfm ); 
+    uvm_config_db #( virtual {{bfm.ifPkg}}_monitor_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} )::set( null , UVMF_VIRTUAL_INTERFACES , {{bfm.name}}_BFM , {{bfm.name}}_mon_bfm ); 
 {% endfor %}
-
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
-uvm_config_db #( virtual {{bfm.ifPkg}}_driver_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} )::set( null , UVMF_VIRTUAL_INTERFACES , {{bfm.name}}_BFM , {{bfm.name}}_drv_bfm  );
+    uvm_config_db #( virtual {{bfm.ifPkg}}_driver_bfm {% if bfm.parameters|length > 0 %}#({% endif %}{% for param in bfm.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if bfm.parameters|length > 0 %}) {% endif %} )::set( null , UVMF_VIRTUAL_INTERFACES , {{bfm.name}}_BFM , {{bfm.name}}_drv_bfm  );
 {% endif %}
 {% endfor %}
 {% endif %}
-
 {% if useCoEmuClkRstGen %}
-      uvm_config_db #(virtual clock_bfm #(CLK_PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD))::set(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_if_h);
-      uvm_config_db #(virtual sync_reset_bfm #(RST_POLARITY, INITIAL_IDLE_CYCLES, RESET_ACTIVE_CYCLES))::set(null, UVMF_VIRTUAL_INTERFACES, RESET_CONTROLLER, rst_if_h);
+    uvm_config_db #(virtual clock_bfm #(INIT_CLOCK_HALF_PERIOD))::set(null, UVMF_VIRTUAL_INTERFACES, CLOCK_CONTROLLER, clk_if_h);
+    uvm_config_db #(virtual sync_reset_bfm #(RST_POLARITY, INITIAL_IDLE_CYCLES, RESET_ACTIVE_CYCLES))::set(null, UVMF_VIRTUAL_INTERFACES, RESET_CONTROLLER, rst_if_h);
 {% endif %}
-
   end
 
 endmodule
-
 {% endblock %}

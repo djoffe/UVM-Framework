@@ -26,6 +26,6 @@ create_acc_file: compile_reg_model_pkg
 
 
 clean:
-	rm -rf  *.tmp  *.log  log transcript work *.wlf vsim.fcdb *.dbg *stacktrace* *.ucdb covhtmlreport SCRATCH vrunhtmlreport certe_dump.xml reg_acc.f forcesetget_nets.sigs
+	rm -rf  *.tmp  *.log  log transcript work *.wlf vsim.fcdb *.dbg *stacktrace* *.ucdb covhtmlreport SCRATCH vrunhtmlreport certe_dump.xml reg_acc.f forcesetget_nets.sigs vis_regs.tcl
 	find ../.. -name "*~" -delete
 	find ../.. -name "*.bak" -delete

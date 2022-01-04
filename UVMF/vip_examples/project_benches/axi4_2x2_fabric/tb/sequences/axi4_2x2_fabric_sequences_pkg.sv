@@ -26,7 +26,7 @@
 package axi4_2x2_fabric_sequences_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
+   
    import uvmf_base_pkg::*;
    import axi4_2x2_fabric_parameters_pkg::*;
    import axi4_2x2_fabric_qvip_params_pkg::*;

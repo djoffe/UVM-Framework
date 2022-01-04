@@ -1,0 +1,34 @@
+
+
+// ------- rtl.vinfo --------
+/work/framework/base_examples/project_benches/ahb2spi/rtl/../../ahb2wb/rtl/verilog/ahb2wb.v
+/work/framework/base_examples/project_benches/ahb2spi/rtl/../../wb2spi/rtl/verilog/wb2spi.v
+/work/framework/base_examples/project_benches/ahb2spi/rtl/./verilog/ahb2spi.v
+
+
+// ------- fli_pkg.vinfo --------
++incdir+/work/framework/common/fli_pkg
+/work/framework/common/fli_pkg/fli_pkg.sv
+
+
+// ------- uvmf_base_pkg_hdl.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg_hdl.sv
+
+
+// ------- uvmf_base_pkg.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg.sv
+
+
+// ------- ahb2spi_parameters_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/ahb2spi/tb/parameters
+/work/framework/base_examples/project_benches/ahb2spi/tb/parameters/ahb2spi_parameters_pkg.sv
+
+
+// ------- hdl_top.vinfo --------
++incdir+/work/framework/base_examples/project_benches/ahb2spi/tb/testbench
+/work/framework/base_examples/project_benches/ahb2spi/tb/testbench/hdl_top.sv
+
+
+// ------- hdl.vinfo --------

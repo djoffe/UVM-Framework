@@ -99,19 +99,16 @@ class uvmf_test_base #(
 
   // FUNCTION: end_of_elaboration_phase
   virtual function void end_of_elaboration_phase(uvm_phase phase);
+    uvm_root r;
+    uvm_report_server rs;
+    uvm_factory f;
     super.end_of_elaboration_phase(phase);
-
     if (get_report_verbosity_level() >= int'(UVM_HIGH) ) begin
-       uvm_top.enable_print_topology = 1;
-       uvm_top.dump_report_state();
-       // Commented for UVM 1.2 compatability factory.print();
-       uvm_top.check_config_usage(1);
-       // uvm_config_db::dump();
-       // uvm_top.print_config(1,1);
-       // show_connectivity(uvm_top,0);
-       // uvmf_analysis_debug #( uvmf_standard_port_debug_policy )::uvmf_analysis_debug( this );
+      r = uvm_root::get();
+      f = uvm_factory::get();
+      f.print();
+      r.print_topology();
     end
-
   endfunction
 
   // FUNCTION: connect_phase
@@ -127,24 +124,5 @@ class uvmf_test_base #(
     top_level_sequence.start(null);
     phase.drop_objection(this, "Objection dropped by test_top");
   endtask
-
-
-// FUNCTION: report_phase
-virtual function void report_phase(uvm_phase phase);
-    uvm_report_server urs;
-
-    urs = get_report_server();
-
-    // Save ucdb if end_of_test flag set and either no error/fatal or regardless flag cleared
-    if  ( save_ucdb_file_at_end_of_test ) begin
-         if ( ((urs.get_severity_count(UVM_ERROR) == 0 ) && (urs.get_severity_count(UVM_FATAL) == 0 )) ||
-              ( save_ucdb_regardless_of_error_or_fatal )) begin
-            void'(mti_Cmd("coverage attribute -name QUESTASIMVERSION -value [vsimVersionString]"));
-            // Use the coverage file save command below to change file name to include seed number
-            // void'(mti_Cmd($sformatf("coverage save %s.$Sv_Seed.ucdb", test_name)));
-            void'(mti_Cmd("coverage save sim.ucdb" ));
-         end
-    end
-endfunction
 
 endclass : uvmf_test_base

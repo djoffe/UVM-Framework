@@ -24,7 +24,6 @@
 package ahb2spi_test_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import uvmf_base_pkg::*;
    import ahb2spi_parameters_pkg::*;
    import ahb2spi_env_pkg::*;

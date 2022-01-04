@@ -11,9 +11,9 @@ env = uvmf_gen.EnvironmentClass('block_a')
 ##   addAgent(<agent_handle_name>,<agent_package_name>,<clock_name>,<reset_name>,<{interfaceParameter1:value1,interfaceParameter2:value2}>, initResp = 'RESPONDER')
 # Note: the agent_package_name will have _pkg appended to it.
 env.addAgent('control_plane_in',      'mem',       'clock', 'reset')
-env.addAgent('control_plane_out',     'mem',       'clock', 'reset')
+env.addAgent('control_plane_out',     'mem',       'clock', 'reset',{} , initResp = 'RESPONDER')
 env.addAgent('secure_data_plane_in',  'pkt',       'pclk',  'prst')
-env.addAgent('secure_data_plane_out', 'pkt',       'pclk',  'prst')
+env.addAgent('secure_data_plane_out', 'pkt',       'pclk',  'prst',{} , initResp = 'RESPONDER')
 
 ## Define the predictors contained in this environment (not instantiate, yet)
 ## addAnalysisComponent(<keyword>,<predictor_type_name>,<dict_of_exports>,<dict_of_ports>) - 
@@ -59,7 +59,7 @@ env.addConnection('secure_data_plane_out','monitored_ap',  'secure_data_plane_sb
 ##   addConfigVar(<name>,<type>)
 ##     optionally can specify if this variable may be specified as 'rand'
 env.addConfigVar('block_a_cfgVar1','bit',isrand=False)
-env.addConfigVar('block_a_cfgVar3','bit [3:0]',isrand=True)
+env.addConfigVar('block_a_cfgVar3','bit [3:0]',isrand=True, value='29')
 env.addConfigVar('block_a_cfgVar4','int',isrand=True)
 env.addConfigVar('block_a_cfgVar5','int',isrand=True)
 

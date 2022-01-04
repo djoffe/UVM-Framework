@@ -31,17 +31,17 @@
 import uvmf_base_pkg_hdl::*;
 import {{name}}_pkg_hdl::*;
 
-interface  {{name}}_if {%if paramDefs|length > 0%}      #(
-{% for param in paramDefs %}      {{param.type}} {{param.name}} = {{param.value}}{% if not loop.last %},{% endif %}                                
-{% endfor %}      )
-{% endif %} ( 
+interface  {{name}}_if {%if paramDefs|length > 0%} #(
+{% for param in paramDefs %}  {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %}{% if not loop.last %},{% else %}){% endif %}                                
+{% endfor %}{% endif %}( 
   input tri {{clock}}, 
-  input tri {{reset}}
+  input tri {{reset}}{% if sigs|length > 0 %},{% endif %}
+
 {% for sig in sigs %}
-  ,inout tri {{sig.vector}} {{sig.name}}
+  inout tri {{sig.vector}} {{sig.name}}{% if not loop.last %},{% endif %}
+
 {% endfor %}
 );
-
 endinterface
 
 {% endblock %}

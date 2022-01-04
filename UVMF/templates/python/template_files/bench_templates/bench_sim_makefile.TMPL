@@ -99,6 +99,11 @@ REPORTING_DO_FILE    = {{name}}_reports_script
 # Include makefile that includes targets for UVM_VIP_Library packages
 include $(UVMF_HOME)/scripts/Makefile
 
+{% if qvip_pkg_env_variables|length > 0 %}
+include $(UVMF_HOME)/common/utility_packages/qvip_utils_pkg/Makefile
+{% endif %}
+
+
 {% if useCoEmuClkRstGen %}
 include $(UVMF_HOME)/common/uvm_co_emulation_utilities/Makefile
 {% endif %}
@@ -118,6 +123,11 @@ INFACT_VSIM_ARGS = $(INFACT_VSIM_ARGS_$(USE_INFACT))
 INFACT_VLOG_ARGS_0 =
 INFACT_VLOG_ARGS_1 += +incdir+./infact_proj_dir +define+INFACT_ENABLE_COMPILE
 INFACT_VLOG_ARGS = $(INFACT_VLOG_ARGS_$(USE_INFACT))
+
+# When running inFact, bring in the inFact sequences package
+INFACT_VOPT_ARGS_0 = 
+INFACT_VOPT_ARGS_1 += {{name}}_infact_sequences_pkg
+INFACT_VOPT_ARGS = $(INFACT_VOPT_ARGS_$(USE_INFACT))
 
 VLOG_ARGS += $(INFACT_VLOG_ARGS)
 {% endif %}
@@ -153,6 +163,8 @@ COMMON_VSIM_ARGS      += {% if svLibNames|length > 0 %} {% for svLibName in svLi
 
 {% if inFactReady %}
 COMMON_VSIM_ARGS      += $(INFACT_VSIM_ARGS)
+BATCH_VOPT_ARGS       += $(INFACT_VOPT_ARGS)
+DEBUG_VOPT_ARGS       += $(INFACT_VOPT_ARGS)
 {% endif %}
 
 BATCH_VSIM_ARGS       += #-uvmcontrol=none
@@ -170,13 +182,14 @@ create_{{name}}_vmaps:
 {{name}}_PARAMETERS_PKG =\
 $(UVMF_PROJECT_DIR)/tb/parameters/{{name}}_parameters_pkg.sv
 
-{% for ext_import in external_imports %}
-{{ext_import}} =\
-$(UVMF_PROJECT_DIR)/tb/parameters/{{ext_import}}.sv
-{% endfor %}
 
 {{name}}_SEQUENCES_PKG =\
 $(UVMF_PROJECT_DIR)/tb/sequences/{{name}}_sequences_pkg.sv
+
+{% if inFactReady %}
+{{name}}_INFACT_SEQUENCES_PKG =\
+$(UVMF_PROJECT_DIR)/tb/sequences/{{name}}_infact_sequences_pkg.sv
+{% endif %}
 
 {{name}}_TEST_PKG =\
 $(UVMF_PROJECT_DIR)/tb/tests/{{name}}_tests_pkg.sv
@@ -203,10 +216,6 @@ q_comp_{{name}}_parameters_pkg:
 v_comp_{{name}}_parameters_pkg: q_comp_{{name}}_parameters_pkg
 	$(HDL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/parameters $({{name}}_PARAMETERS_PKG)
  
-{% for ext_import in external_imports %}
-comp_{{ext_import}}:
-	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/parameters $({{ext_import}})
-{% endfor %}
 
 comp_{{name}}_sequence_pkg:
 	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/sequences $({{name}}_SEQUENCES_PKG)
@@ -228,7 +237,7 @@ comp_{{name}}_vhdl_dut:
 comp_{{name}}_dut: comp_{{name}}_verilog_dut comp_{{name}}_vhdl_dut
 
 {% if qvip_bfm_pkgs|length > 0 %}
-comp_qvip:
+comp_qvip: 
 {% endif %}
 {% for qvip_env_vars in qvip_pkg_env_variables %}
 	$(HVL_COMP_CMD) +incdir+$(QUESTA_MVC_HOME)/questa_mvc_src/sv/ -f $({{qvip_env_vars}}_DIR_NAME)/{{qvip_bfm_pkgs[loop.index-1]}}_filelist.f
@@ -242,12 +251,10 @@ BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
 
 {% if inFactReady %}
 ifeq (1,$(USE_INFACT))
-comp_hvl : comp_hvl_pass1 import_infact comp_hvl_pass2
+comp_hvl : comp_hvl_core import_infact comp_{{name}}_infact_sequences_pkg
 
-# comp_infact_imp.d - used to check whether interface-package sources
+# infact_{{name}}.d - used to check whether interface-package sources
 #                     have changed since the last time we imported
-
-comp_hvl_pass1 : comp_infact_imp.d
 
 COMP_DEPS = \
 {% for bfm in bfm_pkgs %}
@@ -256,14 +263,10 @@ COMP_DEPS = \
 {% endif %}
 {% endfor %} 
 
-comp_infact_imp.d : $(COMP_DEPS)
-	echo "Performing pass1 compilation"
-	$(MAKE) USE_INFACT=0 $(lastword $(MAKEFILE_LIST)) comp_hvl
-	@touch $@
-
 import_infact : infact_{{name}}.d
 
-infact_{{name}}.d : comp_infact_imp.d
+# inFact import depends on having the core HVL compiled
+infact_{{name}}.d : $(COMP_DEPS)
 {% for bfm in bfms %}
 {% if bfm.activity == 'ACTIVE' %}
 	$(INFACT_HOME)/bin/infact cmd import_testbench -project infact_proj_dir \
@@ -277,8 +280,9 @@ infact_{{name}}.d : comp_infact_imp.d
 	$(INFACT_HOME)/bin/infact cmd genproject -rebuild infact_proj_dir
 	@touch $@
 
-# Now, compile the testbench with inFact compilation flags enabled
-comp_hvl_pass2 : comp_hvl_core
+# Compile the inFact sequences package
+comp_{{name}}_infact_sequences_pkg :
+	$(HVL_COMP_CMD) +incdir+$(UVMF_PROJECT_DIR)/tb/sequences $({{name}}_INFACT_SEQUENCES_PKG)
 
 else # USE_INFACT=0
 
@@ -298,7 +302,7 @@ sv_lib.so:	{% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} uvmf_tc.o dpi_link
 	${GPP}  uvmf_tc.o {% for bfm in bfm_pkgs %}{{bfm}}_tc.o {% endfor %} dpi_link.o -shared -o sv_lib.so 
 {% endif %}
 
-comp_hvl_core : {% if qvip_bfm_pkgs|length > 0 %} comp_qvip {% endif %} {% if useCoEmuClkRstGen %} comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg comp_co_emulation_memload_pkg {% endif %} \
+comp_hvl_core : {% if qvip_bfm_pkgs|length > 0 %} comp_qvip comp_qvip_utils_pkg {% endif %} {% if useCoEmuClkRstGen %} comp_co_emulation_clock_pkg comp_co_emulation_reset_pkg comp_co_emulation_memload_pkg {% endif %} \
 	{% for bfm in bfm_pkgs %} comp_{{bfm}}_pkg {% endfor %} \
 	comp_{{env_name}}_env_pkg \
 	comp_{{name}}_parameters_pkg comp_{{name}}_sequence_pkg comp_{{name}}_tests_pkg 
@@ -307,6 +311,9 @@ comp_uvmf_core : comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg {% if useDpiLink %
 
 
 make_build: comp_{{name}}_dut comp_uvmf_core comp_hvl comp_test_bench {% if useDpiLink %} dpi_link.o sv_lib.so {% endif %} {% if vmaps|length > 0 %} create_{{name}}_vmaps {% endif %}
+
+
+hvl_build: {% for bfm in bfm_pkgs %} q_comp_{{bfm}}_pkg {% endfor %} comp_{{env_name}}_env_pkg comp_{{name}}_sequence_pkg comp_{{name}}_tests_pkg hvl_comp_testbench optimize
 
 
 vinfo_build:{% if qvip_bfm_pkgs|length > 0 %} comp_qvip {% endif %} comp_{{name}}_vhdl_dut {% for vinfoDependency in vinfoDependencies %} {{vinfoDependency}} {% endfor %} build_hdl_vinfo build_hvl_vinfo $(VINFO_TGT)

@@ -25,6 +25,11 @@ package {{name}}_pkg_hdl;
   
   import uvmf_base_pkg_hdl::*;
 
+  // Parameters defined as HDL parameters
+{% for param in hdlPkgParamDefs %}
+  parameter {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %};
+{% endfor %}
+
   `include "src/{{name}}_typedefs_hdl.svh"
 
 endpackage

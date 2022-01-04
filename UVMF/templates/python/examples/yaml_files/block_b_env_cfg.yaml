@@ -15,6 +15,18 @@ uvmf:
         - name: "UDP_DATA_WIDTH"
           type: "int"
           value: "140"
+      ## Package-level parameters. These are defined for the HVL package but there
+      ## is an equivalent entry for HDL.
+      hvl_pkg_parameters:
+        - name: "ENV_HVL_PKG_PARAMETER1"
+          type: "integer"
+          value: "92"
+        - name: "ENV_HVL_PKG_PARAMETER2"
+          type: "integer"
+          value: "29"
+      ## DPI routines are defined here. See documentation for full details, but when defined this
+      ## will prompt the creation of DPI-C source containing the specified empty functions with the
+      ## desired argument list as well as the DPI-C declarations on the SV side.
       dpi_define:
         files:
           - "myFirstFile.c"
@@ -124,6 +136,11 @@ uvmf:
           value: "{ block_b_cfgVar4>block_b_cfgVar5; }"
         - name: "non_negative_c"   
           value: "{ (block_b_cfgVar1==0) -> block_b_cfgVar4==0;}"
+      ## Specify the need for a UVM register model. The "use_adapter" and "use_explicit_prediction"
+      ## entries MUST be "True", and only one map entry is supported that must be associated with an
+      ## interface defined within this environment. This will produce an empty register model with the
+      ## appropriate connections to the rest of the environment. User will then need to overlay their
+      ## own UVM register model package on top of the one produced by the generator.
       register_model:
         use_adapter: "True"
         use_explicit_prediction: "True"

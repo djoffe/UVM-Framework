@@ -36,7 +36,6 @@
 package {{name}}_pkg;
   
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import uvmf_base_pkg_hdl::*;
    import uvmf_base_pkg::*;
    import {{name}}_pkg_hdl::*;
@@ -58,6 +57,12 @@ package {{name}}_pkg;
 {% for DPIImport in DPIImports %}
    import "DPI-C" context function {{DPIImport.svType}} {{DPIImport.name}} ({% for argument in DPIImport.arguments %}{{argument['dir']}} {{argument['type']}} {{argument['name']}} {{argument['unpacked_dimension']}} {% if not loop.last %},{% endif %}{% endfor %});
 {% endfor %} 
+
+   // Parameters defined as HVL parameters
+{% for param in hvlPkgParamDefs %}
+   parameter {{param.type}} {{param.name}}{% if param.value != None %} = {{param.value}}{% endif %};
+{% endfor %}
+
    `include "src/{{name}}_typedefs.svh"
    `include "src/{{name}}_transaction.svh"
 
@@ -77,9 +82,6 @@ package {{name}}_pkg;
    `include "src/{{name}}2reg_adapter.svh"
 
    `include "src/{{name}}_agent.svh"
-
-   typedef uvm_reg_predictor #({{name}}_transaction) {{name}}2reg_predictor;
-
 {% if useDpiLink %} 
    export "DPI-C" function {{name}}_pkg_notify_transaction;
    function void {{name}}_pkg_notify_transaction(string xrtl_path, c_bit_array_t bit_vec_in);
@@ -90,6 +92,11 @@ package {{name}}_pkg;
       proxy_h.notify_transaction_bit_vec(bit_vec_in);
    endfunction  
 {% endif %}
+
+// UVMF_CHANGE_ME : When adding new interface sequences to the src directory
+//    be sure to add the sequence file here so that it will be
+//    compiled as part of the interface package.  Be sure to place
+//    the new sequence after any base sequences of the new sequence.
 
 endpackage
 

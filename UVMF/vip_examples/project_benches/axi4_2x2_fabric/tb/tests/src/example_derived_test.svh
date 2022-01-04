@@ -6,8 +6,8 @@
 //
 //----------------------------------------------------------------------
 // Project         : axi4_2x2_fabric Simulation Bench 
-// Unit            : rdo configuration
-// File            : axi4_2x2_fabric_rdo.svh
+// Unit            : Test package
+// File            : example_derived_test.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This test extends test_top and makes the following

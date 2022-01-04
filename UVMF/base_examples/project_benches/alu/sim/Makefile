@@ -99,21 +99,23 @@ COMP_ALU_PARAMETERS_PKG_TGT = $(COMP_ALU_PARAMETERS_PKG_TGT_$(USE_VELOCE))
 comp_alu_parameters_pkg: $(COMP_ALU_PARAMETERS_PKG_TGT)
 
 q_comp_alu_parameters_pkg:
-	        $(HVL_COMP_CMD) $(ALU_PARAMETERS_PKG)
+	        $(HVL_COMP_CMD) $(UVM_INCDIR) $(ALU_PARAMETERS_PKG)
 
 v_comp_alu_parameters_pkg: q_comp_alu_parameters_pkg
-	        $(HDL_COMP_CMD) $(ALU_PARAMETERS_PKG)
+	        $(HDL_COMP_CMD) $(UVM_INCDIR) $(ALU_PARAMETERS_PKG)
 
 comp_alu_sequence_pkg:
-	        $(HVL_COMP_CMD) $(ALU_SEQUENCES_PKG)
+	        $(HVL_COMP_CMD) $(UVM_INCDIR) $(ALU_SEQUENCES_PKG)
 
 comp_alu_test_pkg:
-	        $(HVL_COMP_CMD) $(ALU_TEST_PKG)
+	        $(HVL_COMP_CMD) $(UVM_INCDIR) $(ALU_TEST_PKG)
 
 comp_alu_dut:
 	        $(HDL_COMP_CMD) $(ALU_DUT)
 
 make_build: comp_uvm_pkg comp_fli_pkg comp_uvmf_base_pkg comp_alu_in_pkg comp_alu_out_pkg comp_alu_env_pkg comp_alu_parameters_pkg comp_alu_sequence_pkg comp_alu_test_pkg comp_alu_dut comp_test_bench
+
+hvl_build: q_comp_alu_in_pkg q_comp_alu_out_pkg comp_alu_env_pkg comp_alu_sequence_pkg comp_alu_test_pkg hvl_comp_testbench optimize
 
 BUILD_TGT_0 = make_build
 BUILD_TGT_1 = vinfo_build

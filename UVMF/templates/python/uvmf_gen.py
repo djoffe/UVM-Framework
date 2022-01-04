@@ -44,7 +44,7 @@ import sys
 from optparse import (OptionParser,BadOptionError,AmbiguousOptionError)
 from fnmatch import fnmatch
 from shutil import copyfile
-__version__ = '3.6g'
+__version__ = '2019.1'
 
 try:
   import jinja2
@@ -109,6 +109,8 @@ class BaseElementClass(object):
   def __init__(self,name):
     self.name = name
     self.paramDefs = []
+    self.hdlPkgParamDefs = []
+    self.hvlPkgParamDefs = []
     self.DPIExports = []
     self.DPIImports = []
     self.DPITransDecl = []
@@ -120,9 +122,17 @@ class BaseElementClass(object):
     self.vipLibEnvVariable = 'UVMF_VIP_LIBRARY_HOME'
     self.vipLibEnvVariableNames = []
 
-  def addParamDef(self,name,type,value):
+  def addParamDef(self,name,type,value=None):
     """Add a parameter to the package"""
     self.paramDefs.append(ParamDef(name,type,value))
+
+  def addHdlPkgParamDef(self,name,type,value):
+    """Add a parameter to the package"""
+    self.hdlPkgParamDefs.append(ParamDef(name,type,value))
+
+  def addHvlPkgParamDef(self,name,type,value):
+    """Add a parameter to the package"""
+    self.hvlPkgParamDefs.append(ParamDef(name,type,value))
 
   def addDPIFile(self,name):
     if self.soName == "":
@@ -396,7 +406,7 @@ class PortResetClass(BaseElementInterfaceClass):
     self.name = name
 
 class PortClass(BaseElementInterfaceClass):
-  def __init__(self,name,width,dir,type='tri',isrand=False):
+  def __init__(self,name,width,dir,rstValue,type='tri',isrand=False):
     super(PortClass,self).__init__(name,type,isrand)
     self.width = width
     try:
@@ -411,14 +421,17 @@ class PortClass(BaseElementInterfaceClass):
     if (dir not in ['input','output','inout']):
       raise UserError("Port direction ("+dir+") must be input, output or inout")
     self.dir = dir
+    self.rstValue = rstValue
 
 class InterfaceConfigClass(BaseElementInterfaceClass):
-  def __init__(self,name,type,isrand=False):
+  def __init__(self,name,type,isrand=False,value=''):
     super(InterfaceConfigClass,self).__init__(name,type,isrand)
+    self.value = value
 
 class EnvironmentConfigClass(BaseElementEnvironmentClass):
-  def __init__(self,name,type,isrand=False):
+  def __init__(self,name,type,isrand=False,value=''):
     super(EnvironmentConfigClass,self).__init__(name,type,isrand)
+    self.value = value
 
 class TypeClass(BaseElementClass):
   def __init__(self,name,type):
@@ -453,6 +466,23 @@ class DpiImportClass(BaseElementClass):
     self.svType = svType
     self.cArgs = cArgs
     self.arguments = argumentsList
+
+class NonUvmfComponentClass(BaseElementClass):
+  def __init__(self,name,type,parametersDict):
+    super(NonUvmfComponentClass,self).__init__(name)
+    self.type = type
+    self.parameters = []
+    for parameterName in parametersDict:
+      self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
+
+class QvipMemoryAgentClass(BaseElementClass):
+  def __init__(self,name,type,qvipEnv,parametersDict):
+    super(QvipMemoryAgentClass,self).__init__(name)
+    self.type = type
+    self.qvipEnv=qvipEnv
+    self.parameters = []
+    for parameterName in parametersDict:
+      self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
 class AgentClass(BaseElementClass):
   def __init__(self,name,ifPkg,clk,rst,agentIndex,parametersDict,initResp='INITIATOR'):
@@ -508,20 +538,22 @@ class BfmPkgClass(BaseElementClass):
     self.vipLibEnvVariable = vipLibEnvVariable
 
 class QvipAgentClass(BaseElementClass):
-  def __init__(self,name,ifPkg,activity,unique_id):
+  def __init__(self,name,ifPkg,activity,unique_id,unique_id_with_underscores):
     super(QvipAgentClass,self).__init__(name)
     self.ifPkg = ifPkg
     self.activity = activity
     self.unique_id = unique_id
+    self.unique_id_with_underscores = unique_id_with_underscores
 
 class StringInterfaceNamesClass(BaseElementClass):
-  def __init__(self,name,value,agent_name,ifPkg,activity,unique_id):
+  def __init__(self,name,value,agent_name,ifPkg,activity,unique_id,unique_id_with_underscores):
     super(StringInterfaceNamesClass,self).__init__(name)
     self.value =value
     self.agent_name = agent_name
     self.ifPkg = ifPkg
     self.activity = activity
     self.unique_id = unique_id
+    self.unique_id_with_underscores = unique_id_with_underscores
 
 class SubEnvironmentClass(BaseElementClass):
   def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regSubBlock):
@@ -547,10 +579,11 @@ class QvipSubEnvironmentClass(BaseElementClass):
       self.qvip_if_name.append(element)
 
 class QvipHdlModuleClass(BaseElementClass):
-  def __init__(self,name,envPkg,unique_id):
+  def __init__(self,name,envPkg,unique_id,unique_id_with_underscores):
     super(QvipHdlModuleClass,self).__init__(name)
     self.envPkg = envPkg
     self.unique_id = unique_id
+    self.unique_id_with_underscores = unique_id_with_underscores
 
 class QvipConnectionClass(object):
   def __init__(self, output_component, output_port_name, input_component, input_component_export_name):
@@ -587,10 +620,13 @@ class analysisComponentInstClass(BaseElementClass):
     self.type = type
 
 class envScoreboardClass(BaseElementClass):
-  def __init__(self,name,sType,tType):
+  def __init__(self,name,sType,tType,parametersDict):
     super(envScoreboardClass,self).__init__(name)
     self.sType = sType
     self.tType = tType
+    self.parameters = []
+    for parameterName in parametersDict:
+      self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
 class connectionClass(BaseElementClass):
   def __init__(self,name,pName,subscriberName, aeName):
@@ -620,6 +656,8 @@ class InterfaceClass(BaseGeneratorClass):
     self.configVars = []
     self.responseOperation = '1\'b1'
     self.responseList = []
+    self.responseVarNames = []
+    self.enableFunctionalCoverage = False
 
   def initTemplateVars(self,template):
     template['sigs'] = self.ports
@@ -634,6 +672,8 @@ class InterfaceClass(BaseGeneratorClass):
     template['configVars'] = self.configVars
     template['hdlTypedefs'] = self.hdlTypedefs
     template['paramDefs'] = self.paramDefs
+    template['hdlPkgParamDefs'] = self.hdlPkgParamDefs
+    template['hvlPkgParamDefs'] = self.hvlPkgParamDefs
     template['external_imports'] = self.external_imports
     template['hvlTypedefs'] = self.hvlTypedefs
     template['transVars'] = self.transVars
@@ -641,6 +681,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['configVarsConstraints'] = self.configVarsConstraints
     template['responseOperation'] = self.responseOperation
     template['responseList'] = self.responseList
+    template['responseVarNames'] = self.responseVarNames
     template['DPITransDecl'] = self.DPITransDecl
     template['DPIExports'] = self.DPIExports
     template['DPIImports'] = self.DPIImports
@@ -650,11 +691,12 @@ class InterfaceClass(BaseGeneratorClass):
     template['soName'] = self.soName
     template['svLibNames'] = self.svLibNames
     template['vipLibEnvVariable'] = self.vipLibEnvVariable
+    template['enableFunctionalCoverage'] = self.enableFunctionalCoverage
     return template
 
-  def addPort(self,name,width,dir,type='tri'):
+  def addPort(self,name,width,dir,rstValue='\'bz', type='tri'):
     """Add an interface port definition"""
-    self.ports.append(PortClass(name,width,dir,type))
+    self.ports.append(PortClass(name,width,dir,rstValue,type))
 
   def addHdlTypedef(self,name,type):
     """Add a typedef to the interface class's hdl typedefs file"""
@@ -666,7 +708,8 @@ class InterfaceClass(BaseGeneratorClass):
 
   def addImport(self,name):
     """Add an import to the interface package declaration  """
-    self.external_imports.append(name)
+    if (name not in self.external_imports):
+      self.external_imports.append(name)
 
   def addTransVar(self,name,type,isrand=False,iscompare=True,unpackedDim=""):
     """Add a variable to the interface class's sequence item definition"""
@@ -676,9 +719,9 @@ class InterfaceClass(BaseGeneratorClass):
     """Add a constraint to the interface class's Constraint item definition"""
     self.transVarsConstraints.append(ConstraintsClass(name,type))
 
-  def addConfigVar(self,name,type,isrand=False):
+  def addConfigVar(self,name,type,isrand=False,value=''):
     """Add a configuration variable to the interface class's configuration object definition"""
-    self.configVars.append(InterfaceConfigClass(name,type,isrand))
+    self.configVars.append(InterfaceConfigClass(name,type,isrand,value))
 
   def addConfigVarConstraint(self,name,type):
     """Add a constraint to the config class's Constraint item definition"""
@@ -694,6 +737,7 @@ class InterfaceClass(BaseGeneratorClass):
       for trans in self.transVars:
         if trans.name == entry:
           self.responseList.append({'name':trans.name,'type':trans.type,'unpacked_dimensions':trans.unpackedDim});
+          self.responseVarNames.append(trans.name);
           found = 1
           break
       if (found==0):
@@ -740,7 +784,8 @@ class InterfaceClass(BaseGeneratorClass):
                                                                   "paramDefs":self.paramDefs,
                                                                   "transVars":self.transVars,
                                                                   "configVars":self.configVars,
-                                                                  "responseList":self.responseList
+                                                                  "responseList":self.responseList,
+                                                                  "responseVarNames":self.responseVarNames
                                                                   })
       self.runTemplate("interface_monitor_proxy.TMPL",'dpi_link',{ "name":self.name,
                                                                   "paramDefs":self.paramDefs,
@@ -770,6 +815,8 @@ class EnvironmentClass(BaseGeneratorClass):
     self.template_ext_dir = 'environment_templates'
     self.typedefs = []
     self.regModels = []
+    self.nonUvmfComponents = []
+    self.qvipMemoryAgents = []
     self.agents = []
     self.qvip_agents = []
     self.external_imports = []
@@ -804,10 +851,13 @@ class EnvironmentClass(BaseGeneratorClass):
   def initTemplateVars(self,template):
     template['typedefs'] = self.typedefs
     template['regModels'] = self.regModels;
+    template['nonUvmfComponents'] = self.nonUvmfComponents
+    template['qvipMemoryAgents'] = self.qvipMemoryAgents
     template['agents'] = self.agents
     template['qvip_agents'] = self.qvip_agents
     template['external_imports'] = self.external_imports
     template['paramDefs'] = self.paramDefs
+    template['hvlPkgParamDefs'] = self.hvlPkgParamDefs
     template['subEnvironments'] = self.subEnvironments
     template['qvipSubEnvironments'] = self.qvipSubEnvironments
     template['qvipConnections'] = self.qvipConnections
@@ -846,7 +896,16 @@ class EnvironmentClass(BaseGeneratorClass):
 
   def addImport(self,name):
     """Add an import to the environment package declaration  """
-    self.external_imports.append(name)
+    if (name not in self.external_imports):
+      self.external_imports.append(name)
+
+  def addNonUvmfComponent(self,name,type, parametersDict={}):
+    """Add an agent instantiation to the definition of this environment class"""
+    self.nonUvmfComponents.append(NonUvmfComponentClass(name,type,parametersDict))
+
+  def addQvipMemoryAgent(self,name,type,qvipEnv,parametersDict={}):
+    """Add an agent instantiation to the definition of this environment class"""
+    self.qvipMemoryAgents.append(QvipMemoryAgentClass(name,type,qvipEnv,parametersDict))
 
   def addAgent(self,name,ifPkg,clk,rst,parametersDict={},initResp='INITIATOR'):
     """Add an agent instantiation to the definition of this environment class"""
@@ -895,9 +954,9 @@ class EnvironmentClass(BaseGeneratorClass):
     if (name not in self.acTypes):
       self.acTypes.append(name)
 
-  def addConfigVar(self,name,type,isrand=False):
+  def addConfigVar(self,name,type,isrand=False,value=''):
     """Add a configuration variable to the environment class's configuration object definition"""
-    self.configVars.append(EnvironmentConfigClass(name,type,isrand))
+    self.configVars.append(EnvironmentConfigClass(name,type,isrand,value))
 
   def addConfigVarConstraint(self,name,type):
     """Add a constraint to the config class's Constraint item definition"""
@@ -923,9 +982,9 @@ class EnvironmentClass(BaseGeneratorClass):
     self.analysisComponents.append(analysisComponentInstClass(name,pType))
 
   # addUvmfScoreboard(instanceName, scoreboardType, transactionType)
-  def  addUvmfScoreboard(self, name, sType, tType):
+  def  addUvmfScoreboard(self, name, sType, tType,parametersDict={}):
     """Add scoreboard instance to the definition of this environment class"""
-    self.scoreboards.append(envScoreboardClass(name,sType,tType))
+    self.scoreboards.append(envScoreboardClass(name,sType,tType,parametersDict))
 
   # addConnection(outputComponentName, outputPortName, inputComponentName, inputPortName)
   def  addConnection(self, name, pName, subscriberName, aeName):
@@ -985,7 +1044,7 @@ class BenchClass(BaseGeneratorClass):
     self.bfms = []
     self.bfm_packages = []
     self.bfm_pkg_env_variables = []
-    self.vipLibEnvVariableNames
+    self.vipLibEnvVariableNames = []
     self.qvip_bfms = []
     self.qvip_bfm_packages = []
     self.qvip_hdl_modules = []
@@ -1004,6 +1063,7 @@ class BenchClass(BaseGeneratorClass):
     self.vmaps = []
     self.envParamDefs = []
     self.additionalTops = []
+    self.topEnvHasRegisterModel = False
     for parameterName in parametersDict:
       self.envParamDefs.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
@@ -1032,6 +1092,7 @@ class BenchClass(BaseGeneratorClass):
     template['paramDefs'] = self.paramDefs
     template['envParamDefs'] = self.envParamDefs
     template['additionalTops'] = self.additionalTops
+    template['topEnvHasRegisterModel'] = self.topEnvHasRegisterModel
     template['svLibNames'] = self.svLibNames
     return template
 
@@ -1048,7 +1109,8 @@ class BenchClass(BaseGeneratorClass):
 
   def addImport(self,name):
     """Add an import to the bench package declaration  """
-    self.external_imports.append(name)
+    if (name not in self.external_imports):
+      self.external_imports.append(name)
 
   def addVmap(self,name,dirName):
     """Add a vmap command to bench makefile"""
@@ -1058,7 +1120,7 @@ class BenchClass(BaseGeneratorClass):
     """Add a BFM instantiation to the definition of this bench class"""
     package_name=name+"_BFM"
     value_name=name+"_BFM"
-    self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,""))
+    self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,"",""))
     self.bfms.append(BfmClass(name,ifPkg,clk,rst,activity,parametersDict,sub_env_path,initResp,agentInstName))
     if (ifPkg not in self.bfm_packages):
       self.bfm_packages.append(ifPkg)
@@ -1071,14 +1133,23 @@ class BenchClass(BaseGeneratorClass):
     """Instantiate the qvip BFMs to the definition of this bench class"""
     package_name=name
     value_name=name
-    self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,unique_id))
-    self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity,unique_id))
+    unique_id_with_underscores=""
+    unique_id_no_dots = unique_id.split(".")
+    first=1
+    for segment in unique_id_no_dots:
+      if (first==1):
+        unique_id_with_underscores = segment
+        first = 0
+      else:
+        unique_id_with_underscores = unique_id_with_underscores+"_"+segment
+    self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,unique_id,unique_id_with_underscores))
+    self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity,unique_id,unique_id_with_underscores))
     if (ifPkg not in self.qvip_bfm_packages):
       self.qvip_bfm_packages.append(ifPkg)
       self.qvip_pkg_env_variables.append(unicode(ifPkg).upper())
     if (unique_id not in self.qvip_hdl_module_list):
       self.qvip_hdl_module_list.append(unique_id)
-      self.qvip_hdl_modules.append(QvipHdlModuleClass(name,ifPkg,unique_id))
+      self.qvip_hdl_modules.append(QvipHdlModuleClass(name,ifPkg,unique_id,unique_id_with_underscores))
 
   def addTopLevel(self,topName):
     """Add additional top-level module for simulation"""

@@ -128,10 +128,10 @@ ben.addImport('mgc_axi4_v1_0_pkg')
 ## The following code is used to add this qvip_configurator generated output into an
 ## encapsulating UVMF Generated test bench.  The addQvipBfm function is added to
 ## the python configuration file used by the UVMF bench generator.
-ben.addQvipBfm('mgc_axi4_m0', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='environment_qvip_env_')
-ben.addQvipBfm('mgc_axi4_m1', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='environment_qvip_env_')
-ben.addQvipBfm('mgc_axi4_s0', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='environment_qvip_env_')
-ben.addQvipBfm('mgc_axi4_s1', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='environment_qvip_env_')
+ben.addQvipBfm('mgc_axi4_m0', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='uvm_test_top.environment.qvip_env.')
+ben.addQvipBfm('mgc_axi4_m1', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='uvm_test_top.environment.qvip_env.')
+ben.addQvipBfm('mgc_axi4_s0', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='uvm_test_top.environment.qvip_env.')
+ben.addQvipBfm('mgc_axi4_s1', 'axi4_2x2_fabric_qvip', 'ACTIVE', unique_id='uvm_test_top.environment.qvip_env.')
 
 ## This will prompt the creation of all bench files in their specified
 ##  locations

@@ -4,9 +4,9 @@ tar: clean
 	cd ..; tar zcvf uvm_co-emulation_utilities-$(TAR_VERSION).tgz uvm_co-emulation_utilities \
      --exclude uvm_co-emulation_utilities/.git \
      --exclude uvm_co-emulation_utilities/.gitignore \
-     --exclude uvm_co-emulation_utilities/UVM\ Co-Emulation\ Utility\ Library\ Pictures.graffle \
-     --exclude uvm_co-emulation_utilities/UVM\ Co-Emulation\ Utility\ Library\ User\ Guide.docx \
-     --exclude uvm_co-emulation_utilities/Co-Emulation\ Utilities.pptx \
+     --exclude uvm_co-emulation_utilities/UVM_Co-Emulation_Utility_Library_Pictures.graffle \
+     --exclude uvm_co-emulation_utilities/UVM_Co-Emulation_Utility_Library_User_Guide.docx \
+     --exclude uvm_co-emulation_utilities/Co-Emulation_Utilities.pptx \
      --exclude *modelsim.ini \
      --exclude *tbxbindings.h \
      --exclude *veloce.map \
@@ -17,7 +17,8 @@ tar: clean
      --exclude *design.bin \
      --exclude *wave.db \
      --exclude *.log \
-     --exclude *.DS_Store
+     --exclude *.DS_Store \
+     --exclude *.project
 
 clean:
 	cd tests/clock_tester/sim; make clean

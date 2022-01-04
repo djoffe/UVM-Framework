@@ -30,7 +30,7 @@ package {{env_name}}_reg_pkg;
 {% endif %}
 {% for sub_env in subEnvironments %}
 {% if sub_env.regSubBlock != None %}
-      {{sub_env.envPkg}}_reg_model {{sub_env.regSubBlock}};
+      {{sub_env.envPkg}}_reg_model {{sub_env.name}}_rm;
 {% endif %}
 {% endfor %}
 
@@ -49,7 +49,7 @@ package {{env_name}}_reg_pkg;
 lock_model();
 {% for sub_env in subEnvironments %}
 {% if sub_env.regSubBlock != None %}
-         {{sub_env.regSubBlock}} = new("{{sub_env.regSubBlock}}");
+         {{sub_env.name}}_rm = new("{{sub_env.name}}_rm");
 {% endif %}
 {% endfor %}
  

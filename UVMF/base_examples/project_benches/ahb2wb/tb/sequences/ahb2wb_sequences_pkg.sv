@@ -26,7 +26,6 @@
 package ahb2wb_sequences_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import uvmf_base_pkg::*;
    import ahb_pkg::*;
    import wb_pkg::*;

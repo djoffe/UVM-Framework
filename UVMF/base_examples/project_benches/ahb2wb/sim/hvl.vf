@@ -1,0 +1,69 @@
+
+
+// ------- fli_pkg.vinfo --------
++incdir+/work/framework/common/fli_pkg
+/work/framework/common/fli_pkg/fli_pkg.sv
+
+
+// ------- uvmf_base_pkg_hdl.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg_hdl.sv
+
+
+// ------- uvmf_base_pkg.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg.sv
+
+
+// ------- ahb2wb_parameters_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/ahb2wb/tb/parameters
+/work/framework/base_examples/project_benches/ahb2wb/tb/parameters/ahb2wb_parameters_pkg.sv
+
+
+// ------- ahb_pkg_hdl.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg
+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg/ahb_pkg_hdl.sv
+
+
+// ------- wb_pkg_hdl.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg
+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg/wb_pkg_hdl.sv
+
+
+// ------- ahb_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg
+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg/ahb_pkg.sv
+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg/./src/ahb_if.sv
+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg/./src/ahb_monitor_bfm.sv
+/work/framework/base_examples/verification_ip/interface_packages/ahb_pkg/./src/ahb_driver_bfm.sv
+
+
+// ------- wb_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg
+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg/wb_pkg.sv
+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg/./src/wb_if.sv
+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg/./src/wb_monitor_bfm.sv
+/work/framework/base_examples/verification_ip/interface_packages/wb_pkg/./src/wb_driver_bfm.sv
+
+
+// ------- ahb2wb_env_pkg.vinfo --------
++incdir+/work/framework/base_examples/verification_ip/environment_packages/ahb2wb_env_pkg
+/work/framework/base_examples/verification_ip/environment_packages/ahb2wb_env_pkg/ahb2wb_env_pkg.sv
+
+
+// ------- ahb2wb_sequences_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/ahb2wb/tb/sequences
+/work/framework/base_examples/project_benches/ahb2wb/tb/sequences/ahb2wb_sequences_pkg.sv
+
+
+// ------- ahb2wb_test_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/ahb2wb/tb/tests
+/work/framework/base_examples/project_benches/ahb2wb/tb/tests/ahb2wb_test_pkg.sv
+
+
+// ------- hvl_top.vinfo --------
++incdir+/work/framework/base_examples/project_benches/ahb2wb/tb/testbench
+/work/framework/base_examples/project_benches/ahb2wb/tb/testbench/hvl_top.sv
+
+
+// ------- hvl.vinfo --------

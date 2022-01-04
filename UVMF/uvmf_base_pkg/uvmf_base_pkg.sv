@@ -63,7 +63,6 @@
 package uvmf_base_pkg;
 
    import uvm_pkg::*;
-   import questa_uvm_pkg::*;
    import mti_fli::*;
    import fli_pkg::*;
    import uvmf_base_pkg_hdl::*;
@@ -100,9 +99,9 @@ package uvmf_base_pkg;
    // UVMF Version Banner Class
    `include "src/uvmf_version.svh"
 
-   // Utility classes
-   `include "src/uvmf_standard_port_debug_policy.svh"
-   `include "src/uvmf_analysis_debug.svh"
+   // Utility classes  (commented out for P1800.2)
+   //`include "src/uvmf_standard_port_debug_policy.svh"
+   //`include "src/uvmf_analysis_debug.svh"
 
    // Transaction base class
    `include "src/uvmf_base_typedefs.svh"

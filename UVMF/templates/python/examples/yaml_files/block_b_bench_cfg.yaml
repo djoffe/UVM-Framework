@@ -1,3 +1,8 @@
+# The block_b bench is a bit more complex due to the use
+# of parameterized agents and environments underneath. Top-level
+# parameters are defined which are fed down to both the top-level
+# environment as well as the set of BFMs associated with underlying
+# interfaces.
 uvmf:
   benches:
     "block_b" :
@@ -25,15 +30,20 @@ uvmf:
           value: "TEST_CP_OUT_ADDR_WIDTH"
         - name: "UDP_DATA_WIDTH"   
           value: "TEST_UDP_DATA_WIDTH"   
+      # If the infact_ready flag is uncommented and set to "True" then
+      #  this bench would include additional code to allow for inFact tests
       # infact_ready : "True"
       clock_half_period : "6ns"
       clock_phase_offset : "21ns"
       reset_assertion_level : "True"
       reset_duration : "250ns"
+      # If underlying interfaces are parameterized then the associated BFMs
+      # also need to be parameterized in the same way - otherwise typedef mismatches
+      # will occur during elaboration or runtime.
       interface_params:
-        - bfm_name: "control_plane_in"
-          value:
-            - name: "ADDR_WIDTH"
+        - bfm_name: "control_plane_in"               # Each BFM has a unique name based on the interface name. Benches that 
+          value:                                     #  incorporate sub-environments will have longer BFM names because they
+            - name: "ADDR_WIDTH"                     #  include the hierarchy to the BFM as well as the name of the BFM itself.
               value: "TEST_CP_IN_ADDR_WIDTH"
             - name: "DATA_WIDTH"
               value: "TEST_CP_IN_DATA_WIDTH"

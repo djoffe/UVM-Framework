@@ -17,9 +17,10 @@ env.addAgent('mem_out', 'mem', 'clock', 'reset')
 env.addAgent('pkt_out', 'pkt', 'pclk', 'prst')
 
 ## Import QVIP protocol packages so that the environment can use sequence items and sequences from QVIP library.
-env.addImport('mgc_apb3_v1_0_pkg')
+env.addImport('mvc_pkg')
 env.addImport('mgc_pcie_v2_0_pkg')
 env.addImport('mgc_axi4_v1_0_pkg')
+env.addImport('mgc_apb3_v1_0_pkg')
 
 ## Define the predictors contained in this environment (not instantiate, yet)
 ## addAnalysisComponent(<keyword>,<predictor_type_name>,<dict_of_exports>,<dict_of_ports>) - 

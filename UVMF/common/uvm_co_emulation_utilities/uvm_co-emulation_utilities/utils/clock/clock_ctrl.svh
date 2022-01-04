@@ -1,15 +1,15 @@
-class clock_ctrl #(int unsigned PHASE_OFFSET_IN_PS = 2000,
-                   int unsigned INIT_CLOCK_HALF_PERIOD = 2000)
+class clock_ctrl #(int unsigned INIT_CLOCK_HALF_PERIOD = 2000,
+                   int unsigned PHASE_OFFSET_IN_PS = INIT_CLOCK_HALF_PERIOD)
   extends clock_ctrl_base;
 
-  `uvm_object_param_utils(clock_ctrl #(PHASE_OFFSET_IN_PS,
-                                       INIT_CLOCK_HALF_PERIOD))
+  `uvm_object_param_utils(clock_ctrl #(INIT_CLOCK_HALF_PERIOD,
+                                       PHASE_OFFSET_IN_PS))
 
   //bfm is local because we must set the proxy handle for proper operation
-  local virtual clock_bfm #(PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD) bfm;
+  local virtual clock_bfm #(INIT_CLOCK_HALF_PERIOD, PHASE_OFFSET_IN_PS) bfm;
 
   local bit                       advance_in_progress = 0;
-  local int unsigned              dClockPeriodInPs = 4000;
+  local int unsigned              dClockPeriodInPs = INIT_CLOCK_HALF_PERIOD * 2;
   local int unsigned              dPhaseOffsetInPs;
   local int unsigned              dStartUpTimeInPs;
   local XlSvQueue #(XlSvTimeSync) dTimeQueue;
@@ -27,12 +27,12 @@ class clock_ctrl #(int unsigned PHASE_OFFSET_IN_PS = 2000,
   //BFM Accessors Code
   /////////////////////////////////////////////////////////////////////////////
   
-  function void set_bfm(virtual clock_bfm #(PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD) cbfm);
+  function void set_bfm(virtual clock_bfm #(INIT_CLOCK_HALF_PERIOD, PHASE_OFFSET_IN_PS) cbfm);
     bfm = cbfm;
     bfm.proxy = this;
   endfunction : set_bfm;
 
-  function virtual clock_bfm #(PHASE_OFFSET_IN_PS, INIT_CLOCK_HALF_PERIOD) get_bfm();
+  function virtual clock_bfm #(INIT_CLOCK_HALF_PERIOD, PHASE_OFFSET_IN_PS) get_bfm();
     return bfm;
   endfunction : get_bfm
 
@@ -142,10 +142,10 @@ class clock_ctrl #(int unsigned PHASE_OFFSET_IN_PS = 2000,
     //Get the clock period and the phase offset (if need be)
     if( dClockPeriodInPs == 0 ) initializeClockPeriod();
     if( dPhaseOffsetInPs == 0 ) initializePhaseOffset();
-    //At the beginning of a simulation, we have: phase offset + 1 full 4ns
+    //At the beginning of a simulation, we have: phase offset + 1 full
     // clock period (used to adjust the clock half period) + half period and
     // then we get our first edge for our properly configured clock
-    dStartUpTimeInPs = dPhaseOffsetInPs + 4000 + dClockPeriodInPs/2;
+    dStartUpTimeInPs = dPhaseOffsetInPs + INIT_CLOCK_HALF_PERIOD * 2 + dClockPeriodInPs/2;
   endfunction : initializeStartUpTime
 
   local function void setClockPeriodInPs( int unsigned clockPeriodInPs );

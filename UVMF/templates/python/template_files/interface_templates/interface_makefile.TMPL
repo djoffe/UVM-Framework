@@ -1,5 +1,6 @@
 {% set fname = "verification_ip/interface_packages/{{name}}_pkg/Makefile" %}
 # {{name}} interface packages source
+
 {{name}}_PKG         = \
 {% if useDpiLink %}	+incdir+$(UVMF_HOME)/common/dpi_link_pkg \
 {% endif %}
@@ -23,7 +24,6 @@ q_comp_{{name}}_pkg:
 
 v_comp_{{name}}_pkg: q_comp_{{name}}_pkg
 	$(VELANALYZE_HVL_CMD) $({{name}}_PKG) 
-
 
 {%if DPIFiles != ""%}
 ifeq ($(MTI_VCO_MODE),64)
@@ -62,5 +62,4 @@ comp_{{name}}_pkg_c_files:
 {{name}}_tc.o: dpiheader.h
 	${GPP} -I $(UVMF_HOME)/common/dpi_link_pkg -I . -I${QUESTA_HOME}/include -fPIC \
 	$({{vipLibEnvVariable}})/interface_packages/{{name}}_pkg/src/{{name}}_tc.cpp -shared -o {{name}}_tc.o 
-
 {% endif %}

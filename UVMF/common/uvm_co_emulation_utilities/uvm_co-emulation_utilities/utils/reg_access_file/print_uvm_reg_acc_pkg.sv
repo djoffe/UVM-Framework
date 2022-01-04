@@ -4,7 +4,7 @@ package print_uvm_reg_acc_pkg;
 
 `include "uvm_macros.svh"
 
-  typedef enum { QUESTA, VELOCE } file_mode_e;
+  typedef enum { QUESTA, VELOCE, VISUALIZER } file_mode_e;
   
   function string send2vsim(string cmd = "" );
     string result;
@@ -27,6 +27,8 @@ package print_uvm_reg_acc_pkg;
 
     if (mode == QUESTA) begin
       acc_file = $fopen("reg_acc.temp.f", "w");
+    end else if (mode == VISUALIZER) begin
+      acc_file = $fopen("vis_regs.tcl");
     end else begin
       acc_file = $fopen("forcesetget_nets.sigs", "w");
     end
@@ -42,6 +44,10 @@ package print_uvm_reg_acc_pkg;
           foreach (path.slices[jj]) begin
             if (mode == QUESTA) begin
               $fdisplay(acc_file, $sformatf("+acc=rn+/%s", path.slices[jj].path));
+            end else if (mode == VISUALIZER) begin
+              string color = (total%2) ? "Black" : "DarkGrey";
+              $fdisplay(acc_file, $sformatf("add regview -viewer \"UVM Registers\" -radix Hex -row %0d -column 0 -name \"%s\" -foreground %s -alignment Right", total, path.slices[jj].path, color));
+              $fdisplay(acc_file, $sformatf("add regview -viewer \"UVM Registers\" -radix Hex -row %0d -column 1 -var %s -foreground %s -alignment Right", total, path.slices[jj].path, color));
             end else begin
               $fdisplay(acc_file, path.slices[jj].path);
             end
@@ -51,14 +57,23 @@ package print_uvm_reg_acc_pkg;
       end
     end
 
+    if (mode == VISUALIZER) begin
+      $fdisplay(acc_file, $sformatf("echo \"%0d Registers Added\nGo to View -> Register Viewer -> UVM Registers to view them.\"", total));
+    end
+
     $fclose(acc_file);
     if (mode == QUESTA) begin
       void'(send2vsim("exec /bin/sh -c {cat reg_acc.temp.f | sed 'y/./\\\//' > reg_acc.f;rm reg_acc.temp.f}"));
       `uvm_info("CREATE_ACC_FILE", $sformatf("Backdoor register access file \"reg_acc.f\" was created with %0d entries.", total), UVM_NONE)
+    end else if (mode == VISUALIZER) begin
+      `uvm_info("CREATE_ACC_FILE", $sformatf("Visualizer register access file \"vis_regs.tcl\" was created with %0d entries.", total), UVM_NONE)
+      `uvm_info("CREATE_ACC_FILE", $sformatf("After opening Visualizer, execute \"do vis_regs.tcl\" at the Visulizer prompt"), UVM_NONE)
     end else begin //Veloce
       `uvm_info("CREATE_ACC_FILE", $sformatf("Backdoor register access file \"forcesetget_nets.sigs\" was created with %0d entries.", total), UVM_NONE)
       `uvm_info("CREATE_ACC_FILE", $sformatf("Add \"rtlc -forceset_nets_file forcesetget_nets.sigs\" and \"rtlc -get_nets_file forcesetget_nets.sigs\" to your veloce.config"), UVM_NONE)
     end
+
+    total = 0;
   endfunction : create_acc_file
 
   

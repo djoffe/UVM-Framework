@@ -71,6 +71,22 @@ class EnvironmentDumper:
 
   def parseEnvironment(self):
     data = {}
+    data['qvip_memory_agents'] = []
+    for i in self.obj.qvipMemoryAgents:
+      params = []
+      for p in i.parameters:
+        params.append({'name':p.name,'value':p.value})
+      data['qvip_memory_agents'].append({'name':i.name,'type':i.type,'qvip_environment':i.qvipEnv,'parameters':params})
+    data['non_uvmf_components'] = []
+    for i in self.obj.nonUvmfComponents:
+      if (len(i.parameters)>0):
+        params = []
+        for p in i.parameters:
+          params.append({'name':p.name,'value':p.value})
+        data['non_uvmf_components'].append({'name':i.name,'type':i.type,'parameters':params})
+      else:
+        data['non_uvmf_components'].append({'name':i.name,'type':i.type})
+
     data['agents'] = []
     for i in self.obj.agents:
       if (len(i.parameters)>0):
@@ -91,7 +107,13 @@ class EnvironmentDumper:
       data['analysis_components'].append({'name':i.name,'type':i.type}) # ,'extdef':'True'})
     data['scoreboards'] = []
     for i in self.obj.scoreboards:
-      data['scoreboards'].append({'name':i.name,'sb_type':i.sType,'trans_type':i.tType})
+      if (len(i.parameters)>0):
+        params = []
+        for p in i.parameters:
+          params.append({'name':p.name,'value':p.value})
+        data['scoreboards'].append({'name':i.name,'sb_type':i.sType,'trans_type':i.tType,'parameters':params})
+      else:      
+        data['scoreboards'].append({'name':i.name,'sb_type':i.sType,'trans_type':i.tType})
     data['analysis_ports'] = []
     for i in self.obj.analysis_ports:
       data['analysis_ports'].append({'name':i.name,'trans_type':i.tType,'connected_to':i.connection})
@@ -100,13 +122,16 @@ class EnvironmentDumper:
       data['analysis_exports'].append({'name':i.name,'trans_type':i.tType,'connected_to':i.connection})
     data['config_vars'] = []
     for i in self.obj.configVars:
-      data['config_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand)})
+      data['config_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'value':str(i.value)})
     data['config_constraints'] = []
     for i in self.obj.configVarsConstraints:
       data['config_constraints'].append({'name':i.name,'value':i.type})
     data['parameters'] = []
     for i in self.obj.paramDefs:
       data['parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+    data['hvl_pkg_parameters'] = []
+    for i in self.obj.hvlPkgParamDefs:
+      data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
     data['tlm_connections'] = []
     for i in self.obj.connections:
       driverHier = i.name;
@@ -203,9 +228,15 @@ class InterfaceDumper:
     data['parameters'] = []
     for i in self.obj.paramDefs:
       data['parameters'].append({'name':str(i.name),'type':str(i.type),'value':str(i.value)})
+    data['hdl_pkg_parameters'] = []
+    for i in self.obj.hdlPkgParamDefs:
+      data['hdl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
+    data['hvl_pkg_parameters'] = []
+    for i in self.obj.hvlPkgParamDefs:
+      data['hvl_pkg_parameters'].append({'name':i.name,'type':i.type,'value':i.value})
     data['ports'] = []
     for i in self.obj.ports:
-      data['ports'].append({'name':str(i.name),'width':str(i.width),'dir':str(i.dir)})
+      data['ports'].append({'name':str(i.name),'width':str(i.width),'dir':str(i.dir),'reset_value':str(i.rstValue)})
     data['transaction_vars'] = []
     for i in self.obj.transVars:
       data['transaction_vars'].append({'name':i.name,'type':i.type,'isrand':str(i.isrand),'iscompare':str(i.iscompare),'unpacked_dimension':i.unpackedDim})
@@ -214,7 +245,7 @@ class InterfaceDumper:
       data['transaction_constraints'].append({'name':i.name,'value':i.type})
     data['config_vars'] = []
     for i in self.obj.configVars:
-      data['config_vars'].append({'name':str(i.name),'type':str(i.type),'isrand':str(i.isrand)})
+      data['config_vars'].append({'name':str(i.name),'type':str(i.type),'isrand':str(i.isrand),'value':str(i.value)})
     data['config_constraints'] = []
     for i in self.obj.configVarsConstraints:
       data['config_constraints'].append({'name':i.name,'value':i.type})

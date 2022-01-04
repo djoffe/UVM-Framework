@@ -24,9 +24,9 @@ ben.resetDuration = '250ns'
 ## Specify the agents contained in this bench
 ##   addBfm(<agent_handle_name>,<agent_type_name>,<clock_name>,<reset_name>,<activity>,<{bfmParameter:value})
 ben.addBfm('control_plane_in',      'mem',  'clock', 'reset','ACTIVE', agentInstName="control_plane_in")
-ben.addBfm('control_plane_out',     'mem',  'clock', 'reset','ACTIVE', agentInstName="control_plane_out")
+ben.addBfm('control_plane_out',     'mem',  'clock', 'reset','ACTIVE',initResp = 'RESPONDER', agentInstName="control_plane_out")
 ben.addBfm('secure_data_plane_in',  'pkt',  'pclk',  'prst', 'ACTIVE', agentInstName="secure_data_plane_in")
-ben.addBfm('secure_data_plane_out', 'pkt',  'pclk',  'prst', 'ACTIVE', agentInstName="secure_data_plane_out")
+ben.addBfm('secure_data_plane_out', 'pkt',  'pclk',  'prst', 'ACTIVE',initResp = 'RESPONDER', agentInstName="secure_data_plane_out")
 ## ben.addBfm('dma',                   'dma',  'clock', 'reset','ACTIVE', initResp = 'RESPONDER')
 
 # This API identifies make targets that compile C code.

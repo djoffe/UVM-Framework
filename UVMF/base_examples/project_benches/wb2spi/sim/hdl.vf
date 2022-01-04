@@ -1,0 +1,32 @@
+
+
+// ------- rtl.vinfo --------
+/work/framework/base_examples/project_benches/wb2spi/rtl/./verilog/wb2spi.v
+
+
+// ------- fli_pkg.vinfo --------
++incdir+/work/framework/common/fli_pkg
+/work/framework/common/fli_pkg/fli_pkg.sv
+
+
+// ------- uvmf_base_pkg_hdl.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg_hdl.sv
+
+
+// ------- uvmf_base_pkg.vinfo --------
++incdir+/work/framework/uvmf_base_pkg
+/work/framework/uvmf_base_pkg/uvmf_base_pkg.sv
+
+
+// ------- wb2spi_parameters_pkg.vinfo --------
++incdir+/work/framework/base_examples/project_benches/wb2spi/tb/parameters
+/work/framework/base_examples/project_benches/wb2spi/tb/parameters/wb2spi_parameters_pkg.sv
+
+
+// ------- hdl_top.vinfo --------
++incdir+/work/framework/base_examples/project_benches/wb2spi/tb/testbench
+/work/framework/base_examples/project_benches/wb2spi/tb/testbench/hdl_top.sv
+
+
+// ------- hdl.vinfo --------

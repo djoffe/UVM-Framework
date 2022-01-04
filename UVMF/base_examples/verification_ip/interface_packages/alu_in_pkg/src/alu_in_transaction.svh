@@ -55,12 +55,9 @@ class alu_in_transaction extends uvmf_transaction_base;
   endfunction
 
 //*******************************************************************
-   virtual function void do_print(uvm_printer printer);
-      if (printer.knobs.sprint==0)
-        $display(convert2string());
-      else
-        printer.m_string = convert2string();
-   endfunction
+  virtual function void do_print(uvm_printer printer);
+    $display(convert2string());
+  endfunction
 
 //*******************************************************************
   virtual function bit do_compare (uvm_object rhs, uvm_comparer comparer);

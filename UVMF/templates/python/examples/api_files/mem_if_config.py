@@ -7,9 +7,20 @@ intf = uvmf_gen.InterfaceClass('mem')
 
 ## Specify parameters for this interface package.
 ## These parameters can be used when defining signal and variable sizes.
+## These parameters become class and interface parameters
 # addHdlParamDef(<name>,<type>,<value>)
 intf.addParamDef('DATA_WIDTH','int','220')
 intf.addParamDef('ADDR_WIDTH','int','210')
+
+## Specify parameters that will be included in the hvl package declaration
+intf.addHvlPkgParamDef('MEM_HVL_PKG_PARAMETER1','integer','21')
+intf.addHvlPkgParamDef('MEM_HVL_PKG_PARAMETER2','integer','22')
+
+## Specify parameters that will be included in the hdl package declaration
+intf.addHdlPkgParamDef('MEM_HDL_PKG_PARAMETER1','byte','27')
+intf.addHdlPkgParamDef('MEM_HDL_PKG_PARAMETER2','byte','28')
+
+
 
 ## Specify the clock and reset signal for the interface
 intf.clock = 'clock'
@@ -18,12 +29,12 @@ intf.resetAssertionLevel = True
 
 ## Specify the ports associated with this interface.
 ## The direction is from the perspective of the test bench as an INITIATOR on the bus.
-##   addPort(<name>,<width>,[input|output|inout])
-intf.addPort('cs',1,'output')
-intf.addPort('rwn',1,'output')
-intf.addPort('rdy',1,'input')
-intf.addPort('addr','ADDR_WIDTH','output')
-intf.addPort('wdata','DATA_WIDTH','output')
+##   addPort(<name>,<width>,[input|output|inout],rstValue)
+intf.addPort('cs',1,'output','1\'b0')
+intf.addPort('rwn',1,'output','1\'b1')
+intf.addPort('rdy',1,'input','1\'b0')
+intf.addPort('addr','ADDR_WIDTH','output','\'bz')
+intf.addPort('wdata','DATA_WIDTH','output','\'bz')
 intf.addPort('rdata','DATA_WIDTH','input')
 
 ## Specify typedef for inclusion in typedefs_hdl file
@@ -45,6 +56,9 @@ intf.addTransVar('address','bit [ADDR_WIDTH-1:0]',isrand=True,iscompare=True)
 intf.addTransVar('byte_enable','bit [3:0]',isrand=True,iscompare=False)
 intf.addTransVar('chksum','int',isrand=False,iscompare=False)
 
+intf.specifyResponseOperation('1\'b1')
+intf.specifyResponseData(['read_data'])
+
 ## Specify transaction variable constraint
 ## addTransVarConstraint(<constraint_body_name>,<constraint_body_definition>)
 # intf.addTransVarConstraint('valid_address_range_c','{ address inside {[2048:1055], [1024:555], [511:0]}; }')
@@ -54,6 +68,7 @@ intf.addTransVarConstraint('address_word_align_c','{ address[1:0]==0; }')
 ##   addConfigVar(<name>,<type>)
 ##     optionally can specify if this variable may be specified as 'rand'
 intf.addConfigVar('transfer_gap','bit [3:0]',isrand=True)
+intf.addConfigVar('speed_grade','bit [3:0]',isrand=False, value='35')
 
 ## Specify configuration variable constraint
 ## addConfigVarConstraint(<constraint_body_name>,<constraint_body_definition>)

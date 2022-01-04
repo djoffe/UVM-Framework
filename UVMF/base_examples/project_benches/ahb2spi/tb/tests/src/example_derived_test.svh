@@ -6,8 +6,8 @@
 //
 //----------------------------------------------------------------------
 // Project         : ahb2spi Simulation Bench 
-// Unit            : rdo configuration
-// File            : ahb2spi_rdo.svh
+// Unit            : Test package
+// File            : example_derived_test.svh
 //----------------------------------------------------------------------
 //                                          
 // DESCRIPTION: This test extends test_top and makes the following

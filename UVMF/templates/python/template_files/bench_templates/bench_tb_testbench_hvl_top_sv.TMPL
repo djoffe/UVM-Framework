@@ -20,7 +20,10 @@ import {{name}}_tests_pkg::*;
 
 module hvl_top;
 
-initial run_test();
+  initial begin
+    $timeformat(-9,3,"ns",5);
+    run_test();
+  end
 
 endmodule
 
