@@ -62,7 +62,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% endfor %}
 {% if topEnvHasRegisterModel %}
   // Local handle to register model for convenience
-  {{env_name}}_reg_model reg_model;
+  {{regBlockClass}} reg_model;
   uvm_status_e status;
 {% endif %}
 {% if useCoEmuClkRstGen %}
@@ -189,5 +189,8 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
   endtask
 
 endclass
+
+// pragma uvmf custom external begin
+// pragma uvmf custom external end
 
 {% endblock %}

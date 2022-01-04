@@ -8,6 +8,7 @@ endif
 
 UVMC_VER              ?= 2.3.2
 UVM_VER               ?= 1.1d
+EXTRA_UVMC_VLOG_ARGS  ?=
 EXTRA_SCCOM_ARGS      ?= -Wall -g
 EXTRA_SCCOM_LINK_ARGS ?= -g -O0
 
@@ -20,8 +21,7 @@ UVMCONNECT_CPP = $(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sc/uvmc
 
 compile_uvmc:
 	-@echo "Compiling UVMConnect library for platform $(MACHINE_ARCH)"
-	vlib work
-	vlog   -incr $(XINCDIRS) $(UVMCONNECT_VLOG)
-	sccom $(MACHINE_ARCH) -work work $(DINCDIRS) $(EXTRA_SCCOM_ARGS) $(UVMCONNECT_CPP)
-	sccom $(MACHINE_ARCH) $(DINCDIRS) -lib work -DSC_INCLUDE_DYNAMIC_PROCESSES $(EXTRA_SCCOM_LINK_ARGS) -linkshared
+	vlog   -incr $(EXTRA_UVMC_VLOG_ARGS) $(XINCDIRS) $(UVMCONNECT_VLOG)
+	sccom $(MACHINE_ARCH) $(DINCDIRS) $(EXTRA_SCCOM_ARGS) $(UVMCONNECT_CPP)
+	sccom $(MACHINE_ARCH) $(DINCDIRS) -DSC_INCLUDE_DYNAMIC_PROCESSES $(EXTRA_SCCOM_LINK_ARGS) -linkshared
 

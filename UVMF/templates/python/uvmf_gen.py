@@ -57,11 +57,13 @@ try:
   import jinja2
 except ImportError:
   print("ERROR : Jinja2 package not found.  See templates.README for more information")
+  print("Python version info:\n{}".format(sys.version))
   sys.exit(1)
 ## Require version 2.8 or later of Jinja2 package
 s = jinja2.__version__.split(".")
 if ( (int(s[0]) < 2) | ( (int(s[0]) == 2) & (int(s[1]) < 8))):
   print("ERROR : Jinja2 package version "+jinja2.__version__+" incorrect, must be 2.8 or later")
+  print("Python version info:\n{}".format(sys.version))
   sys.exit(1)
 from jinja2._compat import string_types
 
@@ -468,19 +470,35 @@ class PortClass(BaseElementInterfaceClass):
   def __init__(self,name,width,dir,rstValue,type='tri',isrand=False):
     super(PortClass,self).__init__(name,type,isrand)
     self.width = width
-    try:
-      width = int(width)
-    except ValueError: pass
-    if (width==1):
+    # Width comes in as a string or as a list of strings
+    # - If a singleton, then this is a single-dimension (simple) vector
+    # - If a comma-separated list, this is a packed MDA port
+    if isinstance(width,list):
       self.vector = ''
-    elif isinstance(width,int):
-      self.vector = '[{0}:0]'.format(width-1)
+      for w in width:
+        s = self.calc_width_string(w)
+        if s == '':
+          s = '[1]'
+        self.vector = self.vector+s
     else:
-      self.vector = '['+width+'-1:0]'
+      self.vector = self.calc_width_string(width)
     if (dir not in ['input','output','inout']):
       raise UserError("Port direction ("+dir+") must be input, output or inout")
     self.dir = dir
     self.rstValue = rstValue
+
+  def calc_width_string(self,width):
+    try:
+      w = int(width)
+    except ValueError: 
+      w = width
+      pass
+    if w == 1:
+      return ''
+    elif isinstance(w,int):
+      return '[{0}:0]'.format(w-1)
+    else:
+      return '[{0}-1:0]'.format(w)
 
 class InterfaceConfigClass(BaseElementInterfaceClass):
   def __init__(self,name,type,isrand=False,value='',comment=""):
@@ -562,7 +580,7 @@ class AgentClass(BaseElementClass):
       self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
 class RegModelClass(BaseElementClass):
-  def __init__(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, qvipAgent=False):
+  def __init__(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, qvipAgent=False,regModelPkg='',regBlockClass=''):
     super(RegModelClass,self).__init__('')
     self.useAdapter = useAdapter
     self.useExplicitPrediction = useExplicitPrediction
@@ -571,6 +589,8 @@ class RegModelClass(BaseElementClass):
     self.adapterType = adapterType
     self.busMap = busMap
     self.qvipAgent = qvipAgent
+    self.regModelPkg = regModelPkg
+    self.regBlockClass = regBlockClass
 
 class analysisComponentClass(BaseElementClass):
   def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList,mtlbReady=False):
@@ -638,10 +658,11 @@ class StringInterfaceNamesClass(BaseElementClass):
     self.unique_id_with_underscores = unique_id_with_underscores
 
 class SubEnvironmentClass(BaseElementClass):
-  def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regSubBlock):
+  def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regModelPkg,regBlockClass):
     super(SubEnvironmentClass,self).__init__(name)
     self.envPkg = envPkg
-    self.regSubBlock = regSubBlock
+    self.regModelPkg = regModelPkg
+    self.regBlockClass = regBlockClass
     self.numAgents = numAgents
     self.agentMinIndex = agent_index
     self.agentMaxIndex = agent_index+numAgents-1
@@ -1043,14 +1064,14 @@ class EnvironmentClass(BaseGeneratorClass):
     if (ifPkg not in self.agent_packages):
       self.agent_packages.append(ifPkg)
 
-  def addSubEnv(self,name,envPkg,numAgents,parametersDict={}, regSubBlock=None):
+  def addSubEnv(self,name,envPkg,numAgents,parametersDict={}, regModelPkg=None,regBlockClass=None):
     """Add a sub environment instantiation to the definition of this environment class"""
-    self.subEnvironments.append(SubEnvironmentClass(name,envPkg,numAgents,self.agentIndex,parametersDict,regSubBlock))
+    self.subEnvironments.append(SubEnvironmentClass(name,envPkg,numAgents,self.agentIndex,parametersDict,regModelPkg,regBlockClass))
     self.agentIndex = self.agentIndex+numAgents
     if (envPkg not in self.sub_env_packages):
       self.sub_env_packages.append(envPkg)
-    if (regSubBlock != None and envPkg not in self.subEnvironmentRegPackages):
-      self.subEnvironmentRegPackages.append(envPkg)
+    if (regModelPkg != None and regModelPkg not in self.subEnvironmentRegPackages):
+      self.subEnvironmentRegPackages.append(regModelPkg)
 
   def addQvipSubEnv(self,name,envPkg,agentList):
     """Add a sub environment instantiation to the definition of this environment class"""
@@ -1104,10 +1125,10 @@ class EnvironmentClass(BaseGeneratorClass):
     for aeName in qvipExportDict:
       self.addImpDecl(aeName)
 
-  def addRegisterModel(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, qvipAgent=False):
+  def addRegisterModel(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, qvipAgent=False,regModelPkg=None,regBlockClass=None):
     """Adds a register model to the environment."""
     ## Register the desired analysis component on the types array
-    self.regModels.append(RegModelClass(sequencer,transactionType,adapterType, busMap,useAdapter,useExplicitPrediction,qvipAgent))
+    self.regModels.append(RegModelClass(sequencer,transactionType,adapterType, busMap,useAdapter,useExplicitPrediction,qvipAgent,regModelPkg,regBlockClass))
 
   # addAnalysisComponent(instanceName, analysisComponentType)
   def addAnalysisComponent(self, name, pType, parametersList=[],extDef=False):
@@ -1154,7 +1175,9 @@ class EnvironmentClass(BaseGeneratorClass):
                                                      "sequencer":regModel.sequencer,
                                                      "transactionType":regModel.transactionType,
                                                      "adapterType":regModel.adapterType,
-                                                     "busMap":regModel.busMap})
+                                                     "busMap":regModel.busMap,
+                                                     "regModelPkg":regModel.regModelPkg,
+                                                     "regBlockClass":regModel.regBlockClass})
     first = 0
     for DPIFile in self.DPIFiles:
       if (first==0):
@@ -1211,7 +1234,11 @@ class BenchClass(BaseGeneratorClass):
     self.envParamDefs = []
     self.additionalTops = []
     self.topEnvHasRegisterModel = False
+    self.regModelPkg = ''
+    self.regBlockClass = ''
+    self.using_qvip = False
     self.mtlbReady = False
+    self.useBCR = False
     for parameterName in parametersDict:
       self.envParamDefs.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
@@ -1242,8 +1269,12 @@ class BenchClass(BaseGeneratorClass):
     template['envParamDefs'] = self.envParamDefs
     template['additionalTops'] = self.additionalTops
     template['topEnvHasRegisterModel'] = self.topEnvHasRegisterModel
+    template['regModelPkg'] = self.regModelPkg
+    template['regBlockClass'] = self.regBlockClass
     template['svLibNames'] = self.svLibNames
+    template['using_qvip'] = self.using_qvip
     template['mtlbReady'] = self.mtlbReady
+    template['useBCR'] = self.useBCR
     return template
 
   ## Overload of the create function - insert some conditional considerations
@@ -1251,8 +1282,12 @@ class BenchClass(BaseGeneratorClass):
     """Bench class specific create function - allows for the production of conditional files"""
     if self.inFactEnabled == True:
       self.conditional_array.append('infact_enabled')
+      if 'need_overlay' not in self.conditional_array:
+        self.conditional_array.append('need_overlay')
     if self.mtlbReady:
       self.conditional_array.append('mtlbReady')
+    if self.using_qvip and ('need_overlay' not in self.conditional_array):
+      self.conditional_array.append('need_overlay')
     super(BenchClass,self).create(desired_template,parser)
 
   def addVinfoDependency(self,name):
@@ -1305,10 +1340,10 @@ class BenchClass(BaseGeneratorClass):
     for hdl_module in self.qvip_hdl_modules:
       if unique_id_with_underscores == hdl_module.unique_id_with_underscores:
         hdl_module.agent_names.append(str(name).upper())       ## PYTHON3
-        #hdl_module.agent_activities.append(activity)
-        #hdl_module.agent_activities[(str(name).upper())] = activity
         hdl_module.agent_activities.update({(str(name).upper()):activity})
-        #hdl_module.agent_activities.append([(str(name).upper()):activity])
+    self.using_qvip = True
+    if 'using_qvip' not in self.conditional_array:
+      self.conditional_array.append('using_qvip')
 
   def addTopLevel(self,topName):
     """Add additional top-level module for simulation"""

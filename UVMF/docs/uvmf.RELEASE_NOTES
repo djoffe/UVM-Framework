@@ -2,6 +2,41 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
+2021.1    02/01/2021  General Updates:
+                        - Added two new tutorials under docs/generator_tutorials
+                          - ALU that uses QVIP and UVM register model
+                          - FPU that uses DPI-C
+                        - Added support for supplying switches to QFD flow
+                        - Corrected scorebaord function argument type mismatches
+
+                      Generator Updates:
+                        - Python 3 support added for RHEL8.
+                        - Multiple-dimension packed ports for interfaces now supported.
+                        - Register package name and register block class name can now be specified
+                          in environment YAML configuration.
+                        - Generation merge pragmas added to generated class files that allow for 
+                          externally defined methods.
+                        - Generation merge pragmas added to generated DPI-C files.
+                        - Generation merge pragma added to monitor BFM to allow for customizing
+                          reset detection in wait_for_reset task.
+                        - velrunopts.ini no longer generated.
+                        - Register model automatically velanalyzed to support back-door access
+                          of register model when using Veloce.
+                        - Generated hierarchical register model calls add_block for register 
+                          sub-blocks.
+
+                      Deprecation notice: 
+                        - Deprecation of the API interface to the code generator began in the 
+                          UVMF_2020.1 release with the removal of the API reference guide document.
+                          The --yaml switch can be used to convert legacy API files into YAML as
+                          described in section 5.1.1 of the "UVM Framework Users Guide".  
+
+                      Resolved enhancement and service request Jira items:
+                        UVM-1489, UVM-1486, UVM-1485, UVM-1483, UVM-1478, UVM-1477, UVM-1470, 
+                        UVM-1466, UVM-1465, UVM-1464, UVM-1462, UVM-1461, UVM-1458, UVM-1454, 
+                        UVM-1453, UVM-1451, UVM-1448, UVM-1446, UVM-1442, UVM-1339 
+
+
 2020.3_1  09/01/2020  Patch:
                         - Fixed UVM-1449: Bug in regeneration routine when running on Windows OS
 

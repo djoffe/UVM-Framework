@@ -50,6 +50,7 @@ import shutil
 # Determine addition to sys.path automatically based on script location
 # This means user does not have to explicitly set PYTHONPATH in order for this
 # script to work properly.
+
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python");
 # Only need python2 packages if using python2
 if sys.version_info[0] < 3:
@@ -62,12 +63,11 @@ from voluptuous import Invalid, MultipleInvalid
 from voluptuous.humanize import humanize_error
 from uvmf_version import version
 
-__version__ = version
-
 try:
   import yaml
 except ImportError:
   print("ERROR : yaml package not found.  See templates.README for more information")
+  print("Python version info:\n{}".format(sys.version))
   sys.exit(1)
 
 def merge_summary(merge,verbose=False):
@@ -205,7 +205,7 @@ class DataClass:
     return compClass
 
   ## Generate everything from the data structures
-  def buildElements(self,genarray):
+  def buildElements(self,genarray,verify=True):
     count = 0
     self.interfaceDict = {}
     try:
@@ -232,7 +232,7 @@ class DataClass:
       if util_comp not in self.used_ac_items:
         print("  WARNING : Utility component \""+util_comp+"\" was defined but never used. It will not be generated.")
     ## Verify that something was produced (possible that YAML input was empty or genarray had no matches)
-    if count==0:
+    if count==0 and verify:
       raise UserError("No output was produced!")
 
 
@@ -600,19 +600,28 @@ class DataClass:
           v = True
           pass
         if v:
-          env_def = self.data['environments'][etype]
           try:
-            rm = env_def['register_model'] 
+            rm = self.data['environments'][etype]['register_model'] 
           except KeyError:
             rm = None
             pass
         else:
           rm = None
         if not rm:
-          rm_name = None
+          rm_pkg = None
+          rm_block_class = None
         else:
-          rm_name = etype+'_rm'
-        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_name) 
+          try:
+            rm_pkg = rm['reg_model_package']
+          except KeyError:
+            rm_pkg = etype+"_reg_pkg"
+            pass
+          try:
+            rm_block_class = rm['reg_block_class']
+          except KeyError:
+            rm_block_class = etype+"_reg_model"
+            pass
+        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_pkg,rm_block_class) 
         env_def = self.data['environments'][etype]
         try:
           env_ap_list = env_def['analysis_ports']
@@ -862,6 +871,16 @@ class DataClass:
       pass
     if regInfo != None:
       try:
+        reg_model_pkg = regInfo['reg_model_package']
+      except KeyError:
+        reg_model_pkg = name+"_reg_pkg"
+        pass
+      try:
+        reg_blk_class = regInfo['reg_block_class']
+      except KeyError:
+        reg_blk_class = name+"_reg_model"
+        pass
+      try:
         maps = regInfo['maps']
       except KeyError:
         maps = None
@@ -928,7 +947,9 @@ class DataClass:
         busMap=mapName,
         useAdapter=use_adapter,
         useExplicitPrediction=use_explicit_prediction,
-        qvipAgent=qvip_agent)
+        qvipAgent=qvip_agent,
+        regModelPkg=reg_model_pkg,
+        regBlockClass=reg_blk_class)
     try:
       dpi_def = struct['dpi_define']
       ca = ""
@@ -1003,6 +1024,9 @@ class DataClass:
     struct = self.data['benches'][name]
     ## Get the name of the top-level environment
     top_env = struct['top_env']
+    ## Confirm top-level environment is defined
+    if top_env not in self.data['environments']:
+      raise UserError("Bench \"{}\" top-env of type \"{}\" is not defined".format(name,top_env))
     ## Top-level environment parameters
     try:
       env_params_list = struct['top_env_params']
@@ -1092,6 +1116,17 @@ class DataClass:
     try:
       rm = e['register_model']
       ben.topEnvHasRegisterModel = True
+      try:
+        rm_pkg = rm['reg_model_package']
+        ben.regModelPkg = e['register_model']['reg_model_package']
+      except KeyError:
+        ben.regModelPkg = top_env+"_reg_pkg"
+        pass
+      try:
+        ben.regBlockClass = e['register_model']['reg_block_class']
+      except KeyError:
+        ben.regBlockClass = top_env+"_reg_model"
+        pass
     except KeyError:
       ben.topEnvHasRegisterModel = False
       pass
@@ -1211,6 +1246,10 @@ class DataClass:
       ben.mtlbReady = (struct['mtlb_ready']=="True")
     except KeyError:
       pass
+    try:
+      ben.useBCR = (struct['use_bcr']=="True")
+    except KeyError:
+      ben.useBCR = False
     try:
       existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
@@ -1424,17 +1463,17 @@ class DataClass:
       if p['name'] not in dpn:
         raise UserError("Unable to find parameter \""+p['name']+"\" in definition of "+instanceType+" \""+definitionName+"\" as instance \""+instanceName+"\" in "+parentType+" \""+parentName+"\"")
 
-## When invoked, this script can read a series of provided YAML-based configuration files and parse them, building
-## up a database of information on the contained components. Each component will have an associated uvmf_gen class
-## created around it based on the contents.  
+def run():
+  ## When invoked, this script can read a series of provided YAML-based configuration files and parse them, building
+  ## up a database of information on the contained components. Each component will have an associated uvmf_gen class
+  ## created around it based on the contents.  
 
-## User can specify that a particular element(s) be created with the -g/--generate switch but the default is to produce
-## everything (i.e. call "<element>.create()" against all defined elements).  Any item passed in via --generate 
-## that matches the name of a defined element will be generated (if environments/benches/interfaces are named the
-## same the script will match all of them)
-
-if __name__ == '__main__':
+  ## User can specify that a particular element(s) be created with the -g/--generate switch but the default is to produce
+  ## everything (i.e. call "<element>.create()" against all defined elements).  Any item passed in via --generate 
+  ## that matches the name of a defined element will be generated (if environments/benches/interfaces are named the
+  ## same the script will match all of them)
   search_paths = ['.']
+  __version__ = version
   uvmf_parser = UVMFCommandLineParser(version=__version__,usage="yaml2uvmf.py [options] [yaml_file1 [yaml_fileN]]")
   uvmf_parser.parser.add_option("-f","--file",dest="configfile",action="append",help="Specify a file list of YAML configs. Relative paths relative to the invocation directory")
   uvmf_parser.parser.add_option("-F","--relfile",dest="rel_configfile",action="append",help="Specify a file list of YAML configs. Relative paths relative to the file list itself")
@@ -1449,6 +1488,8 @@ if __name__ == '__main__':
   uvmf_parser.parser.add_option("--merge_debug",dest="merge_debug",action="store_true",help="Provide intermediate unmerged output directory for debug purposes. Debug directory can be specified by --dest_dir switch.",default=False)
   uvmf_parser.parser.add_option("--merge_verbose",dest="merge_verbose",action="store_true",help="Output more verbose messages during the merge operation for debug purposes.",default=False)
   (options,args) = uvmf_parser.parser.parse_args()
+  if options.enable_pdb or options.debug:
+    print("Python version info:\n"+sys.version)
   if options.enable_pdb == True:
     import pdb
     pdb.set_trace()
@@ -1481,7 +1522,7 @@ if __name__ == '__main__':
   for cfg in configfiles:
     dataObj.parseFile(cfg)
   dataObj.validate()
-  dataObj.buildElements(options.gen_name)
+  dataObj.buildElements(options.gen_name,verify=options.merge_export_yaml==None)
   if options.merge_source or options.merge_import_yaml:
     if not options.merge_import_yaml:
       if not (options.merge_no_backup or options.merge_export_yaml):
@@ -1493,6 +1534,11 @@ if __name__ == '__main__':
         print("Parsing customizations from {0} ...".format(options.merge_source))
       # Parse old source for pragma blocks. Resulting object will contain data structure of this activity
       parse = Parse(quiet=options.quiet,cleanup=options.merge_import_yaml,root=os.path.abspath(os.path.normpath(options.merge_source)))
+      # Need to first produce a list of directories in the new output. Only validate files in the merge source
+      # that are in the equivalent directories (to do otherwise would be a waste of time)
+      parse.collect_directories(new_root_dir=options.dest_dir,old_root_dir=options.merge_source)
+      # Traverse through the merged source directory structure. This will only collect data on
+      # directories that were just re-generated, nothing outside of that area. 
       parse.traverse_dir(options.merge_source)
       old_root = parse.root
       if options.merge_export_yaml:
@@ -1540,4 +1586,5 @@ if __name__ == '__main__':
           print("    \"{0}\"".format(l))
       print("  Use backup or revision control source to recover the original content of these blocks")
 
-
+if __name__ == '__main__':
+  run()

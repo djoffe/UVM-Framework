@@ -9,7 +9,7 @@ input rst;
 input in_signal;
 output out_signal;
 
-bit out_signal_o;
+reg out_signal_o;
 
 always @(posedge clk) begin
    if (rst) begin

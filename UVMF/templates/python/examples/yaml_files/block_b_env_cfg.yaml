@@ -163,6 +163,8 @@ uvmf:
       register_model:
         use_adapter: "True"
         use_explicit_prediction: "True"
+        reg_model_package: "blkb_reg_pkg"
+        reg_block_class: "blkb_reg_block"
         maps:
           - name: "bus_map"
             interface: "control_plane_in"

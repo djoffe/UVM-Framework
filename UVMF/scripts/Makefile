@@ -19,8 +19,12 @@ else
 endif
 
 # VRM Variables, used in the 'vrun' target
-VRUN_ARGS ?= -html
-RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
+VRUN_ARGS ?= 
+ifeq ($(VRUN_BCR),1)
+  RMDB_PATH ?= $(UVMF_HOME)/scripts/default_bcr.rmdb
+else
+	RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
+endif
 EXTRA_VRUN_ARGS ?= 
 VRUN_RUNNABLE ?= 
 VRUN_DISABLE_TIMEOUTS ?= 0
@@ -164,8 +168,11 @@ LINK_ARGS += $(LINK_ARGS_$(USE_VELOCE_PROFILER))
 
 # one for debug (full visibility).  If Visualizer is enabled then use
 # -debug switch (QFD flow) for batch mode
+
+VIS_DEBUG_VOPT_ARGS ?= -debug
+QIS_VOPT_ARGS ?= 
 BATCH_VOPT_ARGS_0 = 
-BATCH_VOPT_ARGS_1 = -debug -designfile design.bin
+BATCH_VOPT_ARGS_1 = $(QIS_VOPT_ARGS) $(VIS_DEBUG_VOPT_ARGS) -designfile design.bin
 BATCH_VOPT_ARGS += $(BATCH_VOPT_ARGS_$(USE_VIS))
 
 DEBUG_VOPT_ARGS += +acc 
@@ -187,7 +194,7 @@ VISWAVE_TRLOG = $(VISWAVE_TRLOG_$(ENABLE_TRLOG))
 VIS_MEM_SIZE ?= 1024
 VIS_DUMP_RTL ?= +signal+report+memory=$(VIS_MEM_SIZE)$(VISWAVE_TRLOG)
 VIS_DUMP_TB_0 = 
-VIS_DUMP_TB_1 = +class+uvm_schematic+msgmode=both+displaymsgmode=both
+VIS_DUMP_TB_1 = +class+uvm_schematic+msg+assertion
 VIS_DUMP_TB  ?= $(VIS_DUMP_TB_$(USE_VIS_UVM))
 VIS_DUMP_OPTIONS ?= $(VIS_DUMP_RTL)$(VIS_DUMP_TB)
 
@@ -275,11 +282,7 @@ XWAVE_CMD_1_1 = +velrun+xwave_on +velrun+xwave_select_all_groups "+velrun+xwave_
 XWAVE_CMD   = $(XWAVE_CMD_$(USE_VELOCE)_$(USE_XWAVE))
 BATCH_VSIM_ARGS += $(XWAVE_CMD)
 
-VSIM_VIS_1_1_0 = -qwavedb=+signal+memory=5000+transaction+class+report+assertion
-VSIM_VIS_1_0_1 = -qwavedb=+signal+memory=5000+transaction+class+report+assertion $(XWAVE_CMD)
-VSIM_VIS   = $(VSIM_VIS_$(USE_VELOCE)_$(USE_AUTOUP)_$(USE_XWAVE))
-BATCH_VSIM_ARGS += $(VSIM_VIS)
-
+BATCH_VSIM_ARGS += $(EXTRA_VIS_QWAVEDB_ARGS)
 
 all: info
 info:
@@ -416,10 +419,14 @@ help:
 clean::
 	@-rm -rfv *~ *.ucdb vsim.dbg *.vstf *.log work *.mem *.transcript.txt certe_dump.xml *.wlf transcript covhtmlreport VRMDATA
 	@-rm -rfv design.bin qwave.db dpiheader.h visualizer*.ses vrmhtmlreport
-	@-rm -rfv veloce.med veloce.wave tbxbindings.h modelsim.ini edsenv
+	@-rm -rfv veloce.med veloce.wave tbxbindings.h edsenv
 	@-rm -rfv sv_connect.*
 	@-rm -rfv *.o *.so
 	@-rm -rfv covercheck_results
+	@-rm -rfv qrun.out *.qf *.vf
+
+realclean:: clean
+	@-rm -rfv modelsim.ini
 
 libs:
 	test -e work || vlib work 
@@ -565,6 +572,8 @@ debug gui: libs build link optimize gui_run
 
 vrun:
 	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(VRUN_TIMEOUT_CMD) $(EXTRA_VRUN_ARGS)
+	# This generates the HTML status output
+	vrun -status -html -rmdb $(RMDB_PATH)
 
 ## This target runs covercheck verify using an existing work library and UCDB
 COVERCHECK_TOP ?= verilog_dut

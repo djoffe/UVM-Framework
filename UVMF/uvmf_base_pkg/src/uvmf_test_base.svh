@@ -1,5 +1,7 @@
 //----------------------------------------------------------------------
-//   Copyright 2013 Mentor Graphics Corporation
+//   Copyright 2013-2021 Siemens Corporation
+//   Digital Industries Software
+//   Siemens EDA
 //   All Rights Reserved Worldwide
 //
 //   Licensed under the Apache License, Version 2.0 (the
@@ -47,7 +49,7 @@ class uvmf_test_base #(
    type TOP_LEVEL_SEQ_T
 ) extends uvm_test;
 
-  `uvm_component_param_utils( uvmf_test_base #(CONFIG_T, ENV_T, TOP_LEVEL_SEQ_T));
+  `uvm_component_param_utils( uvmf_test_base #(CONFIG_T, ENV_T, TOP_LEVEL_SEQ_T))
 
   // Instantiate the top level configuration, environment and sequence.
   CONFIG_T        configuration;
@@ -91,9 +93,6 @@ class uvmf_test_base #(
     environment.set_config(configuration);
     uvm_config_db#(CONFIG_T)::set(null,UVMF_CONFIGURATIONS, "TOP_ENV_CONFIG",configuration);
 
-
-    `uvm_info("CFG",configuration.convert2string(),UVM_HIGH);
-
   endfunction
 
   // FUNCTION: end_of_elaboration_phase
@@ -120,6 +119,7 @@ class uvmf_test_base #(
 // This task manages the test objection and starts the top level sequence.
   virtual task run_phase( uvm_phase phase );
     phase.raise_objection(this, "Objection raised by test_top");
+    `uvm_info("CFG",configuration.convert2string(),UVM_HIGH);
     top_level_sequence.start(null);
     phase.drop_objection(this, "Objection dropped by test_top");
   endtask

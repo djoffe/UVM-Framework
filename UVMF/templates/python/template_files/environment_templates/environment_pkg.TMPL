@@ -32,7 +32,7 @@ package {{name}}_env_pkg;
   import {{agent}}_pkg_hdl::*;
 {% endfor %}
 {% for regModel in regModels %}
-  import {{name}}_reg_pkg::*;
+  import {{regModel.regModelPkg}}::*;
 {% endfor %}
 {% for sub_env in env_pkgs %}
   import {{sub_env}}_env_pkg::*;
@@ -77,5 +77,8 @@ package {{name}}_env_pkg;
   // pragma uvmf custom package_item_additional end
 
 endpackage
+
+// pragma uvmf custom external begin
+// pragma uvmf custom external end
 
 {% endblock %}

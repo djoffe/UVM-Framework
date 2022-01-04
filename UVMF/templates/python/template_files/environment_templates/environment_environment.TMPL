@@ -61,7 +61,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endfor %}
 
 {% for scoreboard in scoreboards %}
-  typedef {{scoreboard.sType}} #(.T({{scoreboard.tType}}){% if scoreboard.parameters|length > 0 %},{% endif %}{% for param in scoreboard.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}}}{% endfor %}{% if scoreboard.parameters|length > 0 %}{% endif %})  {{scoreboard.name}}_t;
+  typedef {{scoreboard.sType}} #(.T({{scoreboard.tType}}){% if scoreboard.parameters|length > 0 %},{% endif %}{% for param in scoreboard.parameters %}.{{param.name}}({{param.value}}){% if not loop.last %},{% endif %}{% endfor %}{% if scoreboard.parameters|length > 0 %}{% endif %})  {{scoreboard.name}}_t;
   {{scoreboard.name}}_t {{scoreboard.name}};
 {% endfor %}
 
@@ -231,5 +231,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
   endfunction
 
 endclass
+
+// pragma uvmf custom external begin
+// pragma uvmf custom external end
 
 {% endblock %}

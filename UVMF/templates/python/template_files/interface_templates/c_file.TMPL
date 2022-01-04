@@ -10,12 +10,19 @@
 {% endblock %}
 {% block contents %}
 #include <stdio.h>
+// pragma uvmf custom header begin
+// pragma uvmf custom header end
 
 {% for DPIImport in DPIImports %}
 {{DPIImport.cType}} {{DPIImport.name}} {{DPIImport.cArgs}}
 {
+// pragma uvmf custom {{DPIImport.name}} begin
         printf("Inside {{DPIImport.name}}\n");
+// pragma uvmf custom {{DPIImport.name}} end
 }
 {% endfor %} 
-{% endblock %}
 
+// pragma uvmf custom additional begin
+// pragma uvmf custom additional end
+
+{% endblock %}

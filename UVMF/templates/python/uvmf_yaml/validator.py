@@ -139,6 +139,7 @@ class BenchValidator(BaseValidator):
       Optional('interface_params'): [ interfaceParamSchema ],
       Optional('imports'): [ self.importSchema ],
       Optional('additional_tops'): [ str ],
+      Optional('use_bcr'): Any('True','False'),
     }
     self.schema = Schema(mainSchema)
 
@@ -192,7 +193,8 @@ class QVIPEnvValidator(BaseValidator):
     }
     mainSchema = {
       Required('agents'): [ agentsSchema ],
-      Optional('type'): Any("qvip","cvip")
+      Optional('type'): Any("qvip","cvip"),
+      Optional('location'): str
     }
     self.schema = Schema(mainSchema)
 
@@ -224,7 +226,9 @@ class EnvironmentValidator(BaseValidator):
     regModelSchema = {
       Optional('use_adapter'): Any("True","False"),
       Optional('use_explicit_prediction'): Any("True","False"),
-      Optional('maps'): [ regModelMapSchema ]
+      Optional('maps'): [ regModelMapSchema ],
+      Optional('reg_model_package'): str,
+      Optional('reg_block_class'): str
     }
     scoreboardSchema = {
       Required('name'): str,
@@ -315,7 +319,7 @@ class InterfaceValidator(BaseValidator):
   def initializeSchema(self):
     portSchema = { 
       Required('name'): str,
-      Required('width'): str,
+      Required('width'): Any(str,list),
       Required('dir'): str ,
       Optional('reset_value'): str 
     }

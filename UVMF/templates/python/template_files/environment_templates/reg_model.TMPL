@@ -1,4 +1,4 @@
-{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/registers/{{env_name}}_reg_pkg.sv" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{env_name}}_env_pkg/registers/{{regModelPkg}}.sv" %}
 {% set conditional = "reg_model" %}
 {% extends "base_template.TMPL" %}
 
@@ -11,11 +11,11 @@
 {% endblock %}
 {% block contents %}
 
-package {{env_name}}_reg_pkg;
+package {{regModelPkg}};
 
    import uvm_pkg::*;
 {% for sub_env_reg_package in subEnvironmentRegPackages %}
-   import {{sub_env_reg_package}}_reg_pkg::*;
+   import {{sub_env_reg_package}}::*;
 {% endfor %}
 // pragma uvmf custom additional_imports begin
 // pragma uvmf custom additional_imports end
@@ -117,11 +117,11 @@ package {{env_name}}_reg_pkg;
 // pragma uvmf custom define_block_map_coverage_class end
 
    //--------------------------------------------------------------------
-   // Class: {{env_name}}_reg_model
+   // Class: {{regBlockClass}}
    // 
    //--------------------------------------------------------------------
-   class {{env_name}}_reg_model extends uvm_reg_block;
-      `uvm_object_utils({{env_name}}_reg_model)
+   class {{regBlockClass}} extends uvm_reg_block;
+      `uvm_object_utils({{regBlockClass}})
 // pragma uvmf custom instantiate_registers_within_block begin
 {% if busMap != None %}
       rand {{env_name}}_example_reg0 example_reg0;
@@ -134,8 +134,8 @@ package {{env_name}}_reg_pkg;
       {{env_name}}_{{busMap}}_coverage {{busMap}}_cg;
 {% endif %}
 {% for sub_env in subEnvironments %}
-{% if sub_env.regSubBlock != None %}
-      {{sub_env.envPkg}}_reg_model {{sub_env.name}}_rm;
+{% if sub_env.regModelPkg != None %}
+      {{sub_env.regBlockClass}} {{sub_env.name}}_rm;
 {% endif %}
 {% endfor %}
 
@@ -176,9 +176,10 @@ package {{env_name}}_reg_pkg;
 {% endif %}
 
 {% for sub_env in subEnvironments %}
-{% if sub_env.regSubBlock != None %}
+{% if sub_env.regModelPkg != None %}
          {{sub_env.name}}_rm = new("{{sub_env.name}}_rm");
          {{sub_env.name}}_rm.build();
+         add_block({{sub_env.name}}_rm);
 {% endif %}
 {% endfor %}
  
@@ -200,5 +201,7 @@ package {{env_name}}_reg_pkg;
 
 endpackage
 
-{% endblock %}
+// pragma uvmf custom external begin
+// pragma uvmf custom external end
 
+{% endblock %}

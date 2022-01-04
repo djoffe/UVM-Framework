@@ -9,7 +9,6 @@ uvmf:
         type: 'wb_transaction #(.WB_DATA_WIDTH(WB_DATA_WIDTH), .WB_ADDR_WIDTH(WB_ADDR_WIDTH))'
       - name: ahb_ap
         type: ahb_transaction
-      existing_library_component: 'True'
       parameters:
       - name: WB_DATA_WIDTH
         type: int

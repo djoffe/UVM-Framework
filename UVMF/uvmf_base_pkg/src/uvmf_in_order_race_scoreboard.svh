@@ -1,6 +1,7 @@
 //----------------------------------------------------------------------
-//   Vijay Gill vijay_gill@mentor.com
-//   Copyright 2013 Mentor Graphics Corporation
+//   Copyright 2013-2021 Siemens Corporation
+//   Digital Industries Software
+//   Siemens EDA
 //   All Rights Reserved Worldwide
 //
 //   Licensed under the Apache License, Version 2.0 (the

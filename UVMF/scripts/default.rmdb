@@ -284,7 +284,7 @@
       <command>quit -f</command>
     </localfile>
     <execScript launch="exec" mintimeout="(%COVERCHECK_TIMEOUT%)" usestderr="(%USESTDERR%)">
-      <command>make -f (%VRUNDIR%)/Makefile covercheck UVMF_VIP_LIBRARY_HOME=(%VRUNDIR%)/../../../verification_ip UVMF_PROJECT_DIR=(%VRUNDIR%)/.. COVERCHECK_BUILD_DIR=(%CC_BUILD_DIR%) COVERCHECK_TOP=(%TOP_DU_NAME%) COVERCHECK_UCDB=(%mergefile%) (%EXTRA_COVERCHECK_OPTIONS%)</command>
+      <command>make -f (%VRUNDIR%)/Makefile UVMF_VIP_LIBRARY_HOME=../../../../../../../verification_ip UVMF_PROJECT_DIR=../../../../.. covercheck COVERCHECK_BUILD_DIR=(%CC_BUILD_DIR%) COVERCHECK_TOP=(%TOP_DU_NAME%) COVERCHECK_UCDB=(%mergefile%) (%EXTRA_COVERCHECK_OPTIONS%)</command>
       <command>vsim -c -viewcov (%mergefile%) -do apply_covercheck_exclusions.do</command>
     </execScript>
   </runnable>

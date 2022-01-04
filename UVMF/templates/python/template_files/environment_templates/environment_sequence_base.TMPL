@@ -18,7 +18,7 @@ class {{name}}_env_sequence_base extends uvmf_sequence_base #(uvm_sequence_item)
   {% for regModel in regModels %}
 // Handle to the environments register model
 // This handle needs to be set before use.
-  {{name}}_reg_model  reg_model;
+  {{regModel.regBlockClass}}  reg_model;
 {% endfor %}
 
   // pragma uvmf custom class_item_additional begin
@@ -29,5 +29,8 @@ class {{name}}_env_sequence_base extends uvmf_sequence_base #(uvm_sequence_item)
   endfunction
 
 endclass
+
+// pragma uvmf custom external begin
+// pragma uvmf custom external end
 
 {% endblock %}

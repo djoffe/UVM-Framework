@@ -119,7 +119,7 @@ $(UVMF_PROJECT_DIR)/tb/tests/alu_tests_pkg.sv
 # pragma uvmf custom dut_files begin
 # UVMF_CHANGE_ME : Reference Verilog DUT source.
 alu_VERILOG_DUT =\
-$(UVMF_PROJECT_DIR)/rtl/verilog/alu.v
+$(UVMF_PROJECT_DIR)/rtl/verilog/alu.sv
 
 
 # pragma uvmf custom dut_files end
