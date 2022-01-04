@@ -175,7 +175,7 @@ class Merge(Base):
           if self.old_fname not in self.missing_blocks:
             self.missing_blocks[self.old_fname] = [ l ]
           else:
-            self.missinb_blocks[self.old_fname].append(l)
+            self.missing_blocks[self.old_fname].append(l)
         else:
           raise UserError('Potential loss of hand edits:\n  File: {0}\n  Label: "{1}"\nUse --merge_skip_missing_blocks to proceed and produce list of labels at end'.format(self.old_fname,l))
 

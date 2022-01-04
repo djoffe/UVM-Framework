@@ -110,8 +110,8 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // Transactions received through {{export.name}} initiate the execution of this function.
   // This function performs prediction of DUT output values based on DUT input, configuration and state
   virtual function void write_{{export.name}}({{export.tType}} t);
-    {{export.name}}_debug = t;
     // pragma uvmf custom {{export.name}}_predictor begin
+    {{export.name}}_debug = t;
     `uvm_info("PRED", "Transaction Received through {{export.name}}", UVM_MEDIUM)
     `uvm_info("PRED", {"            Data: ",t.convert2string()}, UVM_FULL)
 {% if ports|length > 0 %}

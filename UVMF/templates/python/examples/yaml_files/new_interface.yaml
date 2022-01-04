@@ -11,7 +11,7 @@ uvmf:
       reset_assertion_level: "True"
       ## Set this flag to disable generation of this interface
 #      existing_library_component : "True"
-      infact_ready: "True"
+      veloce_ready: "True"
 #      parameters:
 #        - name: "IF_PARAMETER"
 #          type: "parameter_type"

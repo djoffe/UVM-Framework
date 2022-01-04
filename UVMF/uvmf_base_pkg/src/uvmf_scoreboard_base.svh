@@ -105,13 +105,13 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scorebo
       end
    endfunction
 
-  // FUNCTION: enable_scoarboard
+  // FUNCTION: enable_scoreboard
   // Used to enable the scoreboard.
   function void enable_scoreboard();
      scoreboard_enabled=1;
   endfunction
 
-  // FUNCTION: disable_scoarboard
+  // FUNCTION: disable_scoreboard
   // Used to disable the scoreboard.
   function void disable_scoreboard();
      scoreboard_enabled=0;

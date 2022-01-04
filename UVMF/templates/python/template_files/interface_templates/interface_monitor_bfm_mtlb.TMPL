@@ -242,9 +242,15 @@ import {{name}}_pkg::*;
 {% endfor %}
 {% endif %}
     // pragma uvmf custom do_monitor begin
+{% if veloceReady %}
 {% for txn in transVars %}
        {{name}}_monitor_struct.{{txn.name}} = {{txn.name}}_i;
 {% endfor %}
+{% else %}
+{% for txn in transVars %}
+       monitored_trans.{{txn.name}} = {{txn.name}}_i;
+{% endfor %}
+{% endif %}
     // pragma uvmf custom do_monitor end
   endtask         
   

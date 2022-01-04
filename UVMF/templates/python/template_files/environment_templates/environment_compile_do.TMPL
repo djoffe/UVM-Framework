@@ -47,7 +47,7 @@ eval $cmd
 quietly set cmd [format "vlog -timescale 1ps/1ps +incdir+%s/{{environment_location}}/{{name}}_env_pkg" $env(UVMF_VIP_LIBRARY_HOME)]
 {% if regModels|length > 0 %}
 {% for regModel in regModels %}
-quietly set cmd [format "%s %s/{{environment_location}}/{{name}}_env_pkg/registers/{{name}}_reg_pkg.sv" $cmd $env(UVMF_VIP_LIBRARY_HOME)]
+quietly set cmd [format "%s %s/{{environment_location}}/{{name}}_env_pkg/registers/{{regModel.regModelPkg}}.sv" $cmd $env(UVMF_VIP_LIBRARY_HOME)]
 {% endfor %}
 {% endif %}
 quietly set cmd [format "%s %s/{{environment_location}}/{{name}}_env_pkg/{{name}}_env_pkg.sv" $cmd $env(UVMF_VIP_LIBRARY_HOME)]

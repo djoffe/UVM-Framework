@@ -18,13 +18,16 @@ except IndexError:
     stim_name = None
 
 #TODO need to make this list more complete
-sizes = {'byte': 8,
+sizes = {'bit': 1,
+         'bit signed': 1,
+         'byte': 8,
          'byte unsigned': 8,
          'shortint': 16,
          'shortint unsigned': 16, 
-         'bit': 1,
-         'bit signed': 1
-         
+         'int': 32,
+         'int unsigned': 32,
+         'longint': 64,  
+         'longint unsigned': 64
          }
 
 def calc_port_size(funcType, packedList):
