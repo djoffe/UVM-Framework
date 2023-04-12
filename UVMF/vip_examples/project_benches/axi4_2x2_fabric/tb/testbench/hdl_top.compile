@@ -7,5 +7,3 @@ src:
   - hdl_top.sv
 incdir:
   - $QUESTA_MVC_HOME/questa_mvc_src/sv
-options:
-  - -timescale 1ps/1ps

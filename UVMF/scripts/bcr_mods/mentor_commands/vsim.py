@@ -7,7 +7,7 @@ class Vsim(Generator):
     super(Vsim,self).__init__
     self.keys = '''
                  cmd         arch    mode         tops    logfile      seed     msglimit    coverage_run    lib           test                        vrm_in_use
-                 verbosity   extra   mvc_switch   vis_wave     trlog    full_do     suppress        modelsimini   permit_unmatched_virt_intf          lint
+                 verbosity   vsim_extra  vsim_overlay_extra mvc_switch   vis_wave     trlog    full_do     suppress        modelsimini   permit_unmatched_virt_intf          lint
                 '''.split()
 
   def set_cmd(self,v={}):
@@ -44,6 +44,18 @@ class Vsim(Generator):
       debug_str = ''
     return (mode_str, run_cmd, debug_str)
 
+  def set_vsim_extra(self,v={}):
+    if 'vsim_extra' in v and v['vsim_extra']:
+      return v['vsim_extra']
+    else:
+      return ''
+
+  def set_vsim_overlay_extra(self,v={}):
+    if 'vsim_overlay_extra' in v and v['vsim_overlay_extra']:
+      return v['vsim_overlay_extra']
+    else:
+      return ''
+
   def elaborate(self,v={}):
     self.cmd                         = self.set_cmd(v)
     self.arch                        = self.set_arch(v)
@@ -55,7 +67,8 @@ class Vsim(Generator):
     self.lib                         = self.set_lib(v)
     self.test                        = self.set_test(v)
     self.verbosity                   = self.set_verbosity(v)
-    self.extra                       = self.set_extra(v)
+    self.vsim_extra                  = self.set_vsim_extra(v)
+    self.vsim_overlay_extra          = self.set_vsim_overlay_extra(v)
     self.mvc_switch                  = self.set_mvc_switch(v)
     self.mode,self.run,self.debug    = self.set_mode_run_debug(v)
     self.vis_wave                    = self.set_vis_wave(v)

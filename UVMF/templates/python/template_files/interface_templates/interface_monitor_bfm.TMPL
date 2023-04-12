@@ -116,7 +116,7 @@ end
   // ****************************************************************************              
   task do_wait_for_reset(); 
   // pragma uvmf custom reset_condition begin
-    wait ( {{reset}}_i == {% if resetAssertionLevel %}0{% else %}1{% endif %} ) ;                                                              
+    wait ( {{reset}}_i === {% if resetAssertionLevel %}0{% else %}1{% endif %} ) ;                                                              
     @(posedge {{clock}}_i) ;                                                                    
   // pragma uvmf custom reset_condition end                                                                
   endtask    
@@ -216,7 +216,7 @@ end
     //
     // Reference code;
     //    How to wait for signal value
-    //      while (control_signal == 1'b1) @(posedge {{clock}}_i);
+    //      while (control_signal === 1'b1) @(posedge {{clock}}_i);
     //    
     //    How to assign a struct member, named xyz, from a signal.   
     //    All available input signals listed.
@@ -233,7 +233,7 @@ end
     //
     // Reference code;
     //    How to wait for signal value
-    //      while (control_signal == 1'b1) @(posedge {{clock}}_i);
+    //      while (control_signal === 1'b1) @(posedge {{clock}}_i);
     //    
     //    How to assign a transaction variable, named xyz, from a signal.   
     //    All available input signals listed.

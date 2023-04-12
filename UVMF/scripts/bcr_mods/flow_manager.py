@@ -221,7 +221,7 @@ class Flow(object):
           continue
         else:
           ## Error, we cannot resolve this variable reference
-          self.logger.error("In flow \"{}\" step \"{}\", unable to resolve variable \"{}\"".format(flow_name,step_name,var))
+          self.logger.error("In flow \"{}\" step \"{}\", while evaluating \"{}\", unable to resolve variable \"{}\"".format(flow_name,step_name,var_name,var))
           sys.exit(1)
       ## Check for recursion
       if var in self.variable_stack:
@@ -293,7 +293,7 @@ class Flow(object):
         else:
           self.elaborate_variable(flow_name,step_name,var_name,step['variables'],listing=listing)     
 
-  def build_commands(self,flow_name,step_names):
+  def build_commands(self,flow_name,step_names,options_tuple):
     """
     Build up command-lines for the given steps of the given flow by extracting the data from the specified command class
     """
@@ -317,6 +317,25 @@ class Flow(object):
         self.logger.error("Flow \"{}\" step \"{}\" was unable to import the command module \"{}\" from package \"{}\"\n       Consider adding a path entry in your flow's 'option':'command_package_paths' array (see documentation for details)".format(flow_name,step_name,step['command_module'],step['command_package']))
         sys.exit(1)
       num = num + 1
+      if (options_tuple):
+        # If any options were pulled from the file lists, these need to be incorporated into the variables list
+        # so that the command modules can find them. Build this up now and add it.
+        compile_file_options = {}
+        for ot in options_tuple:
+          ## entry[0] is the compile file origin, entry[1] is the option set
+          o = ot[1]
+          ## the option might be a simple string, or it might be a key/value pair where key=command name, value=options for that command
+          ## If the option is a simple string, append this to the "__all__" entry
+          if (isinstance(o,str)):
+            if '__all__' not in compile_file_options:
+              compile_file_options['__all__'] = ''
+            compile_file_options['__all__'] = compile_file_options['__all__']+' '+o
+          ## option is a list, meaning entry[0] is the command to modify, entry[1] is the option
+          if (isinstance(o,list)):
+            if o[0] not in compile_file_options:
+              compile_file_options[o[0]] = ''
+            compile_file_options[o[0]] = compile_file_options[o[0]] +' '+o[1]
+        step['variables']['compile_file_options'] = compile_file_options
       commands.append({'f':flow_name,
                        's':step_name,
                        'n':num,

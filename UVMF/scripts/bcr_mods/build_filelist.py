@@ -178,7 +178,7 @@ class Builder(object):
           self.process_ifdef_src_entry(f,dir_name,full_fname,fname,lib_name)
     if 'options' in yaml_data:
       for s in yaml_data['options']:
-        if isinstance(s,str):
+        if isinstance(s,str) or isinstance(s,list):
           self.process_options_entry(s,dir_name,full_fname,fname,lib_name)
         else:
           self.process_ifdef_options_entry(s,dir_name,full_fname,fname,lib_name)
@@ -439,35 +439,6 @@ class Builder(object):
           ofh.write("  "+ps+"\n")
         ofh.write("\n")
         last_source = None
-        if data['options_tuple']:
-          options = []
-          for i in data['options_tuple']:
-            # Options may be present as stand-alone list entries or as a list with element 0 a key and element 1 a value.
-            # If its a stand-alone item they will be used across all file lists. Any tuple elements will only be applied
-            # if element 0 matches the current key.
-            src = i[0]
-            val = i[1]
-            if type(val) is list:
-              key = val[0]
-              val = val[1]
-            else:
-              key = None
-            if (key == k) or (key == None):
-              options.append((src,val))
-          if len(options) > 0:
-            last_source = None
-            ofh.write("// ********** Options **********\n")
-            for i in options:
-              if (i[0] != last_source):
-                if printfullnodes:
-                  lineage = self.top_node.find_child(i[0]).find_lineage()
-                  lineage.reverse()
-                  for n in lineage:
-                    ofh.write("// From {}\n".format(repr(n)))
-                else:
-                  ofh.write("\n// From {}\n".format(i[0]))
-                last_source = i[0]
-              ofh.write(  i[1]+"\n")
         ofh.close()
         self.logger.debug("Wrote file list {}".format(output))
     return files_written

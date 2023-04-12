@@ -74,8 +74,10 @@ class uvmf_parameterized_agent #(
    type DRIVER_T,
    type MONITOR_T,
    type COVERAGE_T,
-   type TRANS_T
-) extends uvm_agent;
+   type TRANS_T,
+   type SEQUENCER_T = uvm_sequencer#(TRANS_T),
+   type BASE_T = uvm_agent
+   ) extends BASE_T;
 
   // Register this component with the factory
   `uvm_component_param_utils(uvmf_parameterized_agent #(
@@ -83,14 +85,13 @@ class uvmf_parameterized_agent #(
      DRIVER_T,
      MONITOR_T,
      COVERAGE_T,
-     TRANS_T
+     TRANS_T,
+     SEQUENCER_T
   ))
 
   // Instantiation of the components
-  typedef uvm_sequencer #(TRANS_T) sequencer_t;
-
   CONFIG_T    configuration;
-  sequencer_t sequencer;
+  SEQUENCER_T sequencer;
   DRIVER_T    driver;
   MONITOR_T   monitor;
   COVERAGE_T  coverage;
@@ -145,10 +146,10 @@ class uvmf_parameterized_agent #(
      // Sequencer
      // Construct a sequencer and driver only if agent is in active mode
      if (configuration.active_passive == ACTIVE) begin : is_active
-       sequencer = new("sequencer",this);
+       sequencer = SEQUENCER_T::type_id::create("sequencer",this);
        // Automatically place the agents sequencer in the uvm_config_db with the UVMF_SEQUENCERS scope using the
        // same field name as the driver bfm interface used by this agent.
-       uvm_config_db #( sequencer_t )::set( null , UVMF_SEQUENCERS , configuration.interface_name, sequencer );
+       uvm_config_db #( SEQUENCER_T )::set( null , UVMF_SEQUENCERS , configuration.interface_name, sequencer );
        // Driver
        if ( driver == null ) begin : driver_null_check
          driver = DRIVER_T::type_id::create({agent_name,"_driver"},this);

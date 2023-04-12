@@ -1,4 +1,4 @@
-{% set fname = "project_benches/{{name}}/tb/testbench/hdl_top.compile" %}
+{% set fname = "{{bench_location}}/{{name}}/tb/testbench/hdl_top.compile" %}
 {% block description %}
 {% endblock %}
 {% block contents %}
@@ -9,7 +9,7 @@ needs:
   - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg_hdl.compile
   - ../parameters/{{name}}_parameters_pkg.compile
 {% for bfm in bfm_pkgs %}
-  - ../../../../verification_ip/interface_packages/{{bfm}}_pkg/{{bfm}}_hdl.compile
+  - ../../../{{relative_bench_from_cwd}}/{{vip_location}}/{{interface_location}}/{{bfm}}_pkg/{{bfm}}_hdl.compile
 {% endfor %}
 src:
   - hdl_top.sv

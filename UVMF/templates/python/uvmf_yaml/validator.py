@@ -135,6 +135,7 @@ class BenchValidator(BaseValidator):
       Optional('use_dpi_link'): str,
       Optional('reset_duration'): str,
       Optional('active_passive'): [ activePassiveSchema ],
+      Optional('active_passive_default'): Any('ACTIVE','PASSIVE'),
       Optional('parameters'): [ self.parameterDefSchema ],
       Optional('top_env_params'):  [ self.parameterUseSchema ],
       Optional('interface_params'): [ interfaceParamSchema ],

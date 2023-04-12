@@ -93,6 +93,10 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endif %}
 {% endfor %}
 
+
+  typedef uvmf_virtual_sequencer_base #(.CONFIG_T({{name}}_env_configuration{{macro.paramUse(paramDefs)|indent(22)}})) {{name}}_vsqr_t;
+  {{name}}_vsqr_t vsqr;
+
   // pragma uvmf custom class_item_additional begin
   // pragma uvmf custom class_item_additional end
  
@@ -109,6 +113,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 // This function builds all components within this environment.
 //
   virtual function void build_phase(uvm_phase phase);
+// pragma uvmf custom build_phase_pre_super begin
+// pragma uvmf custom build_phase_pre_super end
     super.build_phase(phase);
 {% for sub_env in subEnvironments %}
     {{sub_env.name}} = {{sub_env.name}}_t::type_id::create("{{sub_env.name}}",this);
@@ -157,6 +163,11 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endif %}
 // pragma uvmf custom reg_model_build_phase end
 {% endfor %}
+
+    vsqr = {{name}}_vsqr_t::type_id::create("vsqr", this);
+    vsqr.set_config(configuration);
+    configuration.set_vsqr(vsqr);
+
     // pragma uvmf custom build_phase begin
     // pragma uvmf custom build_phase end
   endfunction
@@ -168,6 +179,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 // to agent.
 //
   virtual function void connect_phase(uvm_phase phase);
+// pragma uvmf custom connect_phase_pre_super begin
+// pragma uvmf custom connect_phase_pre_super end
     super.connect_phase(phase);
 {% for conn in connections %}
     {{conn.name}}.{{conn.pName}}.connect({{conn.subscriberName}}.{{conn.aeName}});
@@ -205,7 +218,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endif %}
       {% if regModel.qvipAgent == "True" %}//{% endif %}reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
     // Set sequencer and adapter in register model map
-    if (configuration.enable_reg_adaptation)
+    if ((configuration.enable_reg_adaptation) && ({{regModel.sequencer}}.{% if regModel.qvipAgent == "True" %}m_{% endif %}sequencer != null ))
       configuration.{{name}}_rm.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.{% if regModel.qvipAgent == "True" %}m_{% endif %}sequencer, reg_adapter);
     // Set map and adapter handles within uvm predictor
     if (configuration.enable_reg_prediction) begin

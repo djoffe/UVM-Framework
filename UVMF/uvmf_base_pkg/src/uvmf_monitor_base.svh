@@ -49,10 +49,11 @@
 class uvmf_monitor_base #(
    type CONFIG_T, 
    type BFM_BIND_T,
-   type TRANS_T
-) extends uvm_monitor;
+   type TRANS_T,
+   type BASE_T = uvm_monitor
+) extends BASE_T;
 
-  typedef uvmf_monitor_base #(CONFIG_T, BFM_BIND_T, TRANS_T) uvmf_monitor_base_t;
+  typedef uvmf_monitor_base #(CONFIG_T, BFM_BIND_T, TRANS_T, BASE_T) uvmf_monitor_base_t;
 
   // Analysis_port used to broadcast monitored transactions
   uvm_analysis_port #(TRANS_T) monitored_ap;

@@ -28,6 +28,9 @@ else
 	VRM_TESTLIST ?= testlist
 	VRM_BCR_PARAM ?= 
 endif
+ifeq ($(VRUN_YAML_TESTLIST),1)
+	VRM_TESTLIST := $(VRM_TESTLIST).yaml
+endif
 EXTRA_VRUN_ARGS ?= 
 VRUN_RUNNABLE ?= 
 VRUN_DISABLE_TIMEOUTS ?= 0
@@ -44,6 +47,9 @@ endif
 ifeq ($(DEBUG),1) 
 	EXTRA_VRUN_ARGS += -GDEBUG=1 -debug
 endif
+
+# Control if we wish to use the multi-user coverage mode 
+MULTIUSER ?= 1
 
 # Control whether or not to run at all in debug simulation
 NO_RUN ?= 0
@@ -150,10 +156,14 @@ ifeq ($(MTI_VCO_MODE), 64)
   LIB_PLATFORM = $(LIB_PLATFORM_64BIT)
 endif
 
-# Default compile arguments
-VCOM_ARGS = 
+ifeq ($(MULTIUSER),1)
+	MULTIUSER_ARG = -covermultiuserenv
+endif
 
-VLOG_ARGS_0 = -sv -suppress 2223 -suppress 2286 
+# Default compile arguments
+VCOM_ARGS = $(MULTIUSER_ARG)
+
+VLOG_ARGS_0 = -sv -suppress 2223 -suppress 2286 $(MULTIUSER_ARG)
 VLOG_ARGS_1 = $(VLOG_ARGS_0) \
               +define+XRTL +define+XMVC +define+USE_VTL
 VLOG_ARGS   = $(VLOG_ARGS_$(USE_VELOCE_OR_VTL)) 

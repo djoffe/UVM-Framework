@@ -20,6 +20,7 @@ flows:
       code_cov_types: 'bsf'
       seed: 0
       test: test_top
+      multiuser: True
       lib: ''
       outdir: ''
       use_vis: False
@@ -32,6 +33,7 @@ flows:
       vis_wave_tb: '${vis_wave_rtl}+class+assertion+uvm_schematic+msg+classmemory=${mem_size_log}+statictaskfunc'
       vis_design_filename: 'design.bin'
       vis_wave_filename: ''
+      no_vis_wave: False
       access: ''
       extra_do: ''
       extra_pre_do: ''
@@ -49,6 +51,7 @@ flows:
       post_do: ''
       quit_command: ''
       using_qvip: False
+      time_resolution: ''
       suppress: '8887,2286'
       mappings: ''
       modelsimini: ''
@@ -78,6 +81,7 @@ flows:
       enable_trlog: "Enable transaction logging"
       vis_wave_filename: "Specify a wave dump file name for Visualizer"
       vis_wave: "Override wave dumping options for Visualizer -qwavedb switch"
+      no_vis_wave: "Disable production of -qwavedb switch"
       wave_file: "Load the specified wave format file for debug"
       access: "Use this to specify additional -access or related switches for QIS visibility"
       use_64_bit: "Run tools in 64-bit mode when True. If false, tools that support 32-bit mode will use it"
@@ -92,8 +96,10 @@ flows:
       run_command: "Override how the 'run' command is specified as part of a simulation"
       error_limit: "Control how many errors will be seen before execution halts. Set to 0 for no limit"
       suppress: "Suppress the given error/warning codes, separated by commas"
+      time_resolution: "Explicitly provide the desired time resolution for the simulation. Will use simulator default if left unspecified"
       mappings: "Create the given library mappings prior to invoking simulation. Provide a list of space-separated logical:physical pairs"
       modelsimini: "Will point all commands to the given modelsim.ini file"
+      multiuser: "If True, will compile source using the multi-user coverage mode enabled"
       realclean: "Clean up additional file & directory structure beyond the standard --clean"
       verbose: "Prompt more verbose output from scripts (not to be confused with UVM verbosity)"
       extra_clean: "Specify additional glob patterns to use during a clean operation"
@@ -122,8 +128,11 @@ flows:
       tops: ''
       pdu: ''
       makelib: ''
+      overlay_extra: ''
     variable_descriptions:
       extra: "Append additional switches to qrun command"
+      gen_script: "Invoke qrun with -script switch"
+      tops: "Explicitly specify the top-level modules for qrun"
     steps:
       run:
         description: "Incremental Questa compile & run"
@@ -271,6 +280,10 @@ flows:
       vsim_extra: ''
       vsim_log_filename: 'vsim.log'
       vopt_log_filename: 'vopt.log'
+      vlog_overlay_extra: ''
+      vcom_overlay_extra: ''
+      vopt_overlay_extra: ''
+      vsim_overlay_extra: ''
     variable_descriptions:
       vsim_log_filename: "Logfile name for vsim operation"
       vopt_log_filename: "Logfile name for vopt operation"

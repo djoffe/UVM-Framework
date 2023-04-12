@@ -50,8 +50,9 @@
 
 virtual class uvmf_parameterized_agent_configuration_base #( 
    type DRIVER_BFM_BIND_T,
-   type MONITOR_BFM_BIND_T
-) extends uvm_object;
+   type MONITOR_BFM_BIND_T,
+   type BASE_T = uvm_object
+) extends BASE_T;
 
   // VARIABLE: driver_bfm
   // VARIABLE: monitor_bfm

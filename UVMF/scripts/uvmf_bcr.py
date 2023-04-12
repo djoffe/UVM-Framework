@@ -207,6 +207,18 @@ def run():
     sys.exit(0)
   ## Apply command-line variable overrides
   flow.apply_overrides(args.flow,option_overrides,args.steps)
+  ## Determine sim_dir (default is "." but can be overridden with flow data['options']['sim_dir'] and with command-line variable)
+  if args.sim_dir:
+    flow.data['options']['sim_dir'] = args.sim_dir
+  elif ('options' not in flow.data) or ('sim_dir' not in flow.data['options']):
+    flow.data['options']['sim_dir'] = '.'
+  ## Resolve sim_dir to a full path
+  flow.data['options']['sim_dir'] = resolve_path(flow.data['options']['sim_dir'],'.')
+  ## Set up the exported BCR_SIM_DIR environment variable based on sim_dir value (unless already set)
+  if 'BCR_SIM_DIR' not in os.environ:
+    os.environ['BCR_SIM_DIR'] = flow.data['options']['sim_dir']
+  else:
+    logger.warning("Unable to set BCR_SIM_DIR environment variable, was already set")
   ## Elaborate all variables
   flow.elaborate_variables(args.flow,flow.data['options'],listing=(args.list_flows or args.list_variables or args.list_steps))
   for step in args.steps:
@@ -228,11 +240,6 @@ def run():
     use_fileassoc = False
     fileassoc = {}
     incassoc = {}
-  ## Determine sim_dir (default is "." but can be overridden with flow data['options']['sim_dir'] and with command-line variable)
-  if args.sim_dir:
-    flow.data['options']['sim_dir'] = args.sim_dir
-  elif ('options' not in flow.data) or ('sim_dir' not in flow.data['options']):
-    flow.data['options']['sim_dir'] = '.'
   ## Set up any requested environment variables as per the flow file & overlays
   if 'options' in flow.data and 'env_vars' in flow.data['options']:
     for k,v in flow.data['options']['env_vars'].items():
@@ -256,6 +263,7 @@ def run():
         logger.info("Not setting flow file environment variable \"{}\" to \"{}\", already set to \"{}\"".format(k,envvar,os.environ[k]))
   ## Determine if any file lists need to be created. Triggered by searching for a variable 'compile_files' defined for a given step
   all_filelists = []
+  filelist_data = None
   for step in args.steps:
     step_s = flow.data['flows'][args.flow]['steps'][step]
     if 'variables' in step_s and 'compile_files' in step_s['variables']:
@@ -324,7 +332,11 @@ def run():
     for p in flow.data['options']['command_package_paths']:
       sys.path.insert(0,os.path.realpath(os.path.expandvars(p)))
   ## Create set of commands for all of the requested steps
-  commands = flow.build_commands(args.flow,args.steps)
+  if filelist_data:
+    options_tuple = filelist_data.options_tuple
+  else:
+    options_tuple = None
+  commands = flow.build_commands(args.flow,args.steps,options_tuple)
   ## Process each command in order. The commands come back as an assoc array with elements 'c', 'f', and 's'.  
   ##    f:  Flow name
   ##    s:  Step name

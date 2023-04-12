@@ -26,7 +26,7 @@
 {% block contents %}
 
 
-class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_component;
+class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
 
   // Factory registration of this class
 {{macro.compUtils(name,parameters)}}
@@ -162,6 +162,28 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   endfunction
   
 {% endfor %}
+
+  // FUNCTION: extract_phase
+  virtual function void extract_phase(uvm_phase phase);
+// pragma uvmf custom extract_phase begin
+     super.extract_phase(phase);
+// pragma uvmf custom extract_phase end
+  endfunction
+
+  // FUNCTION: check_phase
+  virtual function void check_phase(uvm_phase phase);
+// pragma uvmf custom check_phase begin
+     super.check_phase(phase);
+// pragma uvmf custom check_phase end
+  endfunction
+
+  // FUNCTION: report_phase
+  virtual function void report_phase(uvm_phase phase);
+// pragma uvmf custom report_phase begin
+     super.report_phase(phase);
+// pragma uvmf custom report_phase end
+  endfunction
+
 endclass 
 
 // pragma uvmf custom external begin

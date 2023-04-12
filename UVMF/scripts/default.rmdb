@@ -7,8 +7,8 @@
       <parameter name="USE_BCR" type="tcl">[getIniVar use_bcr]</parameter>
       <parameter name="COLLAPSE">0</parameter>
       <parameter name="PLATFORM" type="tcl">$tcl_platform(platform)</parameter>
-      <parameter name="TESTLIST_NAME">testlist</parameter>
-      <parameter name="TOP_TESTLIST_FILE">(%SIM_DIR%)/(%TESTLIST_NAME%)</parameter>
+      <parameter name="TESTLIST_NAME" type="tcl">[getIniVar testlist_name]</parameter>
+      <parameter name="TOP_TESTLIST_FILE" type="tcl">[getIniVar top_testlist_file]</parameter>
       <parameter name="DEBUG">0</parameter>
       <parameter name="TESTPLAN_FILE" type="tcl">[getIniVar tplanfile]</parameter>
       <parameter name="TESTPLAN_OPTIONS" type="tcl">[getIniVar tplanoptions]</parameter>
@@ -23,8 +23,9 @@
       <parameter name="CODE_COVERAGE_TARGET" type="tcl">[getIniVar code_coverage_target]</parameter>
       <parameter name="EXTRA_MERGE_OPTIONS" type="tcl">[getIniVar extra_merge_options]</parameter>
       <parameter name="CODE_COVERAGE_MAP" type="tcl">[getIniVar code_coverage_map]</parameter>
+      <parameter name="MERGE_MULTIUSER_STR" type="tcl">[if {(%MULTIUSER%)==1} { return "-multiuserenv" } else { return "" }]</parameter>
       <parameter name="mergefile">(%DATADIR%)/tracker.ucdb</parameter>
-      <parameter name="mergeoptions">-testassociated (%EXTRA_MERGE_OPTIONS%)</parameter>
+      <parameter name="mergeoptions">-testassociated (%MERGE_MULTIUSER_STR%) (%EXTRA_MERGE_OPTIONS%)</parameter>
       <parameter name="HTML_REPORT_ARGS" type="tcl">[getIniVar html_report_args]</parameter>
       <parameter name="USE_INFACT" type="tcl">[getIniVar use_infact]</parameter>
       <parameter name="INFACT_ENABLED"/>
@@ -93,6 +94,7 @@
       <parameter name="BCR_FLOW" type="tcl">[getIniVar bcr_flow]</parameter>
       <parameter name="BCR_OVERLAY" type="tcl">[getIniVar bcr_overlay]</parameter>
       <parameter name="BCR_OVERLAY_STR" type="tcl">[ if {![string match "" "(%BCR_OVERLAY%)"]} {return {--flow_file_overlay (%BCR_OVERLAY%)} } else {return {}} ]</parameter>
+      <parameter name="MULTIUSER" type="tcl">[getIniVar multiuser]</parameter>
       <parameter name="STATUS">0</parameter>
     </parameters>
     <members>
@@ -167,14 +169,16 @@
       <parameter name="CODE_COVERAGE_STR" type="tcl">[GetCodeCovBuildString (%USE_BCR%) (%CODE_COVERAGE_ENABLE%) (%CODE_COVERAGE_TYPES%) (%CODE_COVERAGE_TARGET%)]</parameter>
       <parameter name="BCR_DEBUG" type="tcl">[ if { (%DEBUG%)==1} { return "--debug"} else {return ""}]</parameter>
       <parameter name="FLOW_CONTROL">build_only:True</parameter>
+      <parameter name="BCR_MULTIUSER_STR" type="tcl">[if {(%MULTIUSER%)==0} { return "multiuser:False" } else { return "" } ]</parameter>
+      <parameter name="MAKE_MULTIUSER_STR" type="tcl">[if {(%MULTIUSER%)==0} { return "MULTIUSER=0" } else {return ""} ]</parameter>
     </parameters>
     <execScript launch="vsim" mintimeout="(%BUILD_TIMEOUT%)" usestderr="(%USESTDERR%)">
       <command>if {(%USE_BCR%)} {</command>
-      <command>  exec (%BCR_EXEC_CMD%) (%BCR_FLOW%) --sim_dir (%BUILDDIR%) (%BCR_DEBUG%) (%CODE_COVERAGE_STR%) (%FLOW_CONTROL%) (%VRUN_EXTRA_BUILD_CMD%) (%EXTRABUILDCMD%) (%BCR_OVERLAY_STR%)</command>
+      <command>  exec (%BCR_EXEC_CMD%) (%BCR_FLOW%) --sim_dir (%BUILDDIR%) (%BCR_MULTIUSER_STR%) (%BCR_DEBUG%) (%CODE_COVERAGE_STR%) (%FLOW_CONTROL%) (%VRUN_EXTRA_BUILD_CMD%) (%EXTRABUILDCMD%) (%BCR_OVERLAY_STR%)</command>
       <command>} else {</command>
       <command>  switch (%PLATFORM%) {</command>
       <command>    unix {</command>
-      <command>      exec -ignorestderr make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) (%CODE_COVERAGE_STR%) (%EXTRABUILDCMD%) (%VRUN_EXTRA_BUILD_CMD%)</command>
+      <command>      exec -ignorestderr make -f (%BUILDDIR%)/Makefile libs build optimize UVMF_HOME=(%ROOTDIR%) USE_VINFO=(%USE_VINFO%) USE_VIS=(%USE_VIS%) (%CODE_COVERAGE_STR%) (%MAKE_MULTIUSER_STR%) (%EXTRABUILDCMD%) (%VRUN_EXTRA_BUILD_CMD%)</command>
       <command>    }</command>
       <command>    windows {</command>
       <command>      do (%BUILDDIR%)/compile.do;</command>
@@ -203,7 +207,7 @@
       <parameter name="TESTCASES_FOR_BUILD" type="tcl">[GetTestcases (%build%) (%COLLAPSE%)]</parameter>
       <parameter name="EXTRA_RUN_ARGS_FOR_TESTCASE" type="tcl">[GetExtraArgs (%testname%)]</parameter>
       <parameter name="BUILDDIR" type="tcl">[GetBuildDir (%build%)]</parameter>
-      <parameter name="UVM_TESTNAME" type="tcl">[lindex [split (%testname%) "-"] 1]</parameter>
+      <parameter name="UVM_TESTNAME" type="tcl">[GetUVMTestname (%testname%)]</parameter>
       <parameter name="ucdbfile">(%testname%).ucdb</parameter>
       <parameter name="seed" type="tcl">[lindex [split (%testname%) "-"] 3]</parameter>
       <parameter name="DEBUGMODE">(%NO_RERUN%)</parameter>
@@ -220,6 +224,7 @@
       <parameter name="PRE_RUN_DO" type="tcl">[ if {![string match "" (%PRE_RUN_DOFILE%)] &amp;&amp; [file exists (%VRUNDIR%)/(%PRE_RUN_DOFILE%)]} {return "do (%VRUNDIR%)/(%PRE_RUN_DOFILE%);"} else {return {}}]</parameter>
       <parameter name="TEST_DO" type="tcl">[ if {(%USE_TEST_DOFILE%) &amp;&amp; [file exists (%VRUNDIR%)/(%UVM_TESTNAME%).do]} {return "do (%VRUNDIR%)/(%UVM_TESTNAME%).do"} else {return {}}]</parameter>
       <parameter name="EXTRA_DO_ARG" type="tcl">[ if {![string match "" "(%PRE_RUN_DO%)"] || ![string match "" "(%TEST_DO%)"]} {return {extra_do:"(%PRE_RUN_DO%) (%TEST_DO%)"}} else {return ""}]</parameter>
+      <parameter name="GEN_SYMLINKS" type="tcl">[GenSymlinks (%VRUNDIR%) (%TASKDIR%) (%build%) (%DEBUG%)]</parameter>
     </parameters>
     <localfile name="test.do" expand="yes">
       <command># Do file for use in Make-base run flow (NOT USED WITH BCR FLOW)</command>
@@ -231,6 +236,8 @@
       <command>coverage save -onexit (%ucdbfile%)</command>
       <command>if {![string match "" (%PRE_RUN_DOFILE%)] &amp;&amp; [file exists (%VRUNDIR%)/(%PRE_RUN_DOFILE%)] } { do (%VRUNDIR%)/(%PRE_RUN_DOFILE%)}</command>
       <command>if {(%USE_TEST_DOFILE%) &amp;&amp; [file exists (%VRUNDIR%)/(%UVM_TESTNAME%).do] } { do (%VRUNDIR%)/(%UVM_TESTNAME%).do}</command>
+      <command># Generated symbolic links...</command>
+      <command>(%GEN_SYMLINKS%)</command>
       <command>run -all; quit -sim</command>
     </localfile>
     <execScript launch="vsim (%MVCHOME%)" mintimeout="(%RUN_TIMEOUT%)" usestderr="(%USESTDERR%)">
@@ -242,7 +249,7 @@
       <command>exec (%BCR_EXEC_CMD%) (%BCR_FLOW%) --skip_filelist_build --sim_dir (%BUILDDIR%) (%FLOW_CONTROL%)
             outdir:../../build_task/qrun.out (%EXTRA_RUN_ARGS_FOR_BUILD%) (%EXTRA_RUN_ARGS_FOR_TESTCASE%) (%EXTRA_RUN_OPTIONS%) (%BCR_OVERLAY_STR%)
             (%CODE_COVERAGE_STR%) verbosity:(%UVM_VERBOSITY%) test:(%UVM_TESTNAME%) testname_attr:(%build%)_(%UVM_TESTNAME%)_(%iter%)_(%seed%)
-            seed:(%seed%) vrm_in_use:True ucdb_filename:(%ucdbfile%)
+            seed:(%seed%) vrm_in_use:True ucdb_filename:(%ucdbfile%) 
             (%EXTRA_DO_ARG%) {quit_command:quit -sim}
       </command>
       <command>} else {</command>
@@ -349,10 +356,10 @@
   <runnable name="testplan_if" type="task" unless="&quot;(%TESTPLAN_FILE%)&quot;==&quot;&quot;">
     <execScript launch="vsim">
       <command>if {[file extension (%TESTPLAN_FILE%)]==".ucdb"} {</command>
-      <command>  vcover merge (%TESTPLAN_MERGE_OPTIONS%) (%mergefile%) (%TESTPLAN_FILE%) (%mergefile%)</command>
+      <command>  vcover merge (%TESTPLAN_MERGE_OPTIONS%) (%MERGE_MULTIUSER_STR%) (%mergefile%) (%TESTPLAN_FILE%) (%mergefile%)</command>
       <command>} else {</command>
       <command>  xml2ucdb (%TESTPLAN_OPTIONS%) (%TESTPLAN_FILE%) testplan.ucdb</command>
-      <command>  vcover merge (%TESTPLAN_MERGE_OPTIONS%) (%mergefile%) testplan.ucdb (%mergefile%)</command>
+      <command>  vcover merge (%TESTPLAN_MERGE_OPTIONS%) (%MERGE_MULTIUSER_STR%) (%mergefile%) testplan.ucdb (%mergefile%)</command>
       <command>}</command>
     </execScript>
   </runnable>

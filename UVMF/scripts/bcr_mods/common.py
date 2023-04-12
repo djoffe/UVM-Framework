@@ -72,11 +72,12 @@ class VerbosityAction(argparse.Action):
 
   def __call__(self,parser_obj,namespace,values,option_string=None):
     log = logging.getLogger("logger")
-    if option_string == "--quiet":
+    if option_string == "--quiet" or option_string == "-q":
       level = logging.WARNING
     elif option_string == "--debug":
       level = logging.DEBUG
     else:
+      import traceback
       log.critical("Unknown switch \"%s\" passed to VerbosityAction" % option_string)
       traceback.print_stack()
       sys.exit(1)

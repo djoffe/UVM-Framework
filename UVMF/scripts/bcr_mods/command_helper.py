@@ -36,13 +36,19 @@ class Generator(object):
     except AttributeError as error:
       logger.error("Unable to find command attribute \"{}\" in command class".format(k))
       sys.exit(1)
-    return [clean_whitespace(' '.join(args))]
+    return [clean_whitespace(' '.join(args+[self.process_compile_file_options(self.set_cmd(v),v)]))]
 
   def set_arch(self,v={}):
     if 'use_64_bit' in v and v['use_64_bit']:
       return '-64'
     else:
       return '-32'
+
+  def set_multiuser(self,v={}):
+    if 'multiuser' in v and v['multiuser']:
+      return '-covermultiuserenv'
+    else:
+      return ''
 
   def set_vrm_in_use(self,v={}):
     if v_val(v,'vrm_in_use'):
@@ -54,7 +60,7 @@ class Generator(object):
       if 'QUESTA_MVC_HOME' not in os.environ:
         logger.error("using_qvip set True but $$QUESTA_MVC_HOME not set")
         sys.exit(1)
-      return '-t 1ps -mvchome '+os.environ['QUESTA_MVC_HOME']
+      return '-mvchome '+os.environ['QUESTA_MVC_HOME']
     else:
       return ''
 
@@ -63,6 +69,14 @@ class Generator(object):
       return '-timescale '+v['timescale']
     elif 'using_qvip' in v and v['using_qvip']:
       return '-timescale 1ps/1ps'
+    else:
+      return ''
+
+  def set_time_resolution(self,v={}):
+    if 'time_resolution' in v and v['time_resolution']:
+      return "-t "+v['time_resolution']
+    elif 'using_qvip' in v and v['using_qvip']:
+      return '-t 1ps'
     else:
       return ''
 
@@ -111,7 +125,7 @@ class Generator(object):
     lib_str = ''
     if 'lib' in v and v['lib']:
       for l in v['lib'].split():
-        lib_str = lib_str+' -L '+v['lib']
+        lib_str = lib_str+' -L '+l
       return lib_str
     else:
       return ''
@@ -176,6 +190,8 @@ class Generator(object):
     return ''
 
   def set_vis_wave(self,v={}):
+    if ('no_vis_wave' in v and v['no_vis_wave']):
+      return ''
     if ('use_vis' in v and v['use_vis']) or ('use_vis_uvm' in v and v['use_vis_uvm']):
       if 'vis_wave' in v and v['vis_wave']:
         vis_wave_str = '-qwavedb='+v['vis_wave']
@@ -217,7 +233,8 @@ class Generator(object):
         if 'wave_file' in v and v['wave_file']:
           run_command = run_command+"; do "+v['wave_file']
         elif ('use_vis' in v and v['use_vis']) or ('use_vis_uvm' in v and v['use_vis_uvm']):
-          run_command = run_command+"; do "+v['sim_dir']+"/viswave.do"
+          if (not 'no_vis_wave' in v) or (not v['no_vis_wave']):
+            run_command = run_command+"; do "+v['sim_dir']+"/viswave.do"
         else:
           run_command = run_command+"; do "+v['sim_dir']+"/wave.do"
         quit_command = ''
@@ -313,6 +330,16 @@ class Generator(object):
       return '+UVM_TESTNAME='+v['test']
     else:
       return ''
+
+  def process_compile_file_options(self,name,v):
+    ret = ''
+    if 'compile_file_options' in v:
+      cfo = v['compile_file_options']
+      if '__all__' in cfo:
+        ret = ret + ' '+cfo['__all__']
+      if name in cfo:
+        ret = ret + ' ' + cfo[name]
+    return ret
 
 # Convenience function, returns true if a variable exists and is non-empty, True, etc
 def v_val(v,var):

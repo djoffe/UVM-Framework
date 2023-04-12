@@ -122,6 +122,8 @@ uvmf_active_passive_t interface_activities[] = {
   // executed which builds the agents.
   //
   virtual function void build_phase(uvm_phase phase);
+// pragma uvmf custom build_phase_pre_super begin
+// pragma uvmf custom build_phase_pre_super end
     super.build_phase(phase);
     // pragma uvmf custom configuration_settings_post_randomize begin
     // pragma uvmf custom configuration_settings_post_randomize end

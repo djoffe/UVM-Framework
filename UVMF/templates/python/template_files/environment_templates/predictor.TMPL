@@ -26,7 +26,7 @@
 {% endblock %}
 {% block contents %}
 
-class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_component;
+class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
 
   // Factory registration of this class
 {{macro.compUtils(name,parameters)}}
@@ -64,6 +64,8 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 
 {% for port in ports %}
   // Transaction variable for predicted values to be sent out {{port.name}}
+  // Once a transaction is sent through an analysis_port, another transaction should
+  // be constructed for the next predicted transaction. 
   typedef {{port.tType}} {{port.name}}_output_transaction_t;
   {{port.name}}_output_transaction_t {{port.name}}_output_transaction;
   // Code for sending output transaction out through {{port.name}}

@@ -129,7 +129,11 @@ class BaseElementClass(object):
     self.environment_location = "environment_packages"
     self.vip_location = "verification_ip"
     self.bench_location = "project_benches"
-    self.relative_vip_from_sim = "../../../verification_ip"
+    self.relative_vip_from_sim = ".."+os.path.sep+".."+os.path.sep+".."+os.path.sep+"verification_ip"
+    self.relative_vip_from_cwd = ".."
+    self.relative_bench_from_cwd = ".."
+    self.relative_environment_from_cwd = ".."+os.path.sep+".."
+    self.relative_interface_from_cwd = ".."+os.path.sep+".."
     self.flat_output = False
 
   def addParamDef(self,name,type,value=None):
@@ -235,6 +239,10 @@ class BaseGeneratorClass(BaseElementClass):
                                            "environment_location": self.environment_location,
                                            "bench_location": self.bench_location,
                                            "relative_vip_from_sim": self.relative_vip_from_sim,
+                                           "relative_vip_from_cwd": self.relative_vip_from_cwd,
+                                           "relative_bench_from_cwd": self.relative_bench_from_cwd,
+                                           "relative_environment_from_cwd": self.relative_environment_from_cwd,
+                                           "relative_interface_from_cwd": self.relative_interface_from_cwd,
                                          })
     templateVars.update(ExtraTemplateVars)
     ## Do any necessary search/replace operations within the fname variable
@@ -423,7 +431,7 @@ class BaseGeneratorClass(BaseElementClass):
         ap = dest_dir+"/"+self.bench_location+"/"+self.name+"/yaml"
       else:
         ## Error somewhere.. either a new type of output has been defined or a typo exists somewhere
-        raise UserError("Internal error during YAML archive: \""+self.gen_type+"\" is not a recognized output type. Contact Mentor support")
+        raise UserError("Internal error during YAML archive: \""+self.gen_type+"\" is not a recognized output type. Contact Siemens support")
       if (os.path.exists(ap) == False):
         ## YAML directory doesn't exist, create it
         os.makedirs(ap)
@@ -500,10 +508,11 @@ class InterfaceConfigClass(BaseElementInterfaceClass):
     self.value = value
 
 class EnvironmentConfigClass(BaseElementEnvironmentClass):
-  def __init__(self,name,type,isrand=False,value='',comment=""):
+  def __init__(self,name,type,isrand=False,value='',comment="",unpackedDim=""):
     super(EnvironmentConfigClass,self).__init__(name,type,isrand)
     self.value = value
     self.comment = comment
+    self.unpackedDim = unpackedDim
 
 class TypeClass(BaseElementClass):
   def __init__(self,name,type):
@@ -1099,9 +1108,9 @@ class EnvironmentClass(BaseGeneratorClass):
     if (name not in self.acTypes):
       self.acTypes.append(name)
 
-  def addConfigVar(self,name,type,isrand=False,value='',comment=""):
+  def addConfigVar(self,name,type,isrand=False,value='',comment="",unpackedDim=""):
     """Add a configuration variable to the environment class's configuration object definition"""
-    self.configVars.append(EnvironmentConfigClass(name,type,isrand,value,comment))
+    self.configVars.append(EnvironmentConfigClass(name,type,isrand,value,comment,unpackedDim))
 
   def addConfigVarConstraint(self,name,type,comment=""):
     """Add a constraint to the config class's Constraint item definition"""
@@ -1146,14 +1155,14 @@ class EnvironmentClass(BaseGeneratorClass):
     if self.mtlbReady:
       self.conditional_array.append('mtlbReady')
     for ac in self.analysisComponents:
-      ac.parameters = [ParameterValueClass("CONFIG_T", "CONFIG_T")] + ac.parameters
+      ac.parameters = [ParameterValueClass("CONFIG_T", "CONFIG_T")] +  ac.parameters
     super(EnvironmentClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
     if self.options.yaml:
       return
     for analysisComp in self.analysisComponentTypes:
       ## All analysis components have one parameter at the front that is a typedef for the
       ## parent environment's configuration type. Prepend that to the parameters list now
-      analysisComp.parameters = [ParamDef("CONFIG_T","type",None)] + analysisComp.parameters
+      analysisComp.parameters = [ParamDef("CONFIG_T","type",None)] + [ParamDef("BASE_T","type","uvm_component")] + analysisComp.parameters
       self.runTemplate(analysisComp.keyword+".TMPL",analysisComp.keyword,{"name":analysisComp.name,
                                                      "env_name":self.name,
                                                      "exports":analysisComp.analysisExports,
@@ -1220,6 +1229,7 @@ class BenchClass(BaseGeneratorClass):
     self.clockHalfPeriod = '5ns'
     self.clockPhaseOffset = '9ns'
     self.resetAssertionLevel = False
+    self.activePassiveDefault = 'ACTIVE'
     self.useDpiLink = False
     self.resetDuration = '200ns'
     self.external_imports = []
@@ -1256,6 +1266,7 @@ class BenchClass(BaseGeneratorClass):
     template['resetAssertionLevel'] = self.resetAssertionLevel
     template['useDpiLink'] = self.useDpiLink
     template['resetDuration'] = self.resetDuration
+    template['activePassiveDefault'] = self.activePassiveDefault
     template['external_imports'] = self.external_imports
     template['vmaps'] = self.vmaps
     template['paramDefs'] = self.paramDefs

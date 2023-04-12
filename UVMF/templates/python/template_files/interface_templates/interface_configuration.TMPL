@@ -41,8 +41,7 @@ class {{name}}_configuration {{macro.paramDeclare(paramDefs)|indent(6)}} extends
     // pragma uvmf custom covergroup begin
     option.auto_bin_max=1024;
 {% for config in configVars %}
-{% if config.unpackedDim == '' %}    coverpoint {{config.name}};
-{% endif %}
+{% if config.unpackedDim != '' %}//{% endif %}    coverpoint {{config.name}};
 {% endfor %}
     // pragma uvmf custom covergroup end
   endgroup
