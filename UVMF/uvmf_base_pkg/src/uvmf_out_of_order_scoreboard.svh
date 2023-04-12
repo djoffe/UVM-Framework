@@ -53,6 +53,10 @@ class uvmf_out_of_order_scoreboard #(type T=uvmf_transaction_base) extends uvmf_
    // the transactions get_key() interface.
    T expected_hash[int unsigned];
 
+   T last_expected;
+   T last_actual;
+   bit last_mismatched = 0;
+
    // FUNCTION: new
    function new(string name, uvm_component parent );
       super.new(name, parent);
@@ -107,14 +111,18 @@ class uvmf_out_of_order_scoreboard #(type T=uvmf_transaction_base) extends uvmf_
                   return;
                 end : comparison_disabled
             // Compare actual transaction to expected transaction
+            last_expected = expected_item;
+            last_actual = t;
             if ( t.compare(expected_item) ) 
                begin : compare_passed
                match_count++;
+               last_mismatched = 0;
                `uvm_info("SCBD",compare_message("MATCH! - ",expected_item,t),UVM_MEDIUM)
                end : compare_passed
             else 
                begin : compare_failed
                mismatch_count++;
+               last_mismatched = 1;
                `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_item,t))
                end : compare_failed
             end : item_exists_in_array

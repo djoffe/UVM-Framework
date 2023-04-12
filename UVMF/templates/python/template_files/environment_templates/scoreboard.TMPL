@@ -76,6 +76,8 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // FUNCTION: new
   function new(string name, uvm_component parent);
      super.new(name,parent);
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
   endfunction
 
   // FUNCTION: build_phase
@@ -90,6 +92,8 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 {% for port in ports %}
     {{port.name}} =new("{{port.name}}", this );
 {% endfor %}
+  // pragma uvmf custom build_phase begin
+  // pragma uvmf custom build_phase end
   endfunction
 
 {% for export in exports %}

@@ -71,8 +71,8 @@ except ImportError:
   sys.exit(1)
 
 def merge_summary(merge,verbose=False):
-  block_count = sum(len(l) for l in merge.found_blocks.itervalues())
-  new_block_count = sum(len(l) for l in merge.new_blocks.itervalues())
+  block_count = sum(len(l) for l in merge.found_blocks.values())
+  new_block_count = sum(len(l) for l in merge.new_blocks.values())
   if verbose:
     print("============================== Merge Details ==============================")
   print("  Parsed {0} original files finding a total of {1} \"pragma uvmf custom\" blocks".format(len(merge.rd), block_count))
@@ -104,10 +104,13 @@ class ConfigFileReader:
     try: 
       self.fh = open(fname,'r')
     except IOError:
-      raise UserError("Unable to open -f file "+fname)
+      raise UserError("Unable to open -f/-F file "+fname)
     self.lines = self.fh.readlines()
     for line in self.lines:
+      # Strip comments
       line = re.sub(r"(.*?)#.*",r"\1",line.rstrip()).strip()
+      # Elaborate environment variables
+      line = os.path.expandvars(line)
       if (line != ""):
         if relative_to_file:
           line = os.path.normpath(os.path.dirname(os.path.abspath(fname))+os.path.sep+line)
@@ -205,7 +208,7 @@ class DataClass:
     return compClass
 
   ## Generate everything from the data structures
-  def buildElements(self,genarray,verify=True):
+  def buildElements(self,genarray,verify=True,build_existing=False,archive_yaml=True):
     count = 0
     self.interfaceDict = {}
     try:
@@ -215,17 +218,17 @@ class DataClass:
       pass
     for interface_name in self.data['interfaces']:
       if ((arrlen>0) and (interface_name in genarray)) or (arrlen==0):
-        self.interfaceDict[interface_name] = self.generateInterface(interface_name)
+        self.interfaceDict[interface_name] = self.generateInterface(interface_name,build_existing,archive_yaml)
         count = count + 1 
     self.environmentDict = {}
     for environment_name in self.data['environments']:
       if ((arrlen>0) and (environment_name in genarray)) or (arrlen==0):
-        self.environmentDict[environment_name] = self.generateEnvironment(environment_name)
+        self.environmentDict[environment_name] = self.generateEnvironment(environment_name,build_existing,archive_yaml)
         count = count + 1 
     self.benchDict = {}
     for bench_name in self.data['benches']:
       if ((arrlen>0) and (bench_name in genarray)) or (arrlen==0):
-        self.benchDict[bench_name] = self.generateBench(bench_name)
+        self.benchDict[bench_name] = self.generateBench(bench_name,build_existing,archive_yaml)
         count = count + 1
     ## Check to see if any utility components were defined but never instantiated, flag that as a warning
     for util_comp in self.data['util_components']:
@@ -476,7 +479,7 @@ class DataClass:
         pass
     return ret
 
-  def generateEnvironment(self,name):
+  def generateEnvironment(self,name,build_existing=False,archive_yaml=True):
     env = EnvironmentClass(name)
     struct = self.data['environments'][name]
     qvip_agents_dot = []
@@ -998,15 +1001,16 @@ class DataClass:
       env.mtlbReady = (struct['mtlb_ready']=="True")
     except KeyError:
       pass
+    existing_component = False
     try:
-      existing_component = (struct['existing_library_component']=="True")
+      if not build_existing:
+        existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
-      existing_component = False
       pass
     if (existing_component == True):
       print("  Skipping generation of predefined component "+str(name))
     else:
-      env.create(parser=self.parser)
+      env.create(parser=self.parser,archive_yaml=archive_yaml)
     return env
 
   def parameterSyntax(self,parameterList):
@@ -1019,7 +1023,7 @@ class DataClass:
     fs = "#("+','.join(l)+")"
     return fs
 
-  def generateBench(self,name):
+  def generateBench(self,name,build_existing=False,archive_yaml=True):
     ## Isolate the YAML structure for this bench
     struct = self.data['benches'][name]
     ## Get the name of the top-level environment
@@ -1250,18 +1254,19 @@ class DataClass:
       ben.useBCR = (struct['use_bcr']=="True")
     except KeyError:
       ben.useBCR = False
+    existing_component = False
     try:
-      existing_component = (struct['existing_library_component']=="True")
+      if not build_existing:
+        existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
-      existing_component = False
       pass
     if (existing_component == True):
       print("  Skipping generation of predefined component "+str(name))
     else:
-      ben.create(parser=self.parser)
+      ben.create(parser=self.parser,archive_yaml=archive_yaml)
     return ben
 
-  def generateInterface(self,name):
+  def generateInterface(self,name,build_existing=False,archive_yaml=True):
     intf = InterfaceClass(name)
     struct = self.data['interfaces'][name]
     intf.clock = struct['clock']
@@ -1355,7 +1360,12 @@ class DataClass:
         try:
           cval = cfg['value']
         except KeyError: pass
-        intf.addConfigVar(n,t,crand,cval,c)
+        try:
+          cvud = cfg['unpacked_dimension']
+        except KeyError:
+          cvud = ""
+          pass
+        intf.addConfigVar(n,t,crand,cval,c,cvud)
     except KeyError: pass
     try:
       for item in struct['transaction_constraints']:
@@ -1377,6 +1387,7 @@ class DataClass:
       intf.specifyResponseOperation(resp_op)
       resp_data = response_info['data']
       intf.specifyResponseData(resp_data)
+      print("Warning: response_info YAML structure deprecated.  Slave agent response data now determined by arguments to respond_and_wait_for_next_transfer task within generated driver_bfm.")
     except KeyError: pass
     try:
       dpi_def = struct['dpi_define']
@@ -1428,18 +1439,29 @@ class DataClass:
         ## If this happens it means there are no transaction variables, which is also illegal
         raise UserError("Interface \"{0}\" flagged to be Veloce ready but no transaction variables have been defined. Must define at least one".format(name))
         pass
+      try:
+        for cfg in struct['config_vars']:
+          try:
+            if cfg['unpacked_dimension'] != "":
+              raise UserError("Interface \""+name+"\" flagged to be Veloce ready but configuration variable \""+cfg['name']+"\" has specified an unpacked dimension")
+          except KeyError: pass
+      except KeyError: pass
+        ## If this happens it means there are no transaction variables, which is also illegal
+#        raise UserError("Interface \"{0}\" flagged to be Veloce ready but no transaction variables have been defined. Must define at least one".format(name))
+#        pass
       ## Also possible that there was a transaction variables array defined but its empty. Also illegal
       if len(struct['transaction_vars'])==0:
         raise UserError("Interface \"{0}\" flagged to be Veloce ready but no transaction variables have been defined. Must define at least one".format(name))     
+    existing_component = False
     try:
-      existing_component = (struct['existing_library_component']=="True")
+      if not build_existing:
+        existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
-      existing_component = False
       pass
     if existing_component == True:
       print("  Skipping generation of predefined component "+str(name))
     else:
-      intf.create(parser=self.parser)
+      intf.create(parser=self.parser,archive_yaml=archive_yaml)
     return intf
 
   def check_parameters(self,parentType,parentName,instanceType,instanceName,definitionName,instanceParams,instanceDefinition):
@@ -1487,6 +1509,8 @@ def run():
   uvmf_parser.parser.add_option("--merge_no_backup",dest="merge_no_backup",action="store_true",help="Do not back up original merge source",default=False)
   uvmf_parser.parser.add_option("--merge_debug",dest="merge_debug",action="store_true",help="Provide intermediate unmerged output directory for debug purposes. Debug directory can be specified by --dest_dir switch.",default=False)
   uvmf_parser.parser.add_option("--merge_verbose",dest="merge_verbose",action="store_true",help="Output more verbose messages during the merge operation for debug purposes.",default=False)
+  uvmf_parser.parser.add_option("--build_existing_components",dest="build_existing_components",action="store_true",help="Ignore \"existing_library_component\" flags and attempt to build anyway.",default=False)
+  uvmf_parser.parser.add_option("--no_archive_yaml",dest="no_archive_yaml",action="store_true",default=False,help="Disable YAML archive creation")
   (options,args) = uvmf_parser.parser.parse_args()
   if options.enable_pdb or options.debug:
     print("Python version info:\n"+sys.version)
@@ -1522,7 +1546,7 @@ def run():
   for cfg in configfiles:
     dataObj.parseFile(cfg)
   dataObj.validate()
-  dataObj.buildElements(options.gen_name,verify=options.merge_export_yaml==None)
+  dataObj.buildElements(options.gen_name,verify=options.merge_export_yaml==None,build_existing=options.build_existing_components,archive_yaml=(not options.no_archive_yaml))
   if options.merge_source or options.merge_import_yaml:
     if not options.merge_import_yaml:
       if not (options.merge_no_backup or options.merge_export_yaml):

@@ -89,6 +89,9 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   // FUNCTION: new
   function new(string name, uvm_component parent);
      super.new(name,parent);
+    `uvm_warning("PREDICTOR_REVIEW", "This predictor has been created either through generation or re-generation with merging.  Remove this warning after the predictor has been reviewed.")
+  // pragma uvmf custom new begin
+  // pragma uvmf custom new end
   endfunction
 
   // FUNCTION: build_phase
@@ -103,6 +106,8 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 {% for port in ports %}
     {{port.name}} =new("{{port.name}}", this );
 {% endfor %}
+  // pragma uvmf custom build_phase begin
+  // pragma uvmf custom build_phase end
   endfunction
 
 {% for export in exports %}
@@ -130,6 +135,10 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 {% endfor %} 
 {% for port in ports %}
     // Code for sending output transaction out through {{port.name}}
+    // Please note that each broadcasted transaction should be a different object than previously 
+    // broadcasted transactions.  Creation of a different object is done by constructing the transaction 
+    // using either new() or create().  Broadcasting a transaction object more than once to either the 
+    // same subscriber or multiple subscribers will result in unexpected and incorrect behavior.
     {{port.name}}.write({{port.name}}_output_transaction);
 {% endfor %}
     // pragma uvmf custom {{export.name}}_predictor end

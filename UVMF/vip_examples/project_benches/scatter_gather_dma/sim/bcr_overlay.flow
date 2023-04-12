@@ -7,6 +7,7 @@ options:
     SCATTER_GATHER_DMA_QVIP_DIR_NAME: 
       value: ../../../verification_ip/environment_packages/scatter_gather_dma_qvip_dir/uvmf
       resolve_path: True
+      override: True
 # pragma uvmf custom SCATTER_GATHER_DMA_QVIP_info end
 flows:
   base:

@@ -5,7 +5,6 @@
 needs:
   - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.compile
 {% for agent in agent_pkgs %}
-  - ../../interface_packages/{{agent}}_pkg/{{agent}}_shared.compile
   - ../../interface_packages/{{agent}}_pkg/{{agent}}_hvl.compile
 {% endfor %}
 {% for env in env_pkgs %}

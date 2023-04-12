@@ -19,11 +19,14 @@ else
 endif
 
 # VRM Variables, used in the 'vrun' target
+RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
 VRUN_ARGS ?= 
 ifeq ($(VRUN_BCR),1)
-  RMDB_PATH ?= $(UVMF_HOME)/scripts/default_bcr.rmdb
+  VRM_TESTLIST ?= bcr_testlist
+  VRM_BCR_PARAM ?= -GUSE_BCR=1
 else
-	RMDB_PATH ?= $(UVMF_HOME)/scripts/default.rmdb
+	VRM_TESTLIST ?= testlist
+	VRM_BCR_PARAM ?= 
 endif
 EXTRA_VRUN_ARGS ?= 
 VRUN_RUNNABLE ?= 
@@ -126,7 +129,7 @@ HDL_COMP_CMD_VHDL_1 = $(EMU_COMP_CMD_VHDL)
 HDL_COMP_CMD_VHDL   = $(HDL_COMP_CMD_VHDL_$(USE_VELOCE))
 
 # Veloce compile command as determined by OS3
-VELCOMP_CMD   = velcomp -top $(TOP_HDL) $(VELCOMP_ARGS)
+VELCOMP_CMD   = velcomp -top $(TOP_HDL) $(VELCOMP_ARGS) $(EXTRA_VELCOMP_ARGS)
 
 # Link command as determined by puresim vs Veloce and OS3
 EXTRA_VELHVL_ARGS ?= 
@@ -136,11 +139,12 @@ LINK_CMD     = $(LINK_CMD_$(USE_VELOCE)) $(EXTRA_VELHVL_ARGS) $(LINK_ARGS)
 
 # Library platform as implied by 32 vs 64 bit MTI_VCO_MODE
 # Default assumption is 32-bit (if MTI_VCO_MODE isn't set)
-LIB_PLATFORM_32BIT = linux_el30_gnu450
-LIB_PLATFORM_64BIT = linux_el30_gnu450_x86_64
+# VTL release  4.8.0.0 requires the following LIB_PLATOFORM values for puresim mode.
+# LIB_PLATFORM_32BIT = linux_el30_gnu450
+# LIB_PLATFORM_64BIT = linux_el30_gnu450_x86_64
 # VTL release 4.9.0.0 requires the following LIB_PLATOFORM values for puresim mode.
-# LIB_PLATFORM_32BIT = linux_el30_gnu53
-# LIB_PLATFORM_64BIT = linux64_el30_gnu53
+LIB_PLATFORM_32BIT = linux_el30_gnu53
+LIB_PLATFORM_64BIT = linux64_el30_gnu53
 LIB_PLATFORM = $(LIB_PLATFORM_32BIT)
 ifeq ($(MTI_VCO_MODE), 64)
   LIB_PLATFORM = $(LIB_PLATFORM_64BIT)
@@ -261,19 +265,13 @@ VELLINT_VLOG_ARG    = $(VELLINT_VLOG_ARG_$(USE_VELOCE_LINT))
 VLOG_ARGS          += $(VELLINT_VLOG_ARG)
 
 VELLINT_VOPT_ARG_0  =
-VELLINT_VOPT_ARG_1  = -reporthrefs+hdl_top.dut_verilog 
-#VELLINT_VOPT_ARG_1  = -reporthrefs+hdl_top.dut_vhdl
+VELLINT_VOPT_ARG_1  = -reporthrefs+hdl_top 
 VELLINT_VOPT_ARG    = $(VELLINT_VOPT_ARG_$(USE_VELOCE_LINT))
 
 VELLINT_VSIM_ARG_0  =
 VELLINT_VSIM_ARG_1  = -tbxhvllint
 VELLINT_VSIM_ARG    = $(VELLINT_VSIM_ARG_$(USE_VELOCE_LINT))
 BATCH_VSIM_ARGS    += $(VELLINT_VSIM_ARG)
-
-VELLINT_VELCOMP_ARG_0  =
-VELLINT_VELCOMP_ARG_1  = -lint
-VELLINT_VELCOMP_ARG    = $(VELLINT_VELCOMP_ARG_$(USE_VELOCE_LINT))
-VELCOMP_ARGS          += $(VELLINT_VELCOMP_ARG)
 
 VWAVES_CMD_1_1 = velocecmd \"hwtrace autoupload on -tracedir waves -gen crd -crd_options \\\"-o waves.crd -siglist xwaves.sigs\\\" \";
 VWAVES_CMD   = $(VWAVES_CMD_$(USE_VELOCE)_$(USE_AUTOUP))
@@ -527,9 +525,7 @@ BUILD_TGT = $(BUILD_TGT_$(USE_VINFO))
 
 # Link target (Veloce)
 link:
-ifeq ($(USE_VELOCE_LINT), 0)
 	$(LINK)
-endif
 
 LINK_0 =
 LINK_1 = $(LINK_CMD)
@@ -571,9 +567,8 @@ cli: libs build link optimize cli_run
 debug gui: libs build link optimize gui_run
 
 vrun:
-	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(VRUN_TIMEOUT_CMD) $(EXTRA_VRUN_ARGS)
-	# This generates the HTML status output
-	vrun -status -html -rmdb $(RMDB_PATH)
+	vrun $(VRUN_ARGS) $(VRUN_RUNNABLE) -rmdb $(RMDB_PATH) $(VRUN_TIMEOUT_CMD) -GTESTLIST_NAME=$(VRM_TESTLIST) $(VRM_BCR_PARAM) $(EXTRA_VRUN_ARGS)
+	vrun -status -html -rmdb $(RMDB_PATH) 
 
 ## This target runs covercheck verify using an existing work library and UCDB
 COVERCHECK_TOP ?= verilog_dut

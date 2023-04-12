@@ -1,4 +1,10 @@
+incdir:
+  - .
+
 needs:
-  - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg_hdl.compile
+  - alu_in_common.compile
+  
 src:
-  - alu_in_pkg_hdl.sv
+  - src/alu_in_if.sv
+  - src/alu_in_driver_bfm.sv
+  - src/alu_in_monitor_bfm.sv

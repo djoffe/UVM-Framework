@@ -1,10 +1,17 @@
-__all__ = ['version','parent_parser','resolve_path']
+__all__ = ['version','parent_parser','resolve_path','ordered_load']
 
 import sys
 import os
 import re
 import argparse
 import logging
+
+try:
+  import yaml
+  from collections import OrderedDict
+except ImportError as ie:
+  print("ERROR:Missing library: %s" % str(ie))
+  sys.exit(1)
 
 from uvmf_version import version
 __version__ = version
@@ -81,17 +88,31 @@ parent_parser.add_argument("--debug",action=VerbosityAction,nargs=0,help=argpars
 parent_parser.add_argument("--quiet","-q",action=VerbosityAction,nargs=0,help="Force quiet operation, only produce warning & error messages")
 parent_parser.add_argument("--pdb",action='store_true',help=argparse.SUPPRESS)
 
-def resolve_path(input_path,root,input_file=None):
+def resolve_path(input_path,root,input_file=None,vars=None):
   """ Take input string and treat as a directory or file path. Goal is to return an absolute path.
   Do this by resolving references to $HOME (~) and any other environment variables, then attempting
   to normalize the path if needed (if it is still a relative path, it is relative to the 'root' input)
   """
+  if vars:
+    # Variables dict passed in, try to resolve any embedded variables first, then
+    # resort to environment variables
+    matched = False
+    while True:
+      m = re.match(r'\$\{(?P<var_name>\w+)\}',input_path)
+      if m:
+        var_name = m.group('var_name')
+        if var_name in vars:
+          matched = True
+          input_path = re.sub(r'\$\{'+var_name+r'\}',vars[var_name],input_path)
+      if not matched:
+        break
+      matched = False    
   p = os.path.expanduser(input_path)
   p = os.path.expandvars(p)
   r = os.path.expanduser(root)
   r = os.path.expandvars(r)
   if re.match(r'\$',p):
-    logging.error("Unresolved environment variables in provided path: {}".format(p))
+    logging.error("Unresolved variables in provided path: {}".format(p))
     if input_file:
       logging.error("Reference seen in \"{}\"".format(input_file))
     sys.exit(1)
@@ -99,5 +120,15 @@ def resolve_path(input_path,root,input_file=None):
     p = os.path.abspath(os.path.normpath(r+os.path.sep+p))
   return p
 
+def ordered_load(self, stream, Loader=yaml.SafeLoader, object_pairs_hook=OrderedDict):
+  class OrderedLoader(Loader):
+    pass
+  def construct_mapping(loader, node):
+    loader.flatten_mapping(node)
+    return object_pairs_hook(loader.construct_pairs(node))
+  OrderedLoader.add_constructor(
+    yaml.resolver.BaseResolver.DEFAULT_MAPPING_TAG,
+    construct_mapping)
+  return yaml.load(stream, OrderedLoader)
 
   

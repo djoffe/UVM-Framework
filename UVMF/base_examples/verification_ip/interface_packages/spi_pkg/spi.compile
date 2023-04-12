@@ -1,4 +1,3 @@
 needs:
-  - spi_hdl.compile
   - spi_hvl.compile
-  - spi_xrtl.compile
+  - spi_hdl.compile

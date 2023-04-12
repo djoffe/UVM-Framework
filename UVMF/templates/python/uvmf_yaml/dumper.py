@@ -312,11 +312,6 @@ class InterfaceDumper:
     data['config_constraints'] = []
     for i in self.obj.configVarsConstraints:
       data['config_constraints'].append({'name':i.name,'value':i.type,'comment':i.comment})
-    data['response_info'] = {}
-    data['response_info']['operation'] = self.obj.responseOperation
-    data['response_info']['data'] = []
-    for i in self.obj.responseList:
-      data['response_info']['data'].append(i['name'])
     if self.obj.soName != "":
       data['dpi_define'] = {}
       data['dpi_define']['name'] = self.obj.soName

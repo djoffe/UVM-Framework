@@ -40,8 +40,8 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endfor %}
 
 {% for agent in agents %}
-  typedef {{agent.ifPkg}}_agent {{macro.paramUseNested(agent.parameters)|indent(16)}} {{agent.name}}_agent_t;
-  {{agent.name}}_agent_t {{agent.name}};
+  typedef {{agent.ifPkg}}_agent {{macro.paramUseNested(agent.parameters)|indent(16)}} {{agent.name}}_t;
+  {{agent.name}}_t {{agent.name}};
 
 {% endfor %}
 
@@ -125,7 +125,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     {{ep.name}} = new("{{ep.name}}",this);
 {% endfor %}
 {% for agent in agents %}
-    {{agent.name}} = {{agent.name}}_agent_t::type_id::create("{{agent.name}}",this);
+    {{agent.name}} = {{agent.name}}_t::type_id::create("{{agent.name}}",this);
     {{agent.name}}.set_config(configuration.{{agent.name}}_config);
 {% endfor %}
 {% for nonUvmfComp in nonUvmfComponents %}
@@ -228,6 +228,21 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endif %}
 {% endfor %}
     // pragma uvmf custom reg_model_connect_phase end
+  endfunction
+
+// ****************************************************************************
+// FUNCTION: end_of_simulation_phase()
+// This function is executed just prior to executing run_phase.  This function
+// was added to the environment to sample environment configuration settings
+// just before the simulation exits time 0.  The configuration structure is 
+// randomized in the build phase before the environment structure is constructed.
+// Configuration variables can be customized after randomization in the build_phase
+// of the extended test.
+// If a sequence modifies values in the configuration structure then the sequence is
+// responsible for sampling the covergroup in the configuration if required.
+//
+  virtual function void start_of_simulation_phase(uvm_phase phase);
+     configuration.{{name}}_configuration_cg.sample();
   endfunction
 
 endclass

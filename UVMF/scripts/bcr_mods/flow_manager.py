@@ -78,20 +78,22 @@ class Flow(object):
     }
     top_schema = {
       Optional('options'): {
-        Optional('default'): str,
         Optional('sim_dir'): str,
         Optional('env_vars'): dict,
         Optional('libassoc'): list,
+        Optional('filelist_build_defines'): { str : Any(True,False) },
+        Optional('command_package_paths'): [ str ],
       },
       Required('flows'): { str : flow_schema },
       Optional('include'): [str],
     }
     overlay_schema = {
       Optional('options'): {
-        Optional('default'): str,
         Optional('sim_dir'): str,
         Optional('env_vars'): dict,
         Optional('libassoc'): list,
+        Optional('filelist_build_defines'): { str : Any(True,False) },
+        Optional('command_package_paths'): [ str ],
       },
       Optional('flows'): { str : flow_schema_overlay },
       Optional('include'): [str],
@@ -101,7 +103,6 @@ class Flow(object):
     self.data = self.read_file(fname)
     self.logger.debug("Base flow setup read from "+fname)
     self.validate(fname)
-#    self.resolve_inheritance()
 
   def validate_schema(self,schema,fname,data_structure):
     try:
@@ -129,10 +130,6 @@ class Flow(object):
 
   def validate(self,fname):
     self.validate_schema(self.top_schema,fname,self.data)
-    ## Check that default flow exists
-    if self.data['options']['default'] not in self.data['flows']:
-      self.logger.error("Default flow \"{}\" does not match any of the available defined flows. Valid flows:\n  {}".format(self.data['options']['default'],'\n  '.join(map(str,self.data['flows']))))
-      sys.exit(1)
 
   def inherit(self,inheriting_flow_name,inherited_flow_name):
     ## Inherit a flow on top of another
@@ -198,6 +195,7 @@ class Flow(object):
         self.inherit(k,ds['inherit'])
 
   def elaborate_variable(self,flow_name,step_name,var_name,container_dict,listing=False):
+    self.logger.debug("In flow \"{}\" step \"{}\", attempting to elaborate variable \"{}\"".format(flow_name,step_name,var_name))
     top_vars = self.data['flows'][flow_name]['steps'][step_name]['variables']
     self.variable_stack.append(var_name)
     while True:
@@ -220,7 +218,7 @@ class Flow(object):
         if var in os.environ:
           self.logger.debug("Elaborated {}:{}:{} to environment variable with value \"{}\"".format(flow_name,step_name,var,os.environ[var]))
           container_dict[var_name] = begin+os.environ[var]+end
-          return
+          continue
         else:
           ## Error, we cannot resolve this variable reference
           self.logger.error("In flow \"{}\" step \"{}\", unable to resolve variable \"{}\"".format(flow_name,step_name,var))
@@ -316,7 +314,7 @@ class Flow(object):
       try:
         command_module = importlib.import_module('.'+step['command_module'],step['command_package'])
       except ImportError:
-        self.logger.error("Flow \"{}\" step \"{}\" was unable to import the command module \"{}\" from package \"{}\"\n  path:{}".format(flow_name,step_name,step['command_module'],step['command_package'],sys.path))
+        self.logger.error("Flow \"{}\" step \"{}\" was unable to import the command module \"{}\" from package \"{}\"\n       Consider adding a path entry in your flow's 'option':'command_package_paths' array (see documentation for details)".format(flow_name,step_name,step['command_module'],step['command_package']))
         sys.exit(1)
       num = num + 1
       commands.append({'f':flow_name,
@@ -347,7 +345,7 @@ class Flow(object):
       if override.isspace():
         ## An override can come in as just an empty string.  Ignore this and move on
         continue
-      m = re.match(r"(?P<override_name>\w+):(?P<override_value>.+)",override)
+      m = re.match(r"(?P<override_name>\w+):(?P<override_value>.*)",override)
       if not m:
         self.logger.error("Option override error: \"{}\" not in expected name:value format".format(override))
         sys.exit(1)
@@ -356,15 +354,19 @@ class Flow(object):
       if name in override_dict:
         self.logger.error("Option \"{}\" overridden twice on command-line".format(name))
         sys.exit(1)
-      try:
-        if strtobool(value):
-          value = True
-        else:
-          value = False
-      except ValueError: pass
+      # Convert "True" and "False" keywords into boolean equivalents
+      if value == 'True':
+        value = True
+      if value == 'False':
+        value = False
       override_dict[name] = value
       self.logger.debug("Overriding option \"{}\" with value \"{}\"".format(name,value))
     for variable_name, override_value in override_dict.items():
+      ## First search for defines in the filelist_build_defines structure (if it exists)
+      if 'filelist_build_defines' in self.data['options'] and variable_name in self.data['options']['filelist_build_defines']:
+        self.data['options']['filelist_build_defines'][variable_name] = override_value
+        self.logger.debug("Setting build define \"{}\" to \"{}\"".format(variable_name,override_value))
+        continue
       ## Search for variable name across all steps. 
       if 'variables' in self.data['flows'][flow] and variable_name in self.data['flows'][flow]['variables']:
         ## Found the override in the flow-level variable list. Try to override across all steps
@@ -407,7 +409,7 @@ class Flow(object):
       self.logger.error("Unable to open flows file \"{}\"".format(full_fname))
       sys.exit(1)
     try:
-      data = yaml.safe_load(fs)
+      data = ordered_load(self,fs)
     except yaml.scanner.ScannerError as e:
       self.logger.error("Error in file \"{}\": {}".format(full_fname,e))
       sys.exit(1)

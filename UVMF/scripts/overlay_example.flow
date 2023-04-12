@@ -4,9 +4,8 @@
 #  - Use the $UVMF_BCR_FLOW_FILE_OVERLAY environment variable (can point to multiple files using colon-separated strings)
 #  - Place this file in your uvmf_bcr.py invocation directory and name it 'bcr_overlay.flow'
 
-# Now default flow is to run with 3-step flow
+# Set environment variables specific to any BCR invocation that uses this overlay file
 options:
-  default: '3step'
   env_vars:
     MY_ENV_VAR_1: value_of_env_var_1
     MY_ENV_VAR_2: value_of_env_var_2

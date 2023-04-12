@@ -1,5 +1,4 @@
 needs:
-  - alu_out_hdl.compile
   - alu_out_hvl.compile
-  - alu_out_xrtl.compile
+  - alu_out_hdl.compile
   

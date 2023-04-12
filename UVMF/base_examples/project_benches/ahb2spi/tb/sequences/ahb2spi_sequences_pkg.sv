@@ -47,9 +47,6 @@ package ahb2spi_sequences_pkg;
   //    compiled as part of the sequence package.  Be sure to place
   //    the new sequence after any base sequences of the new sequence.
    //`include "src/ahb2spi_regmodel_sequence.svh"
-   //`include "src/infact_bench_sequence.svh"
-
-
 
   // pragma uvmf custom package_item_additional end
 

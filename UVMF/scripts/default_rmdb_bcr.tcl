@@ -125,6 +125,7 @@ proc vrmSetupDefaults {} {
   setIniVar triageoptions {} 1
   setIniVar bcr_exec_cmd_linux "uvmf_bcr.py" 1
   setIniVar bcr_exec_cmd_windows "python $::env(UVMF_HOME)/scripts/uvmf_bcr.py" 1
+  setIniVar bcr_flow "questa" 1
   return 0
 }
 
