@@ -37,7 +37,7 @@ flows:
       access: ''
       extra_do: ''
       extra_pre_do: ''
-      do_override: False
+      do_override: ''
       compile_only: False
       build_only: False      
       sim_only: False
@@ -66,6 +66,14 @@ flows:
       uvm_precompiled: True
       uvm_debug_pkg: True
       uvm_debug_pkg_location: '${QUESTA_HOME}/verilog_src/questa_uvm_pkg-1.2'
+      cppinstall: ''
+      ext_libraries: ''
+      signal_file: ''
+      profile: False
+      profile_database: 'profile.pdb'
+      fprofile: False
+      fprofile_args: '+perf=high'
+      fprofile_database: 'profile.fdb'
     variable_descriptions:
       live: "Run interactive mode simulation instead of batch-mode"
       test: "Specify which UVM test to invoke"    
@@ -83,7 +91,7 @@ flows:
       vis_wave: "Override wave dumping options for Visualizer -qwavedb switch"
       no_vis_wave: "Disable production of -qwavedb switch"
       wave_file: "Load the specified wave format file for debug"
-      access: "Use this to specify additional -access or related switches for QIS visibility"
+      access: "Use this to specify additional -access or related switches for debug visibility"
       use_64_bit: "Run tools in 64-bit mode when True. If false, tools that support 32-bit mode will use it"
       code_cov_enable: "Enable the collection of code coverage"
       code_cov_target: "Specify the hierarchy to instrument for code coverage"
@@ -110,9 +118,15 @@ flows:
       uvm_precompiled: "When set, use the precompiled version of the UVM package. Otherwise compile from source"
       uvm_debug_pkg: "When set, use the Questa UVM debug package"
       uvm_debug_pkg_location: "Location of the Questa UVM debug package"
+      cppinstall: "When specified, trigger use of -cppinstall switch on all appropriate commands"
+      lib: "Space delimited list of externally compiled libraries that the build will need to reference"
+      signal_file: "When specified, will be used as input to the Visualizer signal file +signal option"
+      fprofile: "Enable use of Visualizer profile capture. Only valid when use_vis is True"
+      profile: "Enable use of legacy auto-profile capture. Only valid when use_vis is False"
+      profile_database: "Specify the name of the generated profile database file"
+      fprofile_args: "Specify additional options to the -fprofile switch"
     steps:
       clean:
-        description: "Clean up"
         command_package: 'mentor_commands'
         command_module: 'clean'
 
@@ -125,14 +139,15 @@ flows:
     variables:
       extra: ''
       gen_script: False
-      tops: ''
+      tops: 'hdl_top hvl_top'
       pdu: ''
-      makelib: ''
       overlay_extra: ''
     variable_descriptions:
       extra: "Append additional switches to qrun command"
       gen_script: "Invoke qrun with -script switch"
       tops: "Explicitly specify the top-level modules for qrun"
+      overlay_extra: "Append additional switches to qrun command, intended for use within an overlay file"
+      pdu: "Provide one or more modules as input, each will have a PDU created via -pdu switch"
     steps:
       run:
         description: "Incremental Questa compile & run"
@@ -220,51 +235,6 @@ flows:
         command_package: 'mentor_commands'
         command_module: 'covercheck'
 
-  infact:
-    order: 0
-    description: "Run Questa simulation using inFact stimulus generation"
-    inherit: questa
-    default_steps:
-      - compile_tests
-      - build_infact_seq
-      - build_bench
-      - run
-    variables:
-      tests_compile_file: null
-      work: "qrun.out/work"
-      infact_top: null
-      test: infact_test_base
-      mode: "-c"  # Workaround to make sure correct LD_LIBRARY_PATH is chosen for inFact DPI
-    steps:
-      compile_tests:
-        description: "Compile source code"
-        variables:
-          compile_only: True
-          compile_files: ${tests_compile_file}
-          log_filename: compile_tests.log
-        command_package: 'mentor_commands'
-        command_module: 'qrun'
-      build_infact_seq:
-        description: "Run inFact QSO to create stimulus package"
-        command_package: 'mentor_commands'
-        command_module: 'infact_qso'
-      build_bench:
-        description: "Complete compilation and elaboration of full bench"
-        command_package: 'mentor_commands'
-        command_module: 'qrun'
-        variables:
-          compile_files: top.compile infact.compile
-          tops: '${infact_top} hdl_top hvl_top'
-          build_only: True
-          log_filename: build_bench.log
-      run:
-        description: "Incremental compile and run inFact simulation"
-        command_package: 'mentor_commands'
-        command_module: 'qrun'
-        variables:
-          tops: '${infact_top} hdl_top hvl_top'
-          sim_only: True
-
   3step:
     order: 7
     description: "Run Questa using three-step flow"
@@ -289,6 +259,10 @@ flows:
       vopt_log_filename: "Logfile name for vopt operation"
       vopt_extra: "Extra command line for vopt operation"
       vsim_extra: "Extra command line for vsim operation"
+      vlog_overlay_extra: "Extra command line for vlog operation, intended for use within an overlay file"
+      vcom_overlay_extra: "Extra command line for vcom operation, intended for use within an overlay file"
+      vopt_overlay_extra: "Extra command line for vopt operation, intended for use within an overlay file"
+      vsim_overlay_extra: "Extra command line for vsim operation, intended for use within an overlay file"
     steps:
       compile:
         description: "Compile source code"
@@ -342,6 +316,8 @@ flows:
       velanalyze_vhdl_suppress: ''
       velanalyze_vhdl_defines: ''
       velanalyze_vhdl_extra: ''
+      velhvl_extra: ''
+      velhvl_overlay_extra: ''
       run_extra: ''
       vlog_extra: ''
       vcom_extra: ''
@@ -364,6 +340,7 @@ flows:
       velanalyze_vlog_extra: 'Append switches to the velanalyze command for Verilog source'
       velanalyze_vhdl_extra: 'Append switches to the velanalyze command for VHDL source'
       velcomp_extra: 'Append switches to the velcomp command'
+      velhvl_extra: 'Append switches to the velhvl command'
       vlog_extra: 'Append switches to the Questa Verilog compile'
       vcom_extra: 'Append switches to the Questa VHDL compile'
       vopt_extra: 'Append switches to the Questa vopt elaboration'

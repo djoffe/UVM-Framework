@@ -44,9 +44,9 @@
 //    T    - Specifies the type of transactions to be compared.
 //           Must be derived from uvmf_transaction_base.
 
-class uvmf_out_of_order_race_scoreboard #(type T=uvmf_transaction_base) extends uvmf_out_of_order_scoreboard #(T);
+class uvmf_out_of_order_race_scoreboard #(type T=uvmf_transaction_base, type BASE_T = uvmf_out_of_order_scoreboard #(T)) extends BASE_T;
 
-   `uvm_component_param_utils(uvmf_out_of_order_race_scoreboard #(T))
+   `uvm_component_param_utils(uvmf_out_of_order_race_scoreboard #(T,BASE_T))
 
    // FUNCTION: new
    function new(string name, uvm_component parent );

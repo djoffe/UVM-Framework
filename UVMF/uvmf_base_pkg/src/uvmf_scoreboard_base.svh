@@ -92,6 +92,7 @@ class uvmf_scoreboard_base #(type T = uvmf_transaction_base, type BASE_T = uvm_s
    // FUNCTION: build
    // Construct the analysis fifo and non-blocking get port
    function void build_phase(uvm_phase phase);
+      super.build_phase(phase);
       // Checking for command line disable of scoreboard activity & empty check.  
       // This is only added for QA testing of UVMF code generators.
       // This is NOT recommended for use when verifying a design.

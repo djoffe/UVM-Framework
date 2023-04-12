@@ -6,7 +6,10 @@ class Vopt(Generator):
   def __init__(self,v={}):
     super(Vopt,self).__init__
     self.keys = '''
-            cmd    arch     tops      work      out    coverage_build  visibility   vis_designfile vopt_extra   vopt_overlay_extra  modelsimini  suppress  lib  logfile lint
+            cmd             arch          tops                work         out    
+            coverage_build  visibility    vis_designfile      vopt_extra   vopt_overlay_extra  
+            modelsimini     suppress      lib                 logfile      lint
+            cppinstall      profiler
             '''.split()
 
   def set_cmd(self,v={}):
@@ -51,10 +54,16 @@ class Vopt(Generator):
     self.coverage_build       = self.set_coverage_build(v)
     self.vis_designfile       = self.set_vis_designfile(v)
     self.lint                 = self.set_lint(v)
+    self.cppinstall           = self.set_cppinstall(v)
+    self.profiler             = self.set_vopt_profiler(v)
 
 # Invoke vopt
 def generate_command(v=None):
   obj = Vopt()
   obj.elaborate(v)
   logger.debug(obj)
+  if 'sim_only' in v and v['sim_only']:
+    return []
+  if 'compile_only' in v and v['compile_only']:
+    return []
   return obj.command(v)

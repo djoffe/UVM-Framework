@@ -1,3 +1,4 @@
+
 from command_helper import *
 import os
 import sys
@@ -7,11 +8,11 @@ class Qrun(Generator):
   def __init__(self,v={}):
     super(Qrun,self).__init__
     self.keys = '''
-           cmd              arch            flow_control   mode         debug       outdir                 permit_unmatched_virt_intf   vrm_in_use
-           logfile          filelists       pdu            seed         msglimit    full_do                timescale                    uvm_switches
-           coverage_run     coverage_build  test           verbosity    extra       mvc_switch             visibility                   overlay_extra
-           vis_wave         trlog           lib            gen_script   tops        suppress               modelsimini                  vis_designfile
-           time_resolution  multiuser
+           cmd              arch            flow_control   mode          debug       outdir                 permit_unmatched_virt_intf   vrm_in_use
+           logfile          filelists       pdu            seed          msglimit    full_do                timescale                    uvm_switches
+           coverage_run     coverage_build  test           verbosity     extra       mvc_switch             visibility                   overlay_extra
+           vis_wave         trlog           lib            gen_script    tops        suppress               modelsimini                  vis_designfile
+           time_resolution  multiuser       cppinstall     profiler
                  '''.split()
     pass
     
@@ -93,7 +94,16 @@ class Qrun(Generator):
         top_str = top_str + ' -top '+t
     return top_str
 
+  def set_profiler(self,v={}):
+    if 'profile' in v and v['profile']:
+      return self.set_vopt_profiler(v)+' '+self.set_vsim_profiler(v)
+    elif 'fprofile' in v and v['fprofile']:
+      return self.set_vsim_profiler(v)
+    else:
+      return ''
+
   def elaborate(self,v={}):
+    self.mode,self.run,self.debug                     = self.set_mode_run_debug(v)
     self.mvc_switch                                   = self.set_mvc_switch(v)
     self.msglimit                                     = self.set_msglimit(v)
     self.coverage_run                                 = self.set_coverage_run(v)
@@ -119,7 +129,6 @@ class Qrun(Generator):
     self.visibility                                   = self.set_visibility(v)
     self.gen_script                                   = self.set_gen_script(v)
     self.tops                                         = self.set_tops(v)
-    self.mode,self.run,self.debug                     = self.set_mode_run_debug(v)
     self.permit_unmatched_virt_intf                   = self.set_permit_unmatched_virt_intf(v)
     self.timescale                                    = self.set_timescale(v)
     self.vis_designfile                               = self.set_vis_designfile(v)
@@ -128,6 +137,8 @@ class Qrun(Generator):
     self.overlay_extra                                = self.set_overlay_extra(v)
     self.time_resolution                              = self.set_time_resolution(v)
     self.multiuser                                    = self.set_multiuser(v)
+    self.cppinstall                                   = self.set_cppinstall(v)
+    self.profiler                                     = self.set_profiler(v)
 
   def command(self,v):
     base_command = super(Qrun,self).command(v)

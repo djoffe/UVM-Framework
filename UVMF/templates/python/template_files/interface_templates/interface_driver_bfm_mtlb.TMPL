@@ -239,11 +239,11 @@ import {{name}}_pkg::*;
        // 
        // Members within the {{name}}_initiator_struct:
 {% for txn in transVars %}
-       //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+       //   {{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
        // Members within the {{name}}_responder_struct:
 {% for txn in transVars %}
-       //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+       //   {{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
        //
        // Reference code;
@@ -271,7 +271,7 @@ import {{name}}_pkg::*;
        // 
        // Variables within the initiator_trans:
 {% for txn in transVars %}
-       //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+       //   {{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
        //
        // Reference code;
@@ -294,11 +294,11 @@ import {{name}}_pkg::*;
     @(posedge {{clock}}_i);
 {% if veloceReady %}
 {% for txn in transVars %}
-       {{txn.name}}_o <= {{name}}_initiator_struct.{{txn.name}};
+       {{txn.name}}_o <= {{name}}_initiator_struct._{{txn.name}};
 {% endfor %}
 {% else %}
 {% for txn in transVars %}
-       {{txn.name}}_o <= initiator_trans.{{txn.name}};
+       {{txn.name}}_o <= initiator_trans._{{txn.name}};
 {% endfor %}
 {% endif %}
   endtask        
@@ -326,11 +326,11 @@ bit first_transfer=1;
        );{% if veloceReady %}// pragma tbx xtf {% endif %}  
   // Variables within the {{name}}_initiator_struct:
 {% for txn in transVars %}
-  //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+  //   {{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
   // Variables within the {{name}}_responder_struct:
 {% for txn in transVars %}
-  //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+  //   {{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}        
 {% else %}  
   task respond_and_wait_for_next_transfer( {{name}}_transaction 
@@ -339,7 +339,7 @@ bit first_transfer=1;
                                          );     
   // Variables within the responder_trans:
 {% for txn in transVars %}
-  //   {{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+  //   {{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
 {% endif %}
   @(posedge {{clock}}_i);

@@ -10,6 +10,8 @@ needs:
 {% for env in env_pkgs %}
   - ../{{env}}_env_pkg/{{env}}_env_pkg.compile
 {% endfor %}
+# pragma uvmf custom extra_needs begin
+# pragma uvmf custom extra_needs end
 
 src:
 {% for regModel in regModels %}
@@ -19,5 +21,7 @@ src:
 {% for cFile in DPIFiles %}
   - dpi/{{cFile}}
 {% endfor %}{% endblock %}
+# pragma uvmf custom extra_src begin
+# pragma uvmf custom extra_src end
 
 

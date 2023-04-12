@@ -22,7 +22,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
 {{macro.objUtils([name,'_transaction']|join(""),paramDefs)}}
 
 {% for txn in transVars %}
-  {% if txn.isrand %}rand {% endif %}{{txn.type}} {{txn.name}} {{txn.unpackedDim}};
+  {% if txn.isrand %}rand {% endif %}{{txn.type}} _{{txn.name}} {{txn.unpackedDim}};
 {% endfor %}
 
   //Constraints for the transaction variables:
@@ -112,7 +112,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
   virtual function string convert2string();
     // pragma uvmf custom convert2string begin
     // UVMF_CHANGE_ME : Customize format if desired.
-    return $sformatf("{% for txn in transVars %}{{txn.name}}:{%if txn.unpackedDim != "" %}%p {% else %}0x%x {% endif %}{% endfor %}"{% for txn in transVars %},{{txn.name}}{% endfor %});
+    return $sformatf("{% for txn in transVars %}_{{txn.name}}:{%if txn.unpackedDim != "" %}%p {% else %}0x%x {% endif %}{% endfor %}"{% for txn in transVars %},_{{txn.name}}{% endfor %});
     // pragma uvmf custom convert2string end
   endfunction
 
@@ -140,7 +140,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     // UVMF_CHANGE_ME : Eliminate comparison of variables not to be used for compare
     return (super.do_compare(rhs,comparer)
 {% for txn in transVars %}{% if txn.iscompare %}
-            &&(this.{{txn.name}} == RHS.{{txn.name}})
+            &&(this._{{txn.name}} == RHS._{{txn.name}})
 {% endif %}{% endfor %}            );
   endfunction
 
@@ -154,7 +154,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     assert($cast(RHS,rhs));
     super.do_copy(rhs);
 {% for txn in transVars %}
-    this.{{txn.name}} = RHS.{{txn.name}};
+    this._{{txn.name}} = RHS._{{txn.name}};
 {% endfor %}
   endfunction
 
@@ -178,7 +178,7 @@ class {{name}}_transaction {{macro.paramDeclare(paramDefs)|indent(6)}} extends u
     //   default : $add_color(transaction_view_h,"grey");
     // endcase
     // UVMF_CHANGE_ME : Eliminate transaction variables not wanted in transaction viewing in the waveform viewer
-{% for txn in transVars %}    $add_attribute(transaction_view_h,{{txn.name}},"{{txn.name}}");
+{% for txn in transVars %}    $add_attribute(transaction_view_h,_{{txn.name}},"_{{txn.name}}");
 {% endfor %}
     // pragma uvmf custom add_to_wave end
     $end_transaction(transaction_view_h,end_time);

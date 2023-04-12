@@ -114,8 +114,9 @@ class uvmf_parameterized_agent #(
   virtual function void build_phase(uvm_phase phase);
      // agent_name used to create the name of the driver and monitor
      string agent_name;
+     super.build_phase(phase);
      agent_name = get_name();
-
+     
      // Agent configuration
      // Get the configuration for this agent from the uvm_config_db if not already set
      if ( configuration == null ) begin : config_null_check

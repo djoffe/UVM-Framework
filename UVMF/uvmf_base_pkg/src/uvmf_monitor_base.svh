@@ -94,6 +94,7 @@ class uvmf_monitor_base #(
   // FUNCTION: build_phase
   // Construct the analysis port in the build phase.
   virtual function void build_phase(uvm_phase phase);
+     super.build_phase(phase);
      monitored_ap=new( "monitored_ap", this );
   endfunction
 
@@ -119,6 +120,7 @@ class uvmf_monitor_base #(
 // ****************************************************************************
   // FUNCTION: start_of_simulation_phase
   virtual function void start_of_simulation_phase(uvm_phase phase);
+     super.start_of_simulation_phase(phase);
   `ifdef QUESTA
      if (configuration.enable_transaction_viewing) begin
        transaction_viewing_stream = $create_transaction_stream({"..",get_full_name(),".","txn_stream"},"TVM");

@@ -56,9 +56,6 @@
 //    - <uvmf_monitor_base>
 //    - <uvmf_parameterized_agent>
 //    - <uvmf_parameterized_simplex_environment>
-//    - <uvmf_parameterized_1agent_environment>
-//    - <uvmf_parameterized_2agent_environment>
-//    - <uvmf_parameterized_3agent_environment>
 //    - <uvmf_test_base>
 
 
@@ -137,9 +134,6 @@ package uvmf_base_pkg;
    `include "src/uvmf_environment_configuration_base.svh"
    `include "src/uvmf_environment_base.svh"
    `include "src/uvmf_parameterized_simplex_environment.svh"
-   `include "src/uvmf_parameterized_1agent_environment.svh"
-   `include "src/uvmf_parameterized_2agent_environment.svh"
-   `include "src/uvmf_parameterized_3agent_environment.svh"
 
    // Test base class
    `include "src/uvmf_test_base.svh"

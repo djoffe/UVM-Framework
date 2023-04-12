@@ -165,7 +165,7 @@ VCOM_ARGS = $(MULTIUSER_ARG)
 
 VLOG_ARGS_0 = -sv -suppress 2223 -suppress 2286 $(MULTIUSER_ARG)
 VLOG_ARGS_1 = $(VLOG_ARGS_0) \
-              +define+XRTL +define+XMVC +define+USE_VTL
+              +define+XRTL +define+XMVC +define+USE_VTL +define+ICVIP_EMU
 VLOG_ARGS   = $(VLOG_ARGS_$(USE_VELOCE_OR_VTL)) 
 
 VELANALYZE_ARGS     = -sv -suppress 2223 -suppress 2286 \

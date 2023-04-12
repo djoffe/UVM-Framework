@@ -23,16 +23,20 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 
   // pragma uvmf custom sequences begin
 
-typedef {{env_name}}_env_sequence_base #(
-        .CONFIG_T({{env_name}}_env_configuration_t){% if envParamDefs|length > 0 %}{% for param in envParamDefs -%}{% if loop.first %},
+// This example shows how to use the environment sequence base
+// It can only be used on environments generated with UVMF_2022.3 and later.
+// Environment sequences generated with UVMF_2022.1 and earlier do not have the required 
+//    environment level virtual sequencer
+// typedef {{env_name}}_env_sequence_base #(
+//         .CONFIG_T({{env_name}}_env_configuration_t){% if envParamDefs|length > 0 %}{% for param in envParamDefs -%}{% if loop.first %},
 {% endif %}
-        .{{param.name}}({{param.value}}){% if not loop.last %},
+//         .{{param.name}}({{param.value}}){% if not loop.last %},
 {% endif %}{% endfor %}
 {% endif %}
-
-        )
-        {{env_name}}_env_sequence_base_t;
-rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
+// 
+//         )
+//         {{env_name}}_env_sequence_base_t;
+// rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
 
 
 
@@ -78,7 +82,7 @@ rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
 {% endfor %}
 {% if topEnvHasRegisterModel %}
   // Local handle to register model for convenience
-  {{regBlockClass}} reg_model;
+  {{regBlockClass}} {{regBlockInstance}};
   uvm_status_e status;
 {% endif %}
 {% if useCoEmuClkRstGen %}
@@ -134,7 +138,7 @@ rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
 {% endfor %}
 {% endif %}
 {% if topEnvHasRegisterModel %}
-    reg_model = top_configuration.{{env_name}}_rm;
+    {{regBlockInstance}} = top_configuration.{{regBlockInstance}};
 {% endif %}
 
 {% if useCoEmuClkRstGen %}
@@ -157,7 +161,7 @@ rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
 
     // Construct sequences here
 
-    {{env_name}}_env_seq = {{env_name}}_env_sequence_base_t::type_id::create("{{env_name}}_env_seq");
+    // {{env_name}}_env_seq = {{env_name}}_env_sequence_base_t::type_id::create("{{env_name}}_env_seq");
 
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
@@ -173,7 +177,7 @@ rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
 {% endfor %}
     join
 {% if topEnvHasRegisterModel %}
-    reg_model.reset();
+    {{regBlockInstance}}.reset();
 {% endif %}
     // Start RESPONDER sequences here
     fork
@@ -195,7 +199,7 @@ rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
     clk_ctrl.wait_clocks(25);
 {% else %}
 
-{{env_name}}_env_seq.start(top_configuration.vsqr);
+// {{env_name}}_env_seq.start(top_configuration.vsqr);
 
     // UVMF_CHANGE_ME : Extend the simulation XXX number of clocks after 
     // the last sequence to allow for the last sequence item to flow 

@@ -78,7 +78,7 @@ class uvmf_test_base #(
 
   // FUNCTION: build_phase
   virtual function void build_phase(uvm_phase phase);
-
+    super.build_phase(phase);
     // Get test name from UVM_TESTNAME command line argument
     if(!$value$plusargs("UVM_TESTNAME=%s", test_name))
       `uvm_error("TEST", {"Unknown Test name", test_name})

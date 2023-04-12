@@ -6,8 +6,8 @@ class Vlog(Generator):
   def __init__(self,v={}):
     super(Vlog,self).__init__
     self.keys = '''
-                 cmd        arch      filelists      modelsimini   vlog_extra    vlog_overlay_extra 
-                 timescale  suppress  logfile        msglimit      lint    multiuser
+                 cmd        arch      filelists      modelsimini   vlog_extra    vlog_overlay_extra   lib
+                 timescale  suppress  logfile        msglimit      lint          multiuser            cppinstall
                 '''.split()
 
   def set_cmd(self,v={}):
@@ -50,6 +50,8 @@ class Vlog(Generator):
     self.msglimit                = self.set_msglimit(v)     
     self.lint                    = self.set_lint(v) 
     self.multiuser               = self.set_multiuser(v)
+    self.cppinstall              = self.set_cppinstall(v)
+    self.lib                     = self.set_lib(v)
 
   def __repr__(self):
     if not self.filelists:
@@ -58,5 +60,7 @@ class Vlog(Generator):
 
   def command(self,v):
     if not self.filelists:
+      return []
+    if 'sim_only' in v and v['sim_only']:
       return []
     return super(Vlog,self).command(v)      

@@ -37,11 +37,11 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   bit enable_predictor_fwrite=0;
 
 {% for DPIImport in DPIImports %}
-{% if DPIImport.name.endswith('_output') %}
+{% if DPIImport.name.endswith('_output') or DPIImport.name.endswith(soName) %}
   // System Verilog variables for C function {{DPIImport.type}} {{DPIImport.name}} {{DPIImport.cArgs}} 
 
 {% for argument in DPIImport.arguments %}
-  {{argument['type']}}  {{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %};
+  {{argument['type']}}  _{{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %};
 {% endfor %}
 {% endif %}
 {% endfor %}
@@ -87,7 +87,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
      if ( file == 0) `uvm_fatal("FOPEN_ERROR", $psprintf("Error opening file: %s", {name,".samples"}))
 
 {% for DPIImport in DPIImports %}{% if DPIImport.name.endswith('_initialize') %}
-     objhandle = {{DPIImport.name}}(objhandle);
+     _objhandle = {{DPIImport.name}}(_objhandle);
 {% endif %}{% endfor %}
 
   endfunction
@@ -122,22 +122,22 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 
 {% for port in ports %}
 {% for DPIImport in DPIImports %}
-{% if DPIImport.name.endswith('_output') %}
+{% if DPIImport.name.endswith('_output') or DPIImport.name.endswith(soName) %}
     // Calling output C function
     {{DPIImport.name}}(
 {%- for argument in DPIImport.arguments -%}
 {% if argument['unpacked_dimension'] and argument['unpacked_dimension'] -%}
    {% if argument['dir']=='input' %}
    {{'    {'}}{% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) %}
- t.{{argument['name']}}_{{i}}{% if not loop.last -%},{% else %}{{'}'}}{% endif %}
+ t._{{argument['name']}}_{{i}}{% if not loop.last -%},{% else %}{{'}'}}{% endif %}
    {% endfor -%}
    
-   {% else %}       {{argument['name']}}{% endif %}
+   {% else %}       _{{argument['name']}}{% endif %}
 {% else %}
    {% if argument['dir']=='input' -%}
         {% if argument['name'] != 'objhandle'%}
-    t.{% endif %}{{argument['name']}}{% else %}
-    {{port.name}}_output_transaction.{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
+    t.{% endif %}_{{argument['name']}}{% else %}
+    {{port.name}}_output_transaction._{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
 {% endif -%}{% endfor %}
 
        );
@@ -155,15 +155,15 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 {% if argument['unpacked_dimension'] and argument['unpacked_dimension'] -%}
    {% if argument['dir']=='input' %}
    {{'    {'}}{% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) %}
- t.{{argument['name']}}_{{i}}{% if not loop.last -%},{% else %}{{'}'}}{% endif %}
+ t._{{argument['name']}}_{{i}}{% if not loop.last -%},{% else %}{{'}'}}{% endif %}
    {% endfor -%}
    
-   {% else %}       {{argument['name']}}{% endif %}
+   {% else %}       _{{argument['name']}}{% endif %}
 {% else %}
    {% if argument['dir']=='input' -%}
         {% if argument['name'] != 'objhandle'%}
-    t.{% endif %}{{argument['name']}}{% else %}
-    {{port.name}}_output_transaction.{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
+    t.{% endif %}_{{argument['name']}}{% else %}
+    {{port.name}}_output_transaction._{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
 {% endif -%}{% endfor %}
 
        );
@@ -177,7 +177,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 {% if argument['unpacked_dimension'] and argument['dir'] != 'input' -%}
     // Entries = {{argument['unpacked_dimension']}}
     {% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) -%}
-    {{port.name}}_output_transaction.{{argument['name']}}_{{i}}  = {{argument['name']}}[{{i}}];
+    {{port.name}}_output_transaction._{{argument['name']}}_{{i}}  = _{{argument['name']}}[{{i}}];
     {% endfor -%}
 {% endif -%}
 {% endfor -%}
@@ -194,7 +194,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
 {% for DPIImport in DPIImports %}
 {% if DPIImport.name.endswith('_output') %}
        $fwrite(file,"{%- for argument in DPIImport.arguments -%}{% if argument['dir'] != 'input' -%}{% if argument['unpacked_dimension'] %}{% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) -%}%d{% if not loop.last %}, {% endif %}{% endfor %}{% else %}%d{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor -%}\n",
-    {%- for argument in DPIImport.arguments -%}{% if argument['dir'] != 'input' -%}{% if argument['unpacked_dimension'] %}{% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) -%}{{port.name}}_output_transaction.{{argument['name']}}_{{i}}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}{{port.name}}_output_transaction.{{argument['name']}}{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor -%});
+    {%- for argument in DPIImport.arguments -%}{% if argument['dir'] != 'input' -%}{% if argument['unpacked_dimension'] %}{% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) -%}{{port.name}}_output_transaction._{{argument['name']}}_{{i}}{% if not loop.last %}, {% endif %}{% endfor %}{% else %}{{port.name}}_output_transaction._{{argument['name']}}{% endif %}{% if not loop.last %}, {% endif %}{% endif %}{% endfor -%});
 {% endif %}
 {% endfor %}
 {% endfor %}
@@ -209,7 +209,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
   virtual function void extract_phase (uvm_phase phase);
     super.extract_phase(phase);
 {% for DPIImport in DPIImports %}{% if DPIImport.name.endswith('_terminate') %}
-    {{DPIImport.name}}(objhandle);
+    {{DPIImport.name}}(_objhandle);
 {% endif %}{% endfor %}
     $fclose(file);
   endfunction

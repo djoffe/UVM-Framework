@@ -49,4 +49,6 @@ class Vcom(Generator):
   def command(self,v):
     if not self.filelists:
       return []
+    if 'sim_only' in v and v['sim_only']:
+      return []
     return super(Vcom,self).command(v)   

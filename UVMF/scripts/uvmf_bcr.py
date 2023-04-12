@@ -34,15 +34,29 @@ class OptionOverrideAction(argparse.Action):
 
 def print_flows(logger,flow):
   l = []
+  import platform
+  if platform.system() == 'Linux':
+    bold_on = '\033[1m'
+    bold_off = '\033[0m'
+  else:
+    bold_on = ''
+    bold_off = ''
   for k,v in sorted(flow.data['flows'].items(),key=lambda e:e[1]['order']):  ## e is a (k,v) tuple so v is e[1]
     if (v['order'] > 0):   # This will prevent the display of virtual flows that cannot be chosen
-      l.append(textwrap.fill("\033[1m{:>12}\033[0m - {}".format(k,v['description']),width=100))
+      l.append(textwrap.fill("{}{:>12}{} - {}".format(bold_on,k,bold_off,v['description']),width=100))
   logger.info("Available flows:\n  {}".format('\n  '.join(map(str,l))))
 
 def print_steps(args,flow,logger):
   l = []
   vlist = []
   def_step_num = 1
+  import platform
+  if platform.system() == 'Linux':
+    bold_on = '\033[1m'
+    bold_off = '\033[0m'
+  else:
+    bold_on = ''
+    bold_off = ''
   # If there are defaults, list default steps first (with indication of that)
   if 'default_steps' in flow.data['flows'][args.flow]:
     slist = flow.data['flows'][args.flow]['default_steps']
@@ -52,18 +66,27 @@ def print_steps(args,flow,logger):
     dformat = ''
   for s in slist:
     dstring = dformat.format(str(def_step_num))
-    l.append(textwrap.fill("\033[1m{:>12}\033[0m - {} {}".format(s,flow.data['flows'][args.flow]['steps'][s]['description'],dstring),width=100))
-    vlist.append(s)
-    def_step_num = def_step_num + 1
+    if s != 'clean':
+      l.append(textwrap.fill("{}{:>12}{} - {} {}".format(bold_on,s,bold_off,flow.data['flows'][args.flow]['steps'][s]['description'],dstring),width=100))
+      vlist.append(s)
+      def_step_num = def_step_num + 1
   # If there were default steps there may be additional steps (like 'clean') that were not in that list.
   # Add those to the end of the output now in a consistent (sorted) way
   for k,v in sorted(flow.data['flows'][args.flow]['steps'].items()):
     if k not in vlist:
-      l.append("\033[1m{:>12}\033[0m - {}".format(k,v['description']))
+      if 'description' in v:
+        l.append("{}{:>12}{} - {}".format(bold_on,k,bold_off,v['description']))
   logger.info("Available steps for flow \"{}\":\n  {}".format(args.flow,'\n  '.join(map(str,l))))
 
 def print_variables(args,flow,logger,filter=[]):
   l = []
+  import platform
+  if platform.system() == 'Linux':
+    bold_on = '\033[1m'
+    bold_off = '\033[0m'
+  else:
+    bold_on = ''
+    bold_off = ''
   ## Test filter input for validity (only accept glob format)
   try:
     globstr = filter[0]
@@ -76,7 +99,7 @@ def print_variables(args,flow,logger,filter=[]):
     for variable_name, variable_description in flow.data['flows'][args.flow]['variable_descriptions'].items():
       if variable_description: 
         if (not globstr) or (fnmatch.fnmatch(variable_name,globstr) or fnmatch.fnmatch(variable_description,globstr)):
-          l.append(textwrap.fill("\033[1m{:>16}\033[0m: {} (Defaults to \"{}\")".format(variable_name,variable_description,flow.data['flows'][args.flow]['variables'][variable_name]),width=100,subsequent_indent='                    '))
+          l.append(textwrap.fill("{}{:>16}{}: {} (Defaults to \"{}\")".format(bold_on,variable_name,bold_off,variable_description,flow.data['flows'][args.flow]['variables'][variable_name]),width=100,subsequent_indent='                    '))
     logger.info("Variables for flow '{}':\n  {}".format(args.flow,'\n  '.join(map(str,l))))
   l = []
   for step_name,step_value in flow.data['flows'][args.flow]['steps'].items():
@@ -84,7 +107,7 @@ def print_variables(args,flow,logger,filter=[]):
       continue
     for variable_name,variable_description in sorted(step_value['variable_descriptions'].items()):
       if variable_description: 
-        l.append(textwrap.fill("\033[1m{}\033[0m: {} (Defaults to \"{}\")".format(variable_name,variable_description,step_value['variables'][variable_name]),width=85,subsequent_indent='    '))
+        l.append(textwrap.fill("{}{}{}: {} (Defaults to \"{}\")".format(bold_on,variable_name,bold_off,variable_description,step_value['variables'][variable_name]),width=85,subsequent_indent='    '))
     logger.info("Variables for step '{}' of flow '{}':\n  {}".format(step_name,args.flow,'\n  '.join(map(str,l))))
 
 def run():
@@ -201,6 +224,10 @@ def run():
   else:
     ## Steps were specified, put them in the list
     args.steps = args.steps.split(" ")
+    ## Check for explicit use of 'clean' step, which is illegal
+    if 'clean' in args.steps:
+      logger.error("Explicit use of 'clean' step is disallowed. Use --clean switch")
+      sys.exit(1)
   ## Display variables if requested
   if args.list_variables:
     print_variables(args,flow,logger,option_overrides)
@@ -355,7 +382,10 @@ def run():
       logger.info("Executing flow \"{}\" step \"{}\" commands:\n  {}".format(command['f'],command['s'],'\n  '.join(map(str,cl))))
       ret = None
       for c in cl:
-        ret = subprocess.call(c,shell=True)
+        try:
+          ret = subprocess.call(c,shell=True)
+        except KeyboardInterrupt:
+          print('Detected keyboard interrupt...')
         logger.debug("Last command returned status {}".format(ret))
         if ret:
           ## Bomb out if the command we just ran returned a non-zero status, pass that status on through exit()

@@ -18,7 +18,7 @@ class Clean(Generator):
                 *~ *.ucdb vsim.dbg *.vstf *.log work *.mem *.transcript.txt certe_dump.xml
                  *.wlf transcript covhtmlreport VRMDATA design.bin *.so *.dll qwave.db *.dbg dpiheader.h visualizer*.ses
                  vrmhtmlreport veloce.med veloce.wave tbxbindings.h edsenv sv_connect.*
-                 *.o *.so covercheck_results qrun.out *.qf *.vf infact_genfiles
+                 *.o *.so covercheck_results qrun.out *.qf *.vf infact_genfiles fprofile *.pdb *.fdb
                '''
     if 'realclean' in v and v['realclean']:
       glob_str = glob_str + ' modelsim.ini'

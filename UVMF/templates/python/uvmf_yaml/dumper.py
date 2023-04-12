@@ -113,7 +113,7 @@ class EnvironmentDumper:
       params = []
       for p in i.parameters:
         params.append({'name':p.name,'value':p.value})
-      data['subenvs'].append({'name':i.name,'type':i.envPkg,'parameters':params})
+      data['subenvs'].append({'name':i.name,'type':i.envPkg,'parameters':params,'reg_block_instance_name':i.regBlockInstance})
     data['analysis_components'] = []
     for i in self.obj.analysisComponents:
       params = []
@@ -167,7 +167,8 @@ class EnvironmentDumper:
         data['register_model'] = { 'use_adapter': str(rm.useAdapter),
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
                                    'reg_model_package': str(rm.regModelPkg),
-                                   'reg_block_class': str(rm.regBlockClass)
+                                   'reg_block_class': str(rm.regBlockClass),
+                                   'reg_adapter_class': str(rm.adapterType)
                                  }
       else:
         match = re.match(r"(.*)",rm.sequencer)
@@ -176,7 +177,8 @@ class EnvironmentDumper:
                                    'use_explicit_prediction': str(rm.useExplicitPrediction),
                                    'reg_model_package': str(rm.regModelPkg),
                                    'reg_block_class': str(rm.regBlockClass),
-                                   'maps': [ { 'name': rm.busMap, 'interface': ifname, 'qvip_agent': str(rm.qvipAgent)} ]
+                                   'reg_adapter_class': str(rm.adapterType),
+                                   'maps': [ { 'name': rm.busMap, 'interface': ifname, 'qvip_agent': str(rm.qvipAgent), 'interface_type':str(rm.vipType)} ]
                                   }
     if self.obj.soName!="":
       data['dpi_define'] = {}

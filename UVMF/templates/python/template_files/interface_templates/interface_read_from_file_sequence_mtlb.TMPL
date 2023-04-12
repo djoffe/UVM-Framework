@@ -73,28 +73,28 @@ endfunction
        forever begin
 {% for txn in transVars %}
 {% if loop.first %}
-          status = $fscanf({{txn.name}}_file, "%d\n", req.{{txn.name}});
+          status = $fscanf({{txn.name}}_file, "%d\n", req._{{txn.name}});
           if ( status != 1 ) begin
               close_files();
               open_files();
-               status = $fscanf({{txn.name}}_file, "%d\n", req.{{txn.name}});
+               status = $fscanf({{txn.name}}_file, "%d\n", req._{{txn.name}});
           end
 {% else %}
-          status =  $fscanf({{txn.name}}_file, "%d\n", req.{{txn.name}});
+          status =  $fscanf({{txn.name}}_file, "%d\n", req._{{txn.name}});
 {% endif %}{% endfor %}
         end
     end else begin
         repeat (cycles_to_run) begin
 {% for txn in transVars %}
 {% if loop.first %}
-          status = $fscanf({{txn.name}}_file, "%d\n", req.{{txn.name}});
+          status = $fscanf({{txn.name}}_file, "%d\n", req._{{txn.name}});
           if ( status != 1 ) begin
               close_files();
               open_files();
-               status = $fscanf({{txn.name}}_file, "%d\n", req.{{txn.name}});
+               status = $fscanf({{txn.name}}_file, "%d\n", req._{{txn.name}});
           end
 {% else %}
-           status = $fscanf({{txn.name}}_file, "%d\n", req.{{txn.name}});
+           status = $fscanf({{txn.name}}_file, "%d\n", req._{{txn.name}});
 {% endif %}{% endfor %}
         end
     end
