@@ -177,6 +177,22 @@ class DataClass:
     ## Can't use pathlib here due to Python2 back-compat, just do a global search/replace
     return ret.replace('\\','/')
 
+  def calculateRelativeVipToCwd(self,compClass):
+    ret = os.path.relpath(os.getcwd(),compClass.vip_location)
+    return ret.replace('\\','/')
+
+  def calculateRelativeBenchToCwd(self,compClass):
+    ret = os.path.relpath(os.getcwd(),compClass.bench_location)
+    return ret.replace('\\','/')
+
+  def calculateRelativeInterfaceToCwd(self,compClass):
+    ret = os.path.relpath(os.getcwd(),compClass.vip_location+os.path.sep+compClass.interface_location)
+    return ret.replace('\\','/')
+
+  def calculateRelativeEnvironmentToCwd(self,compClass):
+    ret = os.path.relpath(os.getcwd(),compClass.vip_location+os.path.sep+compClass.environment_location)
+    return ret.replace('\\','/')
+
   def setupGlobalVars(self,compClass):
     try:
       compClass.header = self.data['global']['header']
@@ -205,6 +221,10 @@ class DataClass:
     except KeyError:
       pass
     compClass.relative_vip_from_sim = self.calculateRelativeVipLocation(compClass)
+    compClass.relative_vip_from_cwd = self.calculateRelativeVipToCwd(compClass)
+    compClass.relative_bench_from_cwd = self.calculateRelativeBenchToCwd(compClass)
+    compClass.relative_interface_from_cwd = self.calculateRelativeInterfaceToCwd(compClass)
+    compClass.relative_environment_from_cwd = self.calculateRelativeEnvironmentToCwd(compClass)
     return compClass
 
   ## Generate everything from the data structures
@@ -276,7 +296,7 @@ class DataClass:
         try:
           active_passive = a['active_passive']
         except KeyError:
-          active_passive = 'ACTIVE'
+          active_passive = None
         agent_list = agent_list + [{ 'name': a['name'], 'parent': s['type'], 'active_passive': active_passive }]
         try:
           import_list = import_list + a['imports']
@@ -525,6 +545,11 @@ class DataClass:
       for nonUvmfComps in struct ['non_uvmf_components']:
         cname,ctype = self.dataExtract(['name', 'type'],nonUvmfComps)
         try:
+          cextdef = ( nonUvmfComps['extdef'] == 'True' )
+          env_has_extdef_items = True
+        except KeyError:
+          pass
+        try:
           cparams_array = nonUvmfComps['parameters']
         except KeyError:
           cparams_array = {}
@@ -576,6 +601,11 @@ class DataClass:
     try:
       for subenv in struct['subenvs']:
         ename,etype = self.dataExtract(['name','type'],subenv)
+        try:
+          subextdef = ( subenv['extdef'] == 'True' )
+          env_has_extdef_items = True
+        except KeyError:
+          pass
         try:
           eparams_array = subenv['parameters']
         except KeyError:
@@ -641,6 +671,11 @@ class DataClass:
     try:
       for agent in self.getAgents(name,recursive=False):
         aname,atype = self.dataExtract(['name','type'],agent)
+        try:
+          aextdef = ( agent['extdef'] == 'True' )
+          env_has_extdef_items = True
+        except KeyError:
+          pass
         try:
           aparams_list = agent['parameters']
         except KeyError:
@@ -858,7 +893,12 @@ class DataClass:
         try:
           cval = cfg_item['value']
         except KeyError: pass
-        env.addConfigVar(n,t,crand,cval,c)
+        try:
+          cvud = cfg_item['unpacked_dimension']
+        except KeyError:
+          cvud = ""
+          pass
+        env.addConfigVar(n,t,crand,cval,c,cvud)
     except KeyError: pass
     try:
       for item in struct['config_constraints']:
@@ -1062,6 +1102,11 @@ class DataClass:
     try:
       ben.resetDuration = struct['reset_duration']
     except KeyError: pass
+    try:
+      ben.activePassiveDefault = struct['active_passive_default']
+    except KeyError: 
+      ben.activePassiveDefault = 'ACTIVE'
+      pass
     ## Check for inFact ready flag
     ben.inFactEnabled = ('infact_enabled' in struct.keys() and struct['infact_enabled']=='True')
 
@@ -1169,7 +1214,7 @@ class DataClass:
       try:
         active_passive = ap_dict[bfm_name]
       except KeyError:
-        active_passive = 'ACTIVE'
+        active_passive = ben.activePassiveDefault
       if a['is_qvip']==1:
         ## Add each QVIP BFM instantiation. Function API is slightly different for QVIP vs. non-QVIP
         ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity=active_passive,unique_id=self.getUniqueID(a['env_path']))

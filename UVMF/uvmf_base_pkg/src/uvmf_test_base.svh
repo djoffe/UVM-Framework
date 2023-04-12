@@ -46,10 +46,11 @@
 class uvmf_test_base #(
    type CONFIG_T,
    type ENV_T,
-   type TOP_LEVEL_SEQ_T
-) extends uvm_test;
+   type TOP_LEVEL_SEQ_T,
+   type BASE_T = uvm_test
+) extends BASE_T;
 
-  `uvm_component_param_utils( uvmf_test_base #(CONFIG_T, ENV_T, TOP_LEVEL_SEQ_T))
+  `uvm_component_param_utils( uvmf_test_base #(CONFIG_T, ENV_T, TOP_LEVEL_SEQ_T, BASE_T))
 
   // Instantiate the top level configuration, environment and sequence.
   CONFIG_T        configuration;

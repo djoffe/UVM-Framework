@@ -61,6 +61,7 @@ vlog -timescale 1ps/1ps $env(UVMF_HOME)/common/uvm_co_emulation_utilities/uvm_co
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env(QUESTA_MVC_HOME)/questa_mvc_{{src_dir}}sv/ -f $env({{qvip_env_vars}}_DIR_NAME)/{{qvip_bfm_pkgs[loop.index-1]}}_filelist.f
 vlog -sv -timescale 1ps/1ps -suppress 2223 -suppress 2286 +incdir+$env({{qvip_env_vars}}_DIR_NAME) $env({{qvip_env_vars}}_DIR_NAME)/hdl_{{qvip_bfm_pkgs[loop.index-1]}}.sv
 {% endfor %}
+vlog -sv -timescale 1ps/1ps +incdir+$env(UVMF_HOME)/common/utility_packages/qvip_utils_pkg $env(UVMF_HOME)/common/utility_packages/qvip_utils_pkg/qvip_utils_pkg.sv
 {% endif %}
 
 ###################################################################

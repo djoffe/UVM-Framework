@@ -31,7 +31,7 @@ UVMF_HOME ?= ___PLEASE_SET_AN_ENVIRONMENT_VARIABLE_NAMED_UVMF_HOME_TO_POINT_TO_T
 # Project(s) specific verification IP library:
 # Directory where reusable verification packages for interfaces, environments, utilities, etc. reside.
 # This variable allows for verification IP to reside independent of project bench and UVMF release directories.
-# For examples deployed with UVMF this will be $(UVMF_HOME)/<example_group>/verification_ip
+# For examples deployed with UVMF this will be $(UVMF_HOME)/<example_group>/{{vip_location}}
 export UVMF_VIP_LIBRARY_HOME ?= $(PWD)/{{relative_vip_from_sim}}
 {% if vipLibEnvVariableNames|length > 0 %}
 # Include environment variables for all listed vip libraries

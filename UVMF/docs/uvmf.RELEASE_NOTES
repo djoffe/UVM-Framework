@@ -2,7 +2,36 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
-2022.1    03/9/2022  General Updates:
+2022.3    08/12/2022  General Updates:
+                        - Out of order race scoreboard added to uvmf_base_pkg
+                        - Added ability to set base class for subset of UVMF base classes 
+                          using BASE_T parameter
+                        - Added uvmf_virtual_sequence_base and uvmf_virtual_sequencer_base to 
+                          uvmf_base_pkg.
+                        
+                      Generator Updates:
+                        - Environment generator creates virtual sequence base and virtual sequencer
+                          within the environments package.
+                        - Bench generator instantiates and starts the top environments virtual 
+                          sequence on the top environments virtual sequence.
+                        - Disabled tlm connection checks for remaining component schema with 
+                          extdef set to true.
+                        - Added unpacked_dim support for env and agent configuration variables
+                        - Configuration variables with unpacked_dimension not included in env 
+                          and agent covergroroups.
+                        - Default value for BFM/Agent ACTIVE/PASSIVE setting can be optionally set
+                          using active_passive_default yaml variable in bench YAML. 
+
+                      BCR Updates:
+                        - Added no_vis_wave variable to disable wave dumping in Visualizer 
+                          in live sim mode
+                        - Updates to options field in BCR compile file.
+                        - Added default support for multiuser coverage merge
+                        - Added mechanism to explicitly name test iteration(s) with 
+                          user-specified string
+                        - Added VRM ability to create symbolic links
+
+2022.1    03/9/2022   General Updates:
                         - Updated MATLAB® integration docs regarding stimgen output names matching 
                           design input names and clarified description of env variables used.
                         - Added section 1.8 in users guide regarding support options.

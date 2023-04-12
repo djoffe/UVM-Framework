@@ -1,4 +1,5 @@
 package require fileutil
+package require yaml
 variable recursion_check
 variable tcdict
 variable builddict 
@@ -8,6 +9,8 @@ variable debug
 variable ini
 variable rerun_count
 variable mseed
+variable testlist_info
+variable current_tb
 
 ## Returns the actual master seed used to seed the Tcl random number generator
 proc returnMasterSeed {} {
@@ -24,6 +27,7 @@ proc returnMasterSeed {} {
 ##      - { buildcmd } : Extra command-line arguments to use during 'make build' command
 ##      - { runcmd } : Extra command-line arguments appended to vsim command for this testbench
 ##      - { builddir } : Directory where this testbench's Makefile lives      
+##      - { symlinks } : List of symbolic links to create for each test executed. Only defined by YAML testlist
 ##  { <repeated for all testbenches> }
 
 ## $tcdict organization to allow for per-iteration extra-args
@@ -32,6 +36,7 @@ proc returnMasterSeed {} {
 ##        { Iteration# } : Incrementing from 0 to N
 ##          { seed } : Seed to use for this iteration
 ##          { extra_args } : Extra command-line arguments for this iteration
+##          { uvm_testname } : UVM test to invoke. Only defined by YAML testlist
 
 proc initTcl {rd {master_seed 0} {dbg 0}} {
   global file_read
@@ -72,6 +77,9 @@ proc vrmSetup {} {}
 
 ## These are default initialization variables 
 proc vrmSetupDefaults {} {
+  global root_dir
+  setIniVar testlist_name "testlist" 1
+  setIniVar top_testlist_file "(%SIM_DIR%)/(%TESTLIST_NAME%)" 1
   setIniVar code_coverage_enable 0 1
   setIniVar code_coverage_types "bsf" 1
   setIniVar code_coverage_target "/hdl_top/DUT." 1
@@ -144,6 +152,7 @@ proc vrmSetupDefaults {} {
   setIniVar bcr_exec_cmd_windows "python $::env(UVMF_HOME)/scripts/uvmf_bcr.py" 1
   setIniVar bcr_flow "questa" 1
   setIniVar bcr_overlay {} 1
+  setIniVar multiuser 1 1
   return 0
 }
 
@@ -169,7 +178,7 @@ proc getIniVar {varname} {
   return {}
 #  puts [format "ERROR : ini variable %s not found" $varname]
 #  puts [format "        Available ini variables: %s" [array names ini]]
-#  exit 88
+#  ex 88
 }
 
 proc setIniVar {varname value {firsttime 0}} {
@@ -182,7 +191,7 @@ proc setIniVar {varname value {firsttime 0}} {
   if {$firsttime==0} {
     if {![info exists ini($lv)]} {
       puts [format "ERROR: ini variable \"%s\" unrecognized on set attempt. Following list are available:\n\t%s" $varname [array names ini]]
-      exit 88
+      ex 88
     }
   }
   set ini($lv) $value
@@ -203,19 +212,170 @@ proc getInfactSdmIni {datadir} {
   }
 }
 
+## YAML-based testlist reader
+proc ReadYAMLTestlistFile { file_name invoc_dir {collapse 0} {debug 0} {init 0}} {
+  global testlist_info
+  global tcdict
+  global builddict
+  global root_dir
+  global recursion_check
+  global current_tb
+  set filename [file normalize $file_name]
+  puts [format "NOTE: Reading YAML testlist file \"%s\"" $filename]
+  if {![file isfile $filename]} {
+    puts [format "ERROR: Invalid file - %s" $filename]
+    ex 88
+  }
+  if {[lsearch $recursion_check $filename] >= 0} {
+    puts [format "ERROR: Circular recursion detected in YAML testlist file %s, was included earlier" $filename]
+    ex 88
+  }
+  set yaml_data [yaml::yaml2dict -file $filename]
+  lappend recursion_check $filename
+  if {![dict exists $yaml_data uvmf_testlist]} {
+    puts [format "ERROR: testlist YAML file %s formatting error" $filename]
+    ex 88
+  }
+  set dir [file dirname $filename]
+  if {[dict exists $yaml_data uvmf_testlist testbenches]} {
+    foreach tb [dict get $yaml_data uvmf_testlist testbenches] {
+      if {![dict exists $tb name]} {
+        puts [format "ERROR: testlist YAML file %s formatting error" $filename]
+        ex 88
+      }
+      if { $debug } {
+        puts [format "DEBUG: Adding testbench %s info to list" [dict get $tb name]]
+      }
+      set tb_name [dict get $tb name]
+      if {[dict exists $builddict $tb_name]} {
+        puts [format "ERROR: Testbench \"%s\" registered twice" $tb_name]
+        ex 88
+      }
+      if {![dict exists $tb extra_build_options]} {
+        dict append tb extra_build_options ""
+      }
+      if {![dict exists $tb extra_run_options]} {
+        dict append tb extra_run_options ""
+      }
+      if {![dict exists $tb symlinks]} {
+        dict append tb symlinks ""
+      }
+      dict set builddict $tb_name "buildcmd" [dict get $tb "extra_build_options"]
+      dict set builddict $tb_name "runcmd" [dict get $tb "extra_run_options"]
+      dict set builddict $tb_name "symlinks" [dict get $tb "symlinks"]
+      dict set builddict $tb_name "builddir" $dir
+      if {$debug==1} {
+        puts [format "DEBUG: Registering testbench %s" $tb_name]
+        puts [format "DEBUG:   buildcmd: %s" [dict get $tb "extra_build_options"]]
+        puts [format "DEBUG:   runcmd: %s" [dict get $tb "extra_run_options"]]
+        puts [format "DEBUG:   symlinks: %s" [dict get $tb "symlinks"]]
+        puts [format "DEBUG:   builddir: %s" $dir]
+      }
+      lappend testlist_info $tb
+    }
+  }
+  if {[dict exists $yaml_data uvmf_testlist tests]} {
+    foreach test [dict get $yaml_data uvmf_testlist tests] {
+      if {![dict exists $test testbench] && ![dict exists $test name]} {
+        puts [format "ERROR: YAML test entry is invalid, no testbench or name entry found"]
+        ex 88
+      }
+      if {[dict exists $test testbench]} {
+        set current_tb [dict get $test testbench]
+      }
+      if {[dict exists $test name]} {
+        # Encountered a new test entry. It will be associated with the last testbench
+        # directive encountered, otherwise an error
+        set tname [dict get $test name]
+        ## Convert dashes to underscores if found
+        set tname [string map { - _ } $tname]
+        if {$current_tb == ""} {
+          puts [format "ERROR: No testbench specified when encountered test \"%s\"" $tname]
+          ex 88
+        }
+        # Remaining items in entry are optional:
+        #  repeat count (default 1)
+        #  seed list (default random)
+        #  uvm testname (default same as test name)
+        #  extra arguments (default empty)
+        # It is possible that there are already test entries for this test, meaning that
+        #  our iteration count doesn't always start at 0. Search the current test case
+        #  dictionary for the current name as a first pass to determine our starting iteration
+        #  number for this series of entries
+        if {![dict exists $tcdict $current_tb $tname]} {
+          set firstiter 0
+        } else {
+          set firstiter [llength [dict keys [dict get $tcdict $current_tb $tname]]]
+        }
+        if {![dict exists $test repeat]} {
+          set repcount 1
+        } else {
+          set repcount [dict get $test repeat]
+        }
+        if {![dict exists $test seeds]} {
+          set seedlist ""
+        } else {
+          set seedlist [dict get $test seeds]
+        }
+        for {set rep 0} {$rep < [expr $repcount]} {incr rep} {
+          if {[llength $seedlist] < [expr $repcount]} {
+            lappend seedlist [randInt]
+          } elseif {[lindex $seedlist $rep] == "random"} {
+            lset seedlist $rep [randInt]
+          }
+        }
+        if {![dict exists $test uvm_testname]} {
+          set uvm_testname $tname
+        } else {
+          set uvm_testname [dict get $test uvm_testname]
+        }
+        if {![dict exists $test extra_args]} {
+          set extra_test_options ""
+        } else {
+          set extra_test_options [dict get $test extra_args]
+        }
+        foreach seed $seedlist {
+          dict set tcdict $current_tb $tname $firstiter seed $seed
+          dict set tcdict $current_tb $tname $firstiter extra_args $extra_test_options
+          dict set tcdict $current_tb $tname $firstiter uvm_testname $uvm_testname
+          incr firstiter
+        }
+      }
+    }
+  }
+  if {[dict exists $yaml_data uvmf_testlist include]} {
+    foreach inc [dict get $yaml_data uvmf_testlist include] {
+      ReadYAMLTestlistFile $inc $invoc_dir $collapse $debug $init
+    }
+  }
+  set recursion_check [lrange $recursion_check 0 end-1]
+}
+
+proc randInt {} {
+  return [expr {int(rand() * 10000000000000000) % 4294967296}]
+}
+
 ## Top level test list parser invocation.  Sets up some globals and then
 ## fires off the internal reader (for purposes of nesting)
 proc ReadTestlistFile {file_name invoc_dir {collapse 0} {debug 0} {init 0}} {
   global recursion_check
   global tcdict
+  global builddict
   global file_read
+  global current_tb
   if {$file_read == 1} {
     return ""
   }
   set recursion_check ""
   set tcdict [dict create]
   set builddict [dict create]
-  ReadTestlistFile_int $file_name $invoc_dir $collapse $debug
+  set testlist_info [dict create]
+  set current_tb ""
+  if {[file extension $file_name] == ".yaml"} {
+    ReadYAMLTestlistFile $file_name $invoc_dir $collapse $debug
+  } else {
+    ReadTestlistFile_int $file_name $invoc_dir $collapse $debug
+  }
   if {$debug == 1} {
     print_tcdict
   }
@@ -236,7 +396,7 @@ proc print_tcdict {} {
         } else {
           set ea_str ""
         }
-        puts [format "\t\t- %d - Seed : %s %s" $i [dict get $iter $i seed] $ea_str]
+        puts [format "\t\t- %d - UVM Test: %s - Seed : %s %s" $i [dict get $iter $i uvm_testname] [dict get $iter $i seed] $ea_str]
       }
     }
   }
@@ -263,6 +423,27 @@ proc GetMapInfo { build_name key } {
   }
   return [dict get $builddict $build_name "mapinfo" $key]
 }
+
+# proc process_yaml_test_entry {entry {debug 1}} {
+#   global builddict
+#   global tcdict
+#   global current_tb
+#   if {[dict exits $entry testbench]} {
+#     set current_tb [dict get $entry testbench]
+#     if {$debug} {
+#       puts [format "DEBUG: Setting current testbench to %s" $current_tb]
+#     }
+#   } elseif {$current_tb == ""} {
+#     puts [format "ERROR: No testbench setting found before encountering test entries"]
+#     ex 88
+#   }
+
+
+# }
+
+proc ex {code} {
+  exit $code
+}
  
 ## Actual test list file reader.  See embedded comments for more detail
 proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
@@ -278,15 +459,13 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
   ## Recursion is checked for, i.e. if a test list includes itself
   if {[lsearch $recursion_check $file_name] >= 0} {
     puts [format "ERROR RECURSION : %s" $file_name]
-    exit 88
+    ex 88
   }
-  if {$debug==1} {
-    puts [format "DEBUG: Opening file \"%s\"" $file_name]
-  }
+  puts [format "NOTE: Reading testlist file \"%s\"" $file_name]
   lappend recursion_check $file_name
   if {![file isfile $file_name]} {
     puts [format "ERROR INVALID FILE : %s" $file_name]
-    exit 88
+    ex 88
   }  
   set dir [file dirname $file_name]
   set tfile [open $file_name r]
@@ -303,10 +482,11 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
         if {[string match "TB_INFO" [lindex $line 0]]} {
           if {[llength $line] != 4} {
             puts [format "ERROR TB_INFO ARGS : %s" $line]
-            exit 88
+            ex 88
           }
           dict set builddict [lindex $line 1] "buildcmd" [lindex $line 2]
           dict set builddict [lindex $line 1] "runcmd" [lindex $line 3]
+          dict set builddict [lindex $line 1] "symlinks" ""
           dict set builddict [lindex $line 1] "builddir" $dir
           if {$debug==1} {
             puts [format "DEBUG: Registering testbench %s" [lindex $line 1]]
@@ -320,12 +500,12 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
           ## exists, and should be specified when the test list exists outside of the ./sim directory
           if {[llength $line] != 3} {
             puts [format "ERROR TB_LOCATION ARGS : %s" $line]
-            exit 88
+            ex 88
           }
           if {![info exists builddict] || ![dict exists $builddict [lindex $line 1]]} {
             puts [format "ERROR TB_LOCATION - No TB_INFO entry for %s" [lindex $line 1]]
             print_builddict
-            exit 88
+            ex 88
           }
           dict set builddict [lindex $line 1] "builddir" [lindex $line 2]
           if {$debug==1} {
@@ -342,7 +522,7 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
           if {![info exists builddict] || ![dict exists $builddict [lindex $line 1]]} {
             puts [format "ERROR TB_MAP - No TB_INFO entry for %s" [lindex $line 1]]
             print_builddict
-            exit 88
+            ex 88
           }
           set source_hier [split [string trim [lindex $line 2]] "/"]
           set dest_hier [split [string trim [lindex $line 3]] "/" ]
@@ -356,12 +536,12 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
         } elseif {[string match "TB" [lindex $line 0]]} {
           if {[llength $line] != 2} {
             puts [format "ERROR TB ARGS : %s" $line]
-            exit 88
+            ex 88
           }
           if {![info exists builddict] || ![dict exists $builddict [lindex $line 1]]} {
             puts [format "ERROR TB - No TB_INFO entry for %s" [lindex $line 1]]
             print_builddict
-            exit 88
+            ex 88
           }
           set tops [lindex $line 1]
           if {$debug == 1} {
@@ -378,11 +558,11 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
         } elseif {[string match "TEST" [lindex $line 0]]} {
           if {[llength $tops] == 0} {
             puts [format "ERROR TEST NO TOP SPECIFIED : %s" $line]
-            exit 88
+            ex 88
           }
           if {[llength $line] == 1} {
             puts [format "ERROR TEST NOT ENOUGH ARGS : %s" $line]
-            exit 88
+            ex 88
           }
           ## Pull off final extra vsim args if possibly present
           if {[llength $line] > 2} {
@@ -404,6 +584,8 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
           set tname [lindex $line 1]
           ## Convert dashes to underscores if found
           set tname [string map { - _ } $tname]
+          ## Store UVM test name as the test name (forward compat)
+          set uvm_tname $tname
           ## Extract repeat count from line. If unspecified default to 1
           if {[llength $line] == 2} {
             set repcount 1
@@ -447,6 +629,7 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
           foreach seed $seedlist {
             dict set tcdict $tops $tname $firstiter seed $seed
             dict set tcdict $tops $tname $firstiter extra_args $extra_test_vsim_args
+            dict set tcdict $tops $tname $firstiter uvm_testname $uvm_tname
             incr firstiter
           }
           if {$debug == 1} {
@@ -506,6 +689,13 @@ proc GetExtraArgs {testname} {
   return [dict get $tcdict [lindex $rv 0] [lindex $rv 1] [lindex $rv 2] "extra_args"]
 }
 
+proc GetUVMTestname {testname} {
+  global tcdict
+  set rv [split $testname -]
+  set ret [dict get $tcdict [lindex $rv 0] [lindex $rv 1] [lindex $rv 2] "uvm_testname"]
+  return $ret
+}
+
 ## Called by the runnables, returns a list of tests to run for
 ## a specified build.  Format is expected to be as follows:
 ## <testbench_name>-<testcase_name>-<iteration>-<seed>
@@ -520,6 +710,9 @@ proc GetTestcases {build collapse} {
   return $ret
 }
 proc FindMVCHome { Makefile_name } {
+  if {![file exists $Makefile_name]} {
+    return 0
+  }
   set matchcnt [llength [fileutil::grep "mvchome" $Makefile_name]]
   return $matchcnt
 }
@@ -707,9 +900,21 @@ proc RegressionStarting {userdata} {
     puts "**********************************************************************************************************"
     puts ""
     puts ""
-    exit 88
+    ex 88
     #exec $data(VSIMDIR)/vrun -exit -rmdb $data(RMDBFILE) -vrmdata $data(DATADIR)
   }
   puts "Regression started at [RightNow]..."
 }
 
+proc GenSymlinks {vrundir taskdir build debug} {
+  global builddict
+  foreach link [dict get $builddict $build "symlinks"] {
+    set target [file normalize [lindex $link 0]]
+    set dest [file normalize [format "%s/%s" $taskdir [lindex $link 1]]]
+    if {$debug} {
+      puts [format "DEBUG: Creating symbolic link %s -> %s" $target $dest]
+    }
+    file link -symbolic $dest $target
+  }
+  return "# Generating symbolic links from testlist file"
+}

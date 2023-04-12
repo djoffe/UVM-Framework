@@ -41,9 +41,9 @@
 //   T - Specifies the type of transactions to be compared.
 //       Must be derived from uvmf_transaction_base.
 
-class uvmf_scoreboard_base #(type T = uvmf_transaction_base) extends uvm_scoreboard;
+class uvmf_scoreboard_base #(type T = uvmf_transaction_base, type BASE_T = uvm_scoreboard) extends BASE_T;
 
-  `uvm_component_param_utils( uvmf_scoreboard_base #(T))
+  `uvm_component_param_utils( uvmf_scoreboard_base #(T, BASE_T))
 
   uvm_analysis_imp_expected#(T, uvmf_scoreboard_base #(T)) expected_analysis_export;
   uvm_analysis_imp_actual#(T, uvmf_scoreboard_base #(T)) actual_analysis_export;

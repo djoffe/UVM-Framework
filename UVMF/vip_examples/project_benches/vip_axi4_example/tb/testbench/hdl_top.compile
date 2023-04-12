@@ -13,6 +13,3 @@ src:
   - $UVMF_HOME/common/mgc_vip/axi4/mgc_axi4_slave_hdl.sv
   - $UVMF_HOME/common/mgc_vip/axi4/mgc_axi4_signal_if.sv
   - hdl_top.sv
-
-options:
-  - -timescale 1ps/1ps

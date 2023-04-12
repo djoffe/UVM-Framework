@@ -51,10 +51,11 @@ class uvmf_driver_base #(
    type CONFIG_T, 
    type BFM_BIND_T,
    type REQ, 
-   type RSP
-) extends uvm_driver#(REQ, RSP );
+   type RSP,
+   type BASE_T = uvm_driver#(REQ, RSP )
+) extends BASE_T;
 
-  typedef uvmf_driver_base #(CONFIG_T, BFM_BIND_T, REQ, RSP) uvmf_driver_base_t;
+  typedef uvmf_driver_base #(CONFIG_T, BFM_BIND_T, REQ, RSP, BASE_T) uvmf_driver_base_t;
 
   // Agent configuration class
   CONFIG_T configuration;

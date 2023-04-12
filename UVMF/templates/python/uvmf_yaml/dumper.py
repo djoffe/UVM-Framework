@@ -39,6 +39,7 @@ class BenchDumper:
     data['reset_assertion_level'] = str(self.obj.resetAssertionLevel)
     data['use_dpi_link'] = str(self.obj.useDpiLink)
     data['reset_duration'] = self.obj.resetDuration
+    data['active_passive_default'] = self.obj.activePassiveDefault
     if (len(self.obj.paramDefs)):
       data['parameters'] = []
       for i in self.obj.paramDefs:

@@ -30,7 +30,7 @@
 {% block contents %}
 
 
-class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_component;
+class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends BASE_T;
 
   // Factory registration of this class
 {{macro.compUtils(name,parameters)}}

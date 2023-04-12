@@ -117,6 +117,7 @@ package uvmf_base_pkg;
    `include "src/uvmf_in_order_race_scoreboard.svh"
    `include "src/uvmf_in_order_race_scoreboard_array.svh"
    `include "src/uvmf_out_of_order_scoreboard.svh"
+   `include "src/uvmf_out_of_order_race_scoreboard.svh"
    `include "src/uvmf_in_order_scoreboard_array.svh"
    `include "src/uvmf_catapult_scoreboard.svh"
 
@@ -131,6 +132,8 @@ package uvmf_base_pkg;
    `include "src/uvmf_parameterized_agent.svh"
 
    // Parameterized environments
+   `include "src/uvmf_virtual_sequencer_base.svh"
+   `include "src/uvmf_virtual_sequence_base.svh"
    `include "src/uvmf_environment_configuration_base.svh"
    `include "src/uvmf_environment_base.svh"
    `include "src/uvmf_parameterized_simplex_environment.svh"

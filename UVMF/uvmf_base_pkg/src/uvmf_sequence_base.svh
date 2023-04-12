@@ -30,7 +30,7 @@
 // Description: This file contains the uvmf extension to the uvm sequence.
 //
 //----------------------------------------------------------------------
-class uvmf_sequence_base #(type REQ, type RSP=REQ ) extends uvm_sequence #(REQ, RSP);
+class uvmf_sequence_base #(type REQ, type RSP=REQ, type BASE_T = uvm_sequence #(REQ, RSP) ) extends BASE_T;
 
   function new( string name ="");
     super.new( name );

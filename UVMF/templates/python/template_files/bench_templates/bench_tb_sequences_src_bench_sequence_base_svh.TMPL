@@ -14,11 +14,28 @@
 
 {% block contents %}
 
+
+typedef {{env_name}}_env_configuration {{macro.paramUseNested(envParamDefs)|indent(8)}} {{env_name}}_env_configuration_t;
+
 class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_item);
 
   `uvm_object_utils( {{name}}_bench_sequence_base );
 
   // pragma uvmf custom sequences begin
+
+typedef {{env_name}}_env_sequence_base #(
+        .CONFIG_T({{env_name}}_env_configuration_t){% if envParamDefs|length > 0 %}{% for param in envParamDefs -%}{% if loop.first %},
+{% endif %}
+        .{{param.name}}({{param.value}}){% if not loop.last %},
+{% endif %}{% endfor %}
+{% endif %}
+
+        )
+        {{env_name}}_env_sequence_base_t;
+rand {{env_name}}_env_sequence_base_t {{env_name}}_env_seq;
+
+
+
   // UVMF_CHANGE_ME : Instantiate, construct, and start sequences as needed to create stimulus scenarios.
   // Instantiate sequences here
 {% for bfm in bfms %}
@@ -53,7 +70,6 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% endif %}
 
   // Top level environment configuration handle
-  typedef {{env_name}}_env_configuration {{macro.paramUseNested(envParamDefs)|indent(8)}} {{env_name}}_env_configuration_t;
   {{env_name}}_env_configuration_t top_configuration;
 
   // Configuration handles to access interface BFM's
@@ -140,6 +156,9 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
     // pragma uvmf custom body begin
 
     // Construct sequences here
+
+    {{env_name}}_env_seq = {{env_name}}_env_sequence_base_t::type_id::create("{{env_name}}_env_seq");
+
 {% for bfm in bfms %}
 {% if  bfm.activity == 'ACTIVE' %}
 {% if  bfm.initResp == 'INITIATOR' %}
@@ -175,6 +194,9 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% if useCoEmuClkRstGen %}
     clk_ctrl.wait_clocks(25);
 {% else %}
+
+{{env_name}}_env_seq.start(top_configuration.vsqr);
+
     // UVMF_CHANGE_ME : Extend the simulation XXX number of clocks after 
     // the last sequence to allow for the last sequence item to flow 
     // through the design.

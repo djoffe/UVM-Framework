@@ -1,11 +1,11 @@
-{% set fname = "verification_ip/environment_packages/{{name}}_env_pkg/{{name}}_env_pkg.compile" %}
+{% set fname = "{{vip_location}}/{{environment_location}}/{{name}}_env_pkg/{{name}}_env_pkg.compile" %}
 {% block description %}
 {% endblock %}
 {% block contents %}
 needs:
   - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.compile
 {% for agent in agent_pkgs %}
-  - ../../interface_packages/{{agent}}_pkg/{{agent}}_hvl.compile
+  - ../{{relative_environment_from_cwd}}/{{vip_location}}/{{interface_location}}/{{agent}}_pkg/{{agent}}_hvl.compile
 {% endfor %}
 {% for env in env_pkgs %}
   - ../{{env}}_env_pkg/{{env}}_env_pkg.compile

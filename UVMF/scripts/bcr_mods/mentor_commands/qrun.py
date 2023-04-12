@@ -7,10 +7,11 @@ class Qrun(Generator):
   def __init__(self,v={}):
     super(Qrun,self).__init__
     self.keys = '''
-           cmd           arch            flow_control   mode         debug       outdir                 permit_unmatched_virt_intf   vrm_in_use
-           logfile       filelists       pdu            seed         msglimit    full_do                timescale                    uvm_switches
-           coverage_run  coverage_build  test           verbosity    extra       mvc_switch             visibility
-           vis_wave      trlog           lib            gen_script   tops        suppress               modelsimini                  vis_designfile
+           cmd              arch            flow_control   mode         debug       outdir                 permit_unmatched_virt_intf   vrm_in_use
+           logfile          filelists       pdu            seed         msglimit    full_do                timescale                    uvm_switches
+           coverage_run     coverage_build  test           verbosity    extra       mvc_switch             visibility                   overlay_extra
+           vis_wave         trlog           lib            gen_script   tops        suppress               modelsimini                  vis_designfile
+           time_resolution  multiuser
                  '''.split()
     pass
     
@@ -28,6 +29,12 @@ class Qrun(Generator):
 
   def set_cmd(self,v={}):
     return 'qrun'
+
+  def set_overlay_extra(self,v={}):
+    if (v_val(v,'overlay_extra')):
+      return v['overlay_extra']
+    else:
+      return ""
 
   def set_filelists(self,v={}):
     if 'sim_only' in v and v['sim_only']:
@@ -118,6 +125,9 @@ class Qrun(Generator):
     self.vis_designfile                               = self.set_vis_designfile(v)
     self.vrm_in_use                                   = self.set_vrm_in_use(v)
     self.uvm_switches                                 = self.set_uvm_switches(v)
+    self.overlay_extra                                = self.set_overlay_extra(v)
+    self.time_resolution                              = self.set_time_resolution(v)
+    self.multiuser                                    = self.set_multiuser(v)
 
   def command(self,v):
     base_command = super(Qrun,self).command(v)
