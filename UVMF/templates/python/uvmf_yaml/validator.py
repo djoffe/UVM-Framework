@@ -36,6 +36,7 @@ class BaseValidator(object):
       Required('type'): str,
       Optional('value'): str,
       Optional('isrand'): Any("True","False"),
+      Optional('unpacked_dimension'): str,
       Optional('comment'): str
     }
     self.constraintSchema = {
@@ -268,7 +269,8 @@ class EnvironmentValidator(BaseValidator):
     nonUvmfComponentSchema = {
       Required('name'): str,
       Required('type'): str,
-      Optional('parameters'): [ self.parameterUseSchema ]
+      Optional('parameters'): [ self.parameterUseSchema ],
+      Optional('extdef'): Any('True','False')
     }
     qvipMemoryAgentComponentSchema = {
       Required('name'): str,
@@ -352,9 +354,9 @@ class InterfaceValidator(BaseValidator):
       Optional('ports'): [ portSchema ],
       Optional('transaction_vars'): [ transactionSchema ],
       Optional('transaction_constraints'): [ self.constraintSchema ],
+      Optional('response_info'): responseSchema,
       Optional('config_vars'): [ self.configVarSchema ],
       Optional('config_constraints'): [ self.constraintSchema ],
-      Optional('response_info'): responseSchema,
       Optional('imports'): [ self.importSchema ],
       Optional('veloce_ready'): Any("True","False"),
       Optional('infact_ready'): Any("True","False"),

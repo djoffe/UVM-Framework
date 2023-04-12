@@ -4,6 +4,7 @@ import sys
 import os
 import time
 import re
+import fnmatch
 
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python")
 sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/scripts/bcr_mods")
@@ -21,6 +22,7 @@ try:
   import logging
   from bcr_mods import *
   import subprocess
+  import collections
 except ImportError as ie:
   print("ERROR:Missing library: %s" % str(ie))
   print("path: "+str(sys.path))
@@ -30,37 +32,51 @@ class OptionOverrideAction(argparse.Action):
   def __init__(self,**kwargs):
     super(OptionOverrideAction,self).__init__(**kwargs)
 
-def print_flows(args,flow,logger):
+def print_flows(logger,flow):
   l = []
   for k,v in sorted(flow.data['flows'].items(),key=lambda e:e[1]['order']):  ## e is a (k,v) tuple so v is e[1]
     if (v['order'] > 0):   # This will prevent the display of virtual flows that cannot be chosen
-      default_str = ''
-      if k==flow.data['options']['default']:
-        default_str = '(Default)'
-      l.append(textwrap.fill("\033[1m{}\033[0m - {} {}".format(k,v['description'],default_str),width=100))
+      l.append(textwrap.fill("\033[1m{:>12}\033[0m - {}".format(k,v['description']),width=100))
   logger.info("Available flows:\n  {}".format('\n  '.join(map(str,l))))
 
 def print_steps(args,flow,logger):
   l = []
   vlist = []
   def_step_num = 1
-  # List default steps first (with indication of that)
-  for s in flow.data['flows'][args.flow]['default_steps']:
-    l.append(textwrap.fill("\033[1m{}\033[0m - {} [Default step #{}]".format(s,flow.data['flows'][args.flow]['steps'][s]['description'],str(def_step_num)),width=100))
+  # If there are defaults, list default steps first (with indication of that)
+  if 'default_steps' in flow.data['flows'][args.flow]:
+    slist = flow.data['flows'][args.flow]['default_steps']
+    dformat = ' [Default step #{}]'
+  else:
+    slist = flow.data['flows'][args.flow]['steps']
+    dformat = ''
+  for s in slist:
+    dstring = dformat.format(str(def_step_num))
+    l.append(textwrap.fill("\033[1m{:>12}\033[0m - {} {}".format(s,flow.data['flows'][args.flow]['steps'][s]['description'],dstring),width=100))
     vlist.append(s)
     def_step_num = def_step_num + 1
+  # If there were default steps there may be additional steps (like 'clean') that were not in that list.
+  # Add those to the end of the output now in a consistent (sorted) way
   for k,v in sorted(flow.data['flows'][args.flow]['steps'].items()):
     if k not in vlist:
-      l.append("\033[1m{}\033[0m - {}".format(k,v['description']))
+      l.append("\033[1m{:>12}\033[0m - {}".format(k,v['description']))
   logger.info("Available steps for flow \"{}\":\n  {}".format(args.flow,'\n  '.join(map(str,l))))
 
-def print_variables(args,flow,logger):
+def print_variables(args,flow,logger,filter=[]):
   l = []
+  ## Test filter input for validity (only accept glob format)
+  try:
+    globstr = filter[0]
+    globstr = '*'+globstr+'*'
+  except IndexError:
+    globstr = None
+    pass
   ## Information requested - describe all the variables (flow and step-level variables)
   if 'variable_descriptions' in flow.data['flows'][args.flow]:
-    for variable_name, variable_description in sorted(flow.data['flows'][args.flow]['variable_descriptions'].items()):
+    for variable_name, variable_description in flow.data['flows'][args.flow]['variable_descriptions'].items():
       if variable_description: 
-        l.append(textwrap.fill("\033[1m{}\033[0m: {} (Defaults to \"{}\")".format(variable_name,variable_description,flow.data['flows'][args.flow]['variables'][variable_name]),width=100,subsequent_indent='    '))
+        if (not globstr) or (fnmatch.fnmatch(variable_name,globstr) or fnmatch.fnmatch(variable_description,globstr)):
+          l.append(textwrap.fill("\033[1m{:>16}\033[0m: {} (Defaults to \"{}\")".format(variable_name,variable_description,flow.data['flows'][args.flow]['variables'][variable_name]),width=100,subsequent_indent='                    '))
     logger.info("Variables for flow '{}':\n  {}".format(args.flow,'\n  '.join(map(str,l))))
   l = []
   for step_name,step_value in flow.data['flows'][args.flow]['steps'].items():
@@ -80,38 +96,34 @@ def run():
     a = a.strip()
     if a != '':
       new_argv.append(a)
-  # Now that the command line is cleaned up of white-space, need to potentially re-order a few things.  Unnamed arguments (which
-  # are always going to be the option overrides) need to all be at the back end of the command otherwise any named arguments
-  # (switches) will get pulled into the overrides and missed. Do that re-ordering now
-  switch_argv = []
-  switch_argv.append(new_argv.pop(0))   ## First item is always the script itself
-  override_argv = []
-  for a in new_argv:
-    m = re.match(r"\w+:.+",a)
-    if m:
-      override_argv.append(a)
-    else:
-      switch_argv.append(a)
-  sys.argv = switch_argv + override_argv
-  parser = argparse.ArgumentParser(epilog="Version "+version,description="Build and run a UVMF simulation",parents=[parent_parser])
-  parser.add_argument("--flow_file",help="Specify flow configuration file. Default is 'mentor.flows' located in same directory as this script", default=None)
+  sys.argv = new_argv
+  parser = argparse.ArgumentParser(epilog="additional position arguments:\n  Specify variable overrides using <NAME>:<VALUE> syntax on command line.",description="Build and run a UVMF simulation",parents=[parent_parser],formatter_class=argparse.RawDescriptionHelpFormatter)
+  parser.add_argument("flow",metavar="FLOW",help="Required. Specify desired flow. Use --list_flows to see available flows",default="UNSPECIFIED",nargs="?")
+  parser.add_argument("--flow_file","--flow-file",help="Specify flow configuration file. Default is 'mentor.flows' located in same directory as this script", default=None)
   parser.add_argument("--flow_file_overlay",help="Specify flow configuration overlays as a colon-separated list", default=None)
-  parser.add_argument("--flow","-f",help="Specify desired flow. Default is specified in the flow file", type=str, default=None)
-  parser.add_argument("--steps",help="Specify steps to run in given flow. Default is to run all steps. Will run steps in provided order", default=None,type=str)
-  parser.add_argument("--dry_run","-n",help="Produce and print commands, do not run anything",action='store_true',default=False)
-  parser.add_argument("--list_flows",help="List out all available flows",action='store_true',default=False)
-  parser.add_argument("--list_steps",help="List out all available steps",action='store_true',default=False)
-  parser.add_argument("--list_variables",help="List out all available variables for the given flow",action='store_true',default=False)
-  parser.add_argument("--filelists_only","-l",help="Only produce file lists ahead of a build step",action='store_true',default=False)
+  parser.add_argument("--steps","-s",help="Specify steps to run in given flow. Default is to run all steps. Will run steps in provided order", default=None,type=str)
+  parser.add_argument("--dry_run","-n","--dry-run",help="Produce and print commands, do not run anything",action='store_true',default=False)
+  parser.add_argument("--list_flows","--list-flows",help="List out all available flows",action='store_true',default=False)
+  parser.add_argument("--list_steps","--list-steps",help="List out all available steps",action='store_true',default=False)
+  parser.add_argument("--list_variables","--list-variables",help="List out all available variables for the given flow. May specify an optional filter string (glob style) to reduce output",action='store_true',default=False)
+  parser.add_argument("--filelists_only","-l","--filelists-only",help="Only produce file lists ahead of a build step",action='store_true',default=False)
   parser.add_argument("--clean","-c",help="Runs the clean step",action='store_true',default=False)
-  parser.add_argument("--skip_filelist_build",help="Disables automatic creation of filelists for build step",action='store_true',default=False)
-  parser.add_argument("--sim_dir",help="Specify location of \"sim\" directory",default=None)
-  parser.add_argument("option_overrides", help="Specify name:value pairs to override options to the given flow. Names must match variables defined in flow file",nargs=argparse.REMAINDER)
-  args = parser.parse_args()
+  parser.add_argument("--skip_filelist_build","--skip-filelist-build",help="Disables automatic creation of filelists for build step",action='store_true',default=False)
+  parser.add_argument("--sim_dir","--sim-dir",help="Specify location of \"sim\" directory",default=None)
+  parser.add_argument("--verbose_filelist","--verbose-filelist",help="Print more detail in generated file lists",action='store_true',default=False)
+  args,option_overrides = parser.parse_known_args()
+  # Check the option overrides array for any unknown arguments. Anything starting with a dash (-) is an unknown switch, not 
+  # an override
+  for o in option_overrides:
+    if re.match(r'^-',o):
+      logger.error("Unknown command line argument \"{}\"".format(o))
+      parser.print_help()
+      sys.exit(1)
   if args.pdb:
     import pdb
     pdb.set_trace()
-  logger.info("uvmf_bcr version %s" % version)
+  if not args.dry_run:
+    logger.info("uvmf_bcr version %s" % version)
   logger.debug("Python version info:\n"+sys.version)
   ## Determine values for arguments if they have not been overridden
   ## Command-line takes precedence over environment variable
@@ -126,10 +138,13 @@ def run():
       args.flow_file = os.path.dirname(__file__) + os.path.sep + 'mentor.flows'
   ## Produce flow data
   flow = Flow(args.flow_file)
+  ## Create an options area if it doesn't already exist
+  if 'options' not in flow.data:
+    flow.data['options'] = {}
   ## Determine sim_dir (default is "." but can be overridden with flow data['options']['sim_dir'] and with command-line variable)
   if args.sim_dir:
     flow.data['options']['sim_dir'] = args.sim_dir
-  elif ('options' not in flow.data) or ('sim_dir' not in flow.data['options']):
+  elif 'sim_dir' not in flow.data['options']:
     flow.data['options']['sim_dir'] = '.'
   ## Pull in any extra flow-file overlays (command-line or ENV var)
   ## Command-line takes precedence over environment variable
@@ -143,28 +158,34 @@ def run():
   flow.apply_overlay(args.flow_file_overlay,args.flow,args.steps)
   ## Resolve inheritance
   flow.resolve_inheritance()
-  ## Determine desired flow
-  if not args.flow:
-    try: 
-      args.flow = flow.data['options']['default']
-    except:
-      pass
-  if not args.flow:
-    logger.error("No default flow and no flow specified on command line")
+  ## List flows if requested
+  if args.list_flows:
+    print_flows(logger,flow)
+    sys.exit(0)
+  ## Check that flow was provided
+  if (args.flow == 'UNSPECIFIED'):
+    logger.error("No flow given on command line. Must be provided as first positional argument. Available flows:")
+    print_flows(logger,flow)
     sys.exit(1)
   ## Confirm that the desired flow is valid
   if args.flow not in flow.data['flows']:
     logger.error("Flow \"{}\" is not a defined flow".format(args.flow))
-    print_flows()
+    print_flows(logger,flow)
     sys.exit(1)
   if not flow.data['flows'][args.flow]['order']:
     logger.error("Flow \"{}\" is tagged as virtual and cannot be directly used".format(args.flow))
-    print_flows()
+    print_flows(logger,flow)
     sys.exit(1)
+    ## List available steps for the given flow
+  if args.list_steps:
+    if 'default_steps' not in flow.data['flows'][args.flow]:
+      logger.info("NOTE: Flow \"{}\" does not have default steps. Use of --steps is required".format(args.flow))
+    print_steps(args,flow,logger)
+    sys.exit(0)
   ## Confirm that the desired flow has default stek,v in sorted(flow.data['flows'].items()ps defined
-  if 'default_steps' not in flow.data['flows'][args.flow]:
+  if ('default_steps' not in flow.data['flows'][args.flow]) and (not args.steps):
     logger.error("Flow \"{}\" does not have a set of default steps. Use of --steps is required".format(args.flow))
-    print_steps()
+    print_steps(args,flow,logger)
     sys.exit(1)
   ## Determine desired steps
   if args.clean:
@@ -180,21 +201,14 @@ def run():
   else:
     ## Steps were specified, put them in the list
     args.steps = args.steps.split(" ")
+  ## Display variables if requested
+  if args.list_variables:
+    print_variables(args,flow,logger,option_overrides)
+    sys.exit(0)
   ## Apply command-line variable overrides
-  flow.apply_overrides(args.flow,args.option_overrides,args.steps)
+  flow.apply_overrides(args.flow,option_overrides,args.steps)
   ## Elaborate all variables
   flow.elaborate_variables(args.flow,flow.data['options'],listing=(args.list_flows or args.list_variables or args.list_steps))
-  ## List flows if requested
-  if args.list_flows:
-    print_flows(args,flow,logger)
-    sys.exit(0)
-  ## List available steps for the given flow
-  if args.list_steps:
-    print_steps(args,flow,logger)
-    sys.exit(0)
-  if args.list_variables:
-    print_variables(args,flow,logger)
-    sys.exit(0)
   for step in args.steps:
     ## Check to see if all of the requested steps exists. Error if any don't
     if step not in flow.data['flows'][args.flow]['steps']:
@@ -222,28 +236,35 @@ def run():
   ## Set up any requested environment variables as per the flow file & overlays
   if 'options' in flow.data and 'env_vars' in flow.data['options']:
     for k,v in flow.data['options']['env_vars'].items():
-      if k not in os.environ:
-        # Only set environment variables that are not already set
-        if type(v) == str:
-          envvar = v
-        elif type(v) == dict:
-          if 'value' not in v or type(v['value']) != str:
-            logger.error("Dictionary format for environment variable \"{}\" in flow file is invalid".format(k))
-            sys.exit(1)
-          envvar = v['value']
-          if 'resolve_path' in v and v['resolve_path']:
-            envvar = resolve_path(envvar,flow.data['options']['sim_dir'])
+      override = False
+      if isinstance(v,str):
+        envvar = v
+      elif isinstance(v,collections.Mapping):
+        if 'value' not in v or type(v['value']) != str:
+          logger.error("Dictionary format for environment variable \"{}\" in flow file is invalid".format(k))
+          sys.exit(1)
+        envvar = v['value']
+        if 'resolve_path' in v and v['resolve_path']:
+          envvar = resolve_path(envvar,flow.data['options']['sim_dir'])
+        if 'override' in v and v['override']:
+          override = True
+      if (k not in os.environ) or override:
+        # Only set environment variables that are not already set unless override==True
         logger.info("Setting environment variable \"{}\" to \"{}\"".format(k,envvar))
         os.environ[k] = envvar
+      else:
+        logger.info("Not setting flow file environment variable \"{}\" to \"{}\", already set to \"{}\"".format(k,envvar,os.environ[k]))
   ## Determine if any file lists need to be created. Triggered by searching for a variable 'compile_files' defined for a given step
   all_filelists = []
   for step in args.steps:
     step_s = flow.data['flows'][args.flow]['steps'][step]
     if 'variables' in step_s and 'compile_files' in step_s['variables']:
-      filelist_data = FilelistBuilder()
+      filelist_data = FilelistBuilder(step_s['variables'])
       #filelist_names = []
       if 'libassoc' in flow.data['options']:
         filelist_data.libassoc = flow.data['options']['libassoc']
+      if 'filelist_build_defines' in flow.data['options']:
+        filelist_data.build_defines = flow.data['options']['filelist_build_defines']
       ## Value of 'compile_files' variable must be a space-delimted list of .compile files. Prepend the flow.data['options']['sim_dir'] value to the front of each file
       ## Error out if compile_files isn't defined
       if not step_s['variables']['compile_files']:
@@ -264,7 +285,7 @@ def run():
         ## as input to create(), but library associations are pulled from the 'libassoc' data structure set up prior to reading compile files
         ## and this will prompt the file list data structure to be more complex (lib_data will be populated) and the 'results' return value
         ## here will also be more complex (a dict of lists of strings instead of a simple list of strings)
-        results = filelist_data.create(qf_file_prefix=qf_file_prefix,use_fileassoc=use_fileassoc,fileassoc=fileassoc,incassoc=incassoc,nobuild=args.skip_filelist_build)
+        results = filelist_data.create(qf_file_prefix=qf_file_prefix,use_fileassoc=use_fileassoc,fileassoc=fileassoc,incassoc=incassoc,nobuild=args.skip_filelist_build,printfullnodes=args.verbose_filelist)
         if isinstance(results,list):
           if firstiter:
             firstiter = False
@@ -298,6 +319,10 @@ def run():
   if args.filelists_only:
     logger.info("Created file lists for requested steps:\n  {}".format('\n  '.join(map(str,all_filelists))))
     sys.exit(0)
+  ## Check for any extra paths to search for imports before we start building up commands
+  if 'command_package_paths' in flow.data['options']:
+    for p in flow.data['options']['command_package_paths']:
+      sys.path.insert(0,os.path.realpath(os.path.expandvars(p)))
   ## Create set of commands for all of the requested steps
   commands = flow.build_commands(args.flow,args.steps)
   ## Process each command in order. The commands come back as an assoc array with elements 'c', 'f', and 's'.  

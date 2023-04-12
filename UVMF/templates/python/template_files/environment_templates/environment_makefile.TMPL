@@ -73,8 +73,8 @@ include $(UVMF_HOME)/common/uvmc/Makefile
 compile_sc: compile_uvmc
 	-@echo "Compiling SystemC TLM models"
 {% for cppFile in uvmc_cpp_files %}
-	sccom $(MACHINE_ARCH) -I$(QUESTA_HOME)/verilog_{{src_dir}}uvmc-$(UVMC_VER)/{{src_dir}}connect/sc -I$(QUESTA_HOME)/includes/systemc $(EXTRA_SCCOM_ARGS) -fmessage-length=0 -fPIC -pipe -scv -DSC_INCLUDE_DYNAMIC_PROCESSES -DDEBUG_COUTX -DSC_INCLUDE_MTI_AC -DMTI_BIND_SC_MEMBER_FUNCTION -verbose {{uvmc_cpp_flags}} {{cppFile}}
+	sccom $(MACHINE_ARCH) -I$(UVMC_HOME)/src/connect/sc -I$(QUESTA_HOME)/includes/systemc $(EXTRA_SCCOM_ARGS) -fmessage-length=0 -fPIC -pipe -scv -DSC_INCLUDE_DYNAMIC_PROCESSES -DDEBUG_COUTX -DSC_INCLUDE_MTI_AC -DMTI_BIND_SC_MEMBER_FUNCTION -verbose {{uvmc_cpp_flags}} {{cppFile}}
 {% endfor %}
-	sccom $(MACHINE_ARCH) -link -I$(QUESTA_HOME)/verilog_{{src_dir}}uvmc-$(UVMC_VER)/{{src_dir}}connect/sc -I$(QUESTA_HOME)/includes/systemc $(EXTRA_SCCOM_LINK_ARGS) -fmessage-length=0 -fPIC -pipe -scv -DSC_INCLUDE_DYNAMIC_PROCESSES
+	sccom $(MACHINE_ARCH) -link -I$(UVMC_HOME)/src/connect/sc -I$(QUESTA_HOME)/includes/systemc $(EXTRA_SCCOM_LINK_ARGS) -fmessage-length=0 -fPIC -pipe -scv -DSC_INCLUDE_DYNAMIC_PROCESSES
 {% endif %}
 

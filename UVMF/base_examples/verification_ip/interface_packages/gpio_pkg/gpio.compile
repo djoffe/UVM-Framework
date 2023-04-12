@@ -1,5 +1,4 @@
 needs:
-  - gpio_hdl.compile
   - gpio_hvl.compile
-  - gpio_xrtl.compile
+  - gpio_hdl.compile
   

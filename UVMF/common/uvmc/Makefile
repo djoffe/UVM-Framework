@@ -12,12 +12,15 @@ EXTRA_UVMC_VLOG_ARGS  ?=
 EXTRA_SCCOM_ARGS      ?= -Wall -g
 EXTRA_SCCOM_LINK_ARGS ?= -g -O0
 
-XINCDIRS  = +incdir+$(QUESTA_HOME)/verilog_src/uvm-$(UVM_VER)/src
-XINCDIRS += +incdir+$(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sv
-UVMCONNECT_VLOG = $(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sv/uvmc_pkg.sv
+UVMC_HOME ?= $(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)
+UVM_HOME ?= $(QUESTA_HOME)/verilog_src/uvm-$(UVM_VER)
 
-DINCDIRS  = -I$(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sc
-UVMCONNECT_CPP = $(QUESTA_HOME)/verilog_src/uvmc-$(UVMC_VER)/src/connect/sc/uvmc.cpp
+XINCDIRS  = +incdir+$(UVM_HOME)/src
+XINCDIRS += +incdir+$(UVMC_HOME)/src/connect/sv
+UVMCONNECT_VLOG = $(UVMC_HOME)/src/connect/sv/uvmc_pkg.sv
+
+DINCDIRS  = -I$(UVMC_HOME)/src/connect/sc
+UVMCONNECT_CPP = $(UVMC_HOME)/src/connect/sc/uvmc.cpp
 
 compile_uvmc:
 	-@echo "Compiling UVMConnect library for platform $(MACHINE_ARCH)"

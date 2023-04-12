@@ -59,13 +59,6 @@ except ImportError:
   print("ERROR : Jinja2 package not found.  See templates.README for more information")
   print("Python version info:\n{}".format(sys.version))
   sys.exit(1)
-## Require version 2.8 or later of Jinja2 package
-s = jinja2.__version__.split(".")
-if ( (int(s[0]) < 2) | ( (int(s[0]) == 2) & (int(s[1]) < 8))):
-  print("ERROR : Jinja2 package version "+jinja2.__version__+" incorrect, must be 2.8 or later")
-  print("Python version info:\n{}".format(sys.version))
-  sys.exit(1)
-from jinja2._compat import string_types
 
 ## Custom Template Loader - does everything the FileSystemLoader does but
 ## can specify a list of glob-type filters to pick up only specific template
@@ -74,7 +67,7 @@ from jinja2._compat import string_types
 class FileSystemFilterLoader(jinja2.FileSystemLoader):
   def __init__(self,searchpath,glob='*',encoding='utf-8',followlinks=False):
     super(FileSystemFilterLoader,self).__init__(searchpath,encoding,followlinks)
-    if isinstance(glob,string_types):
+    if isinstance(glob,str):
       glob = [glob]
     self.glob = glob
 
@@ -180,11 +173,12 @@ class BaseElementClass(object):
 
 ## Base class for all 'interface' type classes (port, config, transaction, etc.)
 class BaseElementInterfaceClass(BaseElementClass):
-  def __init__(self,name,type,isrand=False,comment=""):
+  def __init__(self,name,type,isrand=False,comment="",unpackedDim=""):
     super(BaseElementInterfaceClass,self).__init__(name)
     self.type = type
     self.isrand = isrand
     self.comment = comment
+    self.unpackedDim = unpackedDim
 
 ## Base class for all 'interface' Constraints type classes
 class BaseElementConstraintsClass(BaseElementClass):
@@ -501,8 +495,8 @@ class PortClass(BaseElementInterfaceClass):
       return '[{0}-1:0]'.format(w)
 
 class InterfaceConfigClass(BaseElementInterfaceClass):
-  def __init__(self,name,type,isrand=False,value='',comment=""):
-    super(InterfaceConfigClass,self).__init__(name,type,isrand,comment)
+  def __init__(self,name,type,isrand=False,value='',comment="",unpackedDim=""):
+    super(InterfaceConfigClass,self).__init__(name,type,isrand,comment,unpackedDim)
     self.value = value
 
 class EnvironmentConfigClass(BaseElementEnvironmentClass):
@@ -524,9 +518,8 @@ class ParamDef(BaseElementClass):
 
 class TransClass(BaseElementInterfaceClass):
   def __init__(self,name,type,isrand=False,iscompare=True,unpackedDim="",comment=""):
-    super(TransClass,self).__init__(name,type,isrand,comment)
+    super(TransClass,self).__init__(name,type,isrand,comment,unpackedDim)
     self.iscompare = iscompare
-    self.unpackedDim = unpackedDim
 
 class ConstraintsClass(BaseElementConstraintsClass):
   def __init__(self,name,type,comment):
@@ -836,9 +829,9 @@ class InterfaceClass(BaseGeneratorClass):
     """Add a constraint to the interface class's Constraint item definition"""
     self.transVarsConstraints.append(ConstraintsClass(name,type,comment))
 
-  def addConfigVar(self,name,type,isrand=False,value='',comment=""):
+  def addConfigVar(self,name,type,isrand=False,value='',comment="",unpackedDim=""):
     """Add a configuration variable to the interface class's configuration object definition"""
-    self.configVars.append(InterfaceConfigClass(name,type,isrand,value,comment))
+    self.configVars.append(InterfaceConfigClass(name,type,isrand,value,comment,unpackedDim))
 
   def addConfigVarConstraint(self,name,type,comment=""):
     """Add a constraint to the config class's Constraint item definition"""
@@ -877,7 +870,7 @@ class InterfaceClass(BaseGeneratorClass):
     return self.getPorts('inout')
 
   ## Overload of the create function - add some extra loops on the end for conditional components
-  def create(self,desired_template='all',parser=None):
+  def create(self,desired_template='all',parser=None,archive_yaml=True):
     """Interface class specific create function - allows for the production of conditional files"""
     ## We need to generate a list of DPI arguments that are *not* part of the
     ## existing transVars list - this way we can reliably produce a comprehensive
@@ -896,7 +889,7 @@ class InterfaceClass(BaseGeneratorClass):
           self.DPITransDecl.append(TransClass(a['name'],a['type'],False,False,ud))
     if self.mtlbReady:
       self.conditional_array.append('mtlbReady')
-    super(InterfaceClass,self).create(desired_template,parser)
+    super(InterfaceClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
     if self.options.yaml:
       return
     # Generation of DPI link files
@@ -1146,7 +1139,7 @@ class EnvironmentClass(BaseGeneratorClass):
     self.connections.append(connectionClass(name,pName,subscriberName, aeName, validate))
 
   ## Overload of the create function - add some extra loops on the end for analysis components
-  def create(self,desired_template='all',parser=None):
+  def create(self,desired_template='all',parser=None,archive_yaml=True):
     """Environment class specific create function - allows for the production of multiple analysis component files"""
     ## Prepand the environment config typedef to the front of all util component instantiations, too
     ## Need to do this before call to super.create since these changes will be needed then
@@ -1154,7 +1147,7 @@ class EnvironmentClass(BaseGeneratorClass):
       self.conditional_array.append('mtlbReady')
     for ac in self.analysisComponents:
       ac.parameters = [ParameterValueClass("CONFIG_T", "CONFIG_T")] + ac.parameters
-    super(EnvironmentClass,self).create(desired_template,parser)
+    super(EnvironmentClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
     if self.options.yaml:
       return
     for analysisComp in self.analysisComponentTypes:
@@ -1278,7 +1271,7 @@ class BenchClass(BaseGeneratorClass):
     return template
 
   ## Overload of the create function - insert some conditional considerations
-  def create(self,desired_template='all',parser=None):
+  def create(self,desired_template='all',parser=None,archive_yaml=True):
     """Bench class specific create function - allows for the production of conditional files"""
     if self.inFactEnabled == True:
       self.conditional_array.append('infact_enabled')
@@ -1288,7 +1281,7 @@ class BenchClass(BaseGeneratorClass):
       self.conditional_array.append('mtlbReady')
     if self.using_qvip and ('need_overlay' not in self.conditional_array):
       self.conditional_array.append('need_overlay')
-    super(BenchClass,self).create(desired_template,parser)
+    super(BenchClass,self).create(desired_template,parser,archive_yaml=archive_yaml)
 
   def addVinfoDependency(self,name):
     """Add a make target to the vinfo target for compiling c source  """

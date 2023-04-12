@@ -1,36 +1,47 @@
 from command_helper import *
 import os
+import sys
+from mentor_commands import vlog, vcom
+
+class QuestaCompile(Generator):
+
+  def __init__(self,v={}):
+    super(QuestaCompile,self).__init__
+    self.vlog_obj = vlog.Vlog()
+    self.vcom_obj = vcom.Vcom()
+
+  def vlog_elaborate(self,v={}):
+    d = {}
+    if v_val(v,'vlog_extra'):
+      d['extra'] = v['vlog_extra']
+    if v_val(v,'vlog_log_filename'):
+      d['log_filename'] = v['vlog_log_filename']
+    self.vlog_obj.elaborate(merge_dict(v,d))
+
+  def vcom_elaborate(self,v={}):
+    d = {}
+    if v_val(v,'vcom_extra'):
+      d['extra'] = v['vcom_extra']
+    if v_val(v,'vcom_log_filename'):
+      d['log_filename'] = v['vcom_log_filename']
+    self.vcom_obj.elaborate(merge_dict(v,d))
+
+  def __repr__(self):
+    return '\n'.join([repr(self.vlog_obj),repr(self.vcom_obj)])
+
+  def elaborate(self,v={}):
+    self.vlog_elaborate(v)
+    self.vcom_elaborate(v)
+
+  def command(self,v):
+    # This needs to return any vmap commands, then vlog command, then vcom
+    return self.set_vmap_commands(v)+self.vlog_obj.command(v)+self.vcom_obj.command(v)  
 
 # Invoke compile operations for Questa. Verilog (vlog) first, then VHDL (vcom)
 def generate_command(v=None):
-  if 'using_qvip':
-    mvc_switch = '-timescale 1ps/1ps'
-  else:
-    mvc_switch = ''
-  cmds = []
-  # Verilog/SV and C are compiled with vlog
-  vlog_flist_str = filelists(val=v['filelists'],assoc='vlog')+" "+filelists(v['filelists'],assoc='c')
-  # VHDL compiled with vcom
-  vhdl_flist_str = filelists(val=v['filelists'],assoc='vhdl')
-  arch_str = ''
-  if v['use_64_bit']:
-    arch_str = '-64'
-  suppress_str = ''
-  if v['suppress']:
-    suppress_str = "-suppress "+v['suppress']
-  modelsimini_str = ''
-  if v['modelsimini']:
-    modelsimini_str = '-modelsimini '+v['modelsimini']
-  cmds = []
-  if v['mappings'] != '':
-    # Expect this to be sets of <logical_name>:<physical_name> pair strings separated by spaces
-    for m in library_mappings(v['mappings']):
-      cmds.append(clean_whitespace('vmap {} {} {}'.format(m[0],m[1],modelsimini_str)))
-    modelsimini_str = ""  ## Clear this if a modelsim.ini file was pointed to along with vmap commands
-  if vlog_flist_str != '':
-    cmds.append(clean_whitespace("vlog {} {} {} {} {} {} {} -l {}".format(vlog_flist_str,arch_str,modelsimini_str,v['vlog_switches'],v['vlog_extra'],mvc_switch,suppress_str,v['vlog_log_filename'])))
-  if vhdl_flist_str != '':
-    cmds.append(clean_whitespace("vcom {} {} {} {} {} {} -l {}".format(vhdl_flist_str,arch_str,modelsimini_str,v['vcom_switches'],v['vcom_extra'],suppress_str,v['vlog_log_filename'])))
-  return cmds
+  obj = QuestaCompile()
+  obj.elaborate(v)
+  logger.debug(obj)
+  return obj.command(v)
 
 

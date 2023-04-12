@@ -1,6 +1,9 @@
+incdir:
+  - .
+
 needs:
-  - ../../../verification_ip/interface_packages/spi_pkg/spi.compile
-  - ../../../verification_ip/interface_packages/ahb_pkg/ahb.compile
+  - ../../../verification_ip/interface_packages/spi_pkg/spi_hdl.compile
+  - ../../../verification_ip/interface_packages/ahb_pkg/ahb_hdl.compile
   - ../../ahb2wb/rtl/rtl.compile
   - ../../wb2spi/rtl/rtl.compile
 

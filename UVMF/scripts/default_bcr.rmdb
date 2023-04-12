@@ -83,6 +83,7 @@
       <parameter name="BCR_EXEC_CMD_WINDOWS" type="tcl">[getIniVar bcr_exec_cmd_windows]</parameter>
       <parameter name="BCR_EXEC_CMD_LINUX" type="tcl">[getIniVar bcr_exec_cmd_linux]</parameter>
       <parameter name="BCR_EXEC_CMD" type="tcl">[ switch $tcl_platform(platform) { unix { return "(%BCR_EXEC_CMD_LINUX%)" } windows { return "(%BCR_EXEC_CMD_WINDOWS%)" } default { return "!ERROR!ERROR!ERROR!" } } ]</parameter>
+      <parameter name="BCR_FLOW" type="tcl">[getIniVar bcr_flow]</parameter>
     </parameters>
     <members>
       <member>start_infact_sdm_task</member>
@@ -149,14 +150,14 @@
       <parameter name="EXTRABUILDCMD" type="tcl">[GetBuildCmd (%build%)]</parameter>
       <parameter name="VRUN_EXTRA_BUILD_CMD"></parameter>
       <parameter name="BUILDDIR" type="tcl">[GetBuildDir (%build%)]</parameter>
-      <parameter name="CODE_COVERAGE" type="tcl">[ if { (%CODE_COVERAGE_ENABLE%) } { return "code_coverage_enable:True (%CC_TYPES%) (%CC_TARGET%)" } else { return "" }]</parameter>
-      <parameter name="CC_TYPES" type="tcl">[ if { {(%CODE_COVERAGE_TYPES%)}!=0 } { return "code_coverage_types:(%CODE_COVERAGE_TYPES%)" } else {return "" }]</parameter>
-      <parameter name="CC_TARGET" type="tcl">[ if { {(%CODE_COVERAGE_TARGET%)}!=0 } { return "code_coverage_target:(%CODE_COVERAGE_TARGET%)" } else {return "" }]</parameter>
+      <parameter name="CODE_COVERAGE" type="tcl">[ if { (%CODE_COVERAGE_ENABLE%) } { return "code_cov_enable:True (%CC_TYPES%) (%CC_TARGET%)" } else { return "" }]</parameter>
+      <parameter name="CC_TYPES" type="tcl">[ if { {(%CODE_COVERAGE_TYPES%)}!=0 } { return "code_cov_types:(%CODE_COVERAGE_TYPES%)" } else {return "" }]</parameter>
+      <parameter name="CC_TARGET" type="tcl">[ if { {(%CODE_COVERAGE_TARGET%)}!=0 } { return "code_cov_target:(%CODE_COVERAGE_TARGET%)" } else {return "" }]</parameter>
       <parameter name="BCR_DEBUG" type="tcl">[ if { (%DEBUG%)==1} { return "--debug"} else {return ""}]</parameter>
       <parameter name="FLOW_CONTROL" type="tcl">[ if { (%USE_INFACT%)==1 } { return {--flow infact --steps "compile_bench build_infact_seq build_bench"} } else { return build_only:True }]</parameter>
     </parameters>
     <execScript launch="vsim" mintimeout="(%BUILD_TIMEOUT%) usestderr=(%USESTDERR%)">
-      <command>exec (%BCR_EXEC_CMD%) --sim_dir (%BUILDDIR%) (%BCR_DEBUG%) (%CODE_COVERAGE%) (%FLOW_CONTROL%) (%VRUN_EXTRA_BUILD_CMD%) (%EXTRABUILDCMD%)</command>
+      <command>exec (%BCR_EXEC_CMD%) (%BCR_FLOW%) --sim_dir (%BUILDDIR%) (%BCR_DEBUG%) (%CODE_COVERAGE%) (%FLOW_CONTROL%) (%VRUN_EXTRA_BUILD_CMD%) (%EXTRABUILDCMD%)</command>
     </execScript>
   </runnable>
 
@@ -181,7 +182,7 @@
       <parameter name="DEBUGMODE">(%NO_RERUN%)</parameter>
       <parameter name="EXTRA_RUN_ARGS_FOR_BUILD" type="tcl">[GetRunCmd (%build%)]</parameter>
       <parameter name="UVM_VERBOSITY" type="tcl">[ if { (%DEBUGMODE%) } { return "UVM_MEDIUM" } else { return "UVM_LOW" }]</parameter>
-      <parameter name="CC_STR" type="tcl">[ if { (%CODE_COVERAGE_ENABLE%) } { return "code_coverage_enable:True" } else { return "" }]</parameter>
+      <parameter name="CC_STR" type="tcl">[ if { (%CODE_COVERAGE_ENABLE%) } { return "code_cov_enable:True" } else { return "" }]</parameter>
       <!-- Wave file is only generated if Visualizer is enabled (USE_VIS=1)
            Further, wave file produced if:
              DUMP_WAVES is set to 1,  OR 
@@ -200,10 +201,10 @@
           if {!({(%VIS_ARGS%)} == "")} {file link -symbolic "design.bin" "../../build_task/design.bin"}
       </command>
       <command> 
-          exec (%BCR_EXEC_CMD%) --skip_filelist_build --sim_dir (%BUILDDIR%) (%FLOW_CONTROL%)
+          exec (%BCR_EXEC_CMD%) (%BCR_FLOW%) --skip_filelist_build --sim_dir (%BUILDDIR%) (%FLOW_CONTROL%)
             outdir:../../build_task/qrun.out (%EXTRA_RUN_ARGS_FOR_BUILD%) (%EXTRA_RUN_ARGS_FOR_TESTCASE%) (%EXTRA_RUN_OPTIONS%)
             (%CC_STR%) verbosity:(%UVM_VERBOSITY%) test:(%UVM_TESTNAME%) testname_attr:(%build%)_(%UVM_TESTNAME%)_(%iter%)_(%seed%)
-            seed:(%seed%) switches:+vrm_in_use ucdb_filename:(%ucdbfile%)
+            seed:(%seed%) vrm_in_use:True ucdb_filename:(%ucdbfile%)
             (%EXTRA_DO_ARG%) {quit_command:quit -sim}
       </command>
       <!-- Following command modifies the design hierarchy in the UCDB to match a mapping defined in the test list with TB_MAP -->
@@ -270,7 +271,7 @@
       <command>quit -f</command>
     </localfile>
     <execScript mintimeout="(%COVERCHECK_TIMEOUT%)" usestderr="(%USESTDERR%)">
-      <command>exec (%BCR_EXEC_CMD%) --flow covercheck --step analyze
+      <command>exec (%BCR_EXEC_CMD%) covercheck --step analyze
                  lib:(%CC_BUILD_DIR%)/qrun.out/work
                  top:(%TOP_DU_NAME%)
                  ucdb_filename:(%mergefile%)

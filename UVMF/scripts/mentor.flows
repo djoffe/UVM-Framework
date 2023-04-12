@@ -1,6 +1,3 @@
-options:
-  default: 'questa'
-
 flows:
 
   base:
@@ -14,12 +11,13 @@ flows:
     incassoc:
       vlog: "+incdir+"    
     variables:
-      code_coverage_enable: False
+      uvm_path: ${uvm_location}/${uvm_version}
+      code_cov_enable: False
       log_filename: run.log
       debug: ''
       use_64_bit: True
-      code_coverage_target: '/hdl_top/dut_verilog.'
-      code_coverage_types: 'bsf'
+      code_cov_target: '/hdl_top/dut_verilog.'
+      code_cov_types: 'bsf'
       seed: 0
       test: test_top
       lib: ''
@@ -27,16 +25,17 @@ flows:
       use_vis: False
       live: False
       use_vis_uvm: False
-      enable_trlog: ''
+      enable_trlog: False
       mem_size_log: '1024'
       vis_wave: ''
-      vis_wave_rtl: '+signal+memory=${mem_size_log}+report'
-      vis_wave_tb: '+signal+memory=${mem_size_log}+report+class+assertion+uvm_schematic+msg'
+      vis_wave_rtl: '+signal+memory=${mem_size_log}+report+parameter'
+      vis_wave_tb: '${vis_wave_rtl}+class+assertion+uvm_schematic+msg+classmemory=${mem_size_log}+statictaskfunc'
       vis_design_filename: 'design.bin'
       vis_wave_filename: ''
       access: ''
       extra_do: ''
       extra_pre_do: ''
+      do_override: False
       compile_only: False
       build_only: False      
       sim_only: False
@@ -46,41 +45,65 @@ flows:
       run_command: ''
       mode: '-batch'
       error_limit: 20
-      switches: ''
       pre_do: "set IterationLimit 140000; set NoQuitOnFinish 1; coverage attribute -name TESTNAME -value ${testname_attr}; coverage save -onexit ${ucdb_filename}"
       post_do: ''
       quit_command: ''
       using_qvip: False
-      suppress: '8887,2286,13233'
+      suppress: '8887,2286'
       mappings: ''
       modelsimini: ''
       realclean: False
+      verbose: False
+      extra_clean: ''
+      permit_unmatched_virt_intf: True
+      wave_file: ''
+      vrm_in_use: False
+      uvm_location: '${QUESTA_HOME}/verilog_src'
+      uvm_version: 'uvm-1.1d'
+      uvm_precompiled: True
+      uvm_debug_pkg: True
+      uvm_debug_pkg_location: '${QUESTA_HOME}/verilog_src/questa_uvm_pkg-1.2'
     variable_descriptions:
       live: "Run interactive mode simulation instead of batch-mode"
-      use_vis: "Dump Visualizer wave format"
-      use_vis_uvm: "Dump Visualizer wave format including structures for TB debug"
-      enable_trlog: "Enable transaction logging"
+      test: "Specify which UVM test to invoke"    
+      seed: "Specify the random seed for the run"
+      verbosity: "Specify the UVM verbosity of the simulation"
+      log_filename: "Specify log file produced during the run"
+      compile_only: "When set to True, only compile the environment and do not optimize or execute simulation"
+      build_only: "When set to True, only compile and optimize the enviornment and do not execute simulation"
+      sim_only: "When set to True, skip compile and optimize and attempt to execute simulation immediately"
+      use_vis: "Dump Visualizer waves for RTL debug"
+      use_vis_uvm: "Dump Visualizer waves for RTL and TB debug"      
       mem_size_log: "Memory size limit for Visualizer memory content logging"
+      enable_trlog: "Enable transaction logging"
+      vis_wave_filename: "Specify a wave dump file name for Visualizer"
       vis_wave: "Override wave dumping options for Visualizer -qwavedb switch"
+      wave_file: "Load the specified wave format file for debug"
       access: "Use this to specify additional -access or related switches for QIS visibility"
       use_64_bit: "Run tools in 64-bit mode when True. If false, tools that support 32-bit mode will use it"
-      code_coverage_enable: "Enable the collection of code coverage"
-      log_filename: "Specify log file produced during the run"
-      code_coverage_target: "Specify the hierarchy to instrument for code coverage"
-      code_coverage_types: "Specify which types of code coverage to collect"
-      seed: "Specify the random seed for the run"
+      code_cov_enable: "Enable the collection of code coverage"
+      code_cov_target: "Specify the hierarchy to instrument for code coverage"
+      code_cov_types: "Specify which types of code coverage to collect"
       extra_pre_do: "Call additional Tcl commands at the very beginning of the -do command set"
       extra_do: "Call additional Tcl commands prior to the run command(s)"
+      do_override: "If specified, value will be used for entire \"-do\" switch input"
       testname_attr: "Direct control of the UCDB \"TESTNAME\" attribute"
       ucdb_filename: "Direct control over the UCDB file name"
-      verbosity: "Specify the UVM verbosity of the simulation"
       run_command: "Override how the 'run' command is specified as part of a simulation"
       error_limit: "Control how many errors will be seen before execution halts. Set to 0 for no limit"
-      test: "Specify which UVM test to invoke"    
-      suppress: "Suppress the given error codes, separated by commas"
+      suppress: "Suppress the given error/warning codes, separated by commas"
       mappings: "Create the given library mappings prior to invoking simulation. Provide a list of space-separated logical:physical pairs"
       modelsimini: "Will point all commands to the given modelsim.ini file"
       realclean: "Clean up additional file & directory structure beyond the standard --clean"
+      verbose: "Prompt more verbose output from scripts (not to be confused with UVM verbosity)"
+      extra_clean: "Specify additional glob patterns to use during a clean operation"
+      permit_unmatched_virt_intf: "Allow unmatched virtual interfaces (Usually required)"
+      uvm_path: "Full path to the desired base UVM source code"
+      uvm_location: "Path to the location of all available UVM source packages"
+      uvm_version: "Specify which version of the base UVM package to use"
+      uvm_precompiled: "When set, use the precompiled version of the UVM package. Otherwise compile from source"
+      uvm_debug_pkg: "When set, use the Questa UVM debug package"
+      uvm_debug_pkg_location: "Location of the Questa UVM debug package"
     steps:
       clean:
         description: "Clean up"
@@ -122,6 +145,9 @@ flows:
           wavefile: 'qwave.db'
           formatfile: 'viswave.do'
         variable_descriptions:
+          designfile: "Specify path to the design file"
+          wavefile: "Specify path to the wave file"
+          formatfile: "Specify path to the wave format file"
           extra: "Specify additional switches to the command line"
         command_package: 'mentor_commands'
         command_module: 'visualizer'
@@ -179,13 +205,14 @@ flows:
           compile_only: True
           compile_files: 'top.compile'
           extra: ${compile_extra}
+          lib: ''
       analyze:
         description: "Run CoverCheck against compiled design"
         command_package: 'mentor_commands'
         command_module: 'covercheck'
 
   infact:
-    order: 8
+    order: 0
     description: "Run Questa simulation using inFact stimulus generation"
     inherit: questa
     default_steps:
@@ -291,16 +318,16 @@ flows:
     order: 6
     description: "Run a TBX simulation on Veloce"
     inherit: base
-    default_steps:
-      - hdl_build
-      - hvl_build
-      - run
     use_fileassoc: True
     variables:
-      uvm_src_path: ${QUESTA_HOME}/verilog_src/uvm-1.1d/src
-      velanalyze_vlog_switches: -suppress 2286 -suppress 2223 +define+XRTL +define+XMVC +define+USE_VTL 
-      velanalyze_vhdl_switches: ''
+      velanalyze_extract_suppress: ''
+      velanalyze_extract_extra: ''
+      velanalyze_extract_defines: ''
+      velanalyze_vlog_suppress: '-suppress_ver_warnings'
+      velanalyze_vlog_defines: 'XRTL XMVC USE_VTL'
       velanalyze_vlog_extra: ''
+      velanalyze_vhdl_suppress: ''
+      velanalyze_vhdl_defines: ''
       velanalyze_vhdl_extra: ''
       run_extra: ''
       vlog_extra: ''
@@ -308,22 +335,47 @@ flows:
       vopt_extra: ''
       velcomp_switches: ''
       velcomp_extra: ''
+      realclean: False
+      vlog_logfile_name: 'vlog.log'
+      vcom_logfile_name: 'vcom.log'
+      vopt_logfile_name: 'vopt.log'
+      vsim_logfile_name: 'vsim.log'
+      lint: False
     variable_descriptions:
+      velanalyze_extract_suppress: 'Suppress messages during velanalyze for HVL extraction'
+      velanalyze_extract_extra: 'Append switches to the velanalyze for HVL extraction'
+      velanalyze_extract_defines: 'Define macros during velanalyze for HVL extraction'
+      velanalyze_vlog_suppress: 'Suppress messages during velanalyze for Verilog source'
+      velanalyze_vhdl_suppress: 'Suppress messages during velanalyze for VHDL source'
+      velanalyze_vlog_defines: 'Define macros during velanalyze for Verilog source'
       velanalyze_vlog_extra: 'Append switches to the velanalyze command for Verilog source'
       velanalyze_vhdl_extra: 'Append switches to the velanalyze command for VHDL source'
+      velcomp_extra: 'Append switches to the velcomp command'
       vlog_extra: 'Append switches to the Questa Verilog compile'
       vcom_extra: 'Append switches to the Questa VHDL compile'
       vopt_extra: 'Append switches to the Questa vopt elaboration'
       run_extra: 'Append switches to the simulation run command'
-      # Clear out these descriptions as they are not valid for this flow
+      vlog_logfile_name: 'Logfile for the vlog run'
+      vcom_logfile_name: 'Logfile for the vcom run'
+      vopt_logfile_name: 'Logfile for the vopt run'
+      vsim_logfile_name: 'Logfile for the vsim run'
+      lint: 'Enable TBX friendliness lint checks during compile and run'
+      # Clear out/redefine these descriptions as they are not valid or different for this flow
       live: ''
-      use_vis: ''
-      use_vis_uvm: ''
+      code_cov_enable: ''
+      code_cov_target: ''
+      code_cov_types: ''
+      log_filename: ''
+      mappings: ''
+      suppress: 'Suppress messages for Questa commands'
+      vcom_extra: ''
+      vcom_log_filename: ''
     steps:
       hdl_build:
         description: "Build HDL for Veloce (velanalyze, velcomp)"
         variables:
           compile_files: "hdl.compile hvl.compile"
+          hdl_top: "hdl_top"
         command_package: 'mentor_commands'
         command_module: 'veloce_hdl_build'
       hvl_build:
@@ -334,8 +386,9 @@ flows:
           vcom_switches: ''
           vlog_extra: ''
           vcom_extra: ''
-          velhvl_switches: '-sim veloce -g -ldflags "-Wl,--whole-archive -Wl,--no-whole-archive"'
+          velhvl_ldflags: '-g -ldflags "-Wl,--whole-archive -Wl,--no-whole-archive"'
           velhvl_extra: ''
+          velhvl_sim: 'veloce'
           tops: hvl_top hdl_top TbxSvManager
           out: opt
           debug: ''
@@ -348,4 +401,5 @@ flows:
         variables:
           extra: ${run_extra}
           tops: opt
+          log_filename: ${vsim_logfile_name}
 

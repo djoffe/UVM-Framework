@@ -10,7 +10,7 @@ options:
 # pragma uvmf custom {{qvip_env_var}}_info begin
     {{qvip_env_var}}_DIR_NAME: 
       value: the_environment_variable_named_{{qvip_env_var}}_DIR_NAME_needs_to_point_to_the_QVIP_configurator_generated_code_for_this_sub_environment
-      resolve_path: True
+      resolve_path: False  # Set this to True if the value above is changed to something containing variable references
 # pragma uvmf custom {{qvip_env_var}}_info end
 {% endfor %}
 {% endif %}

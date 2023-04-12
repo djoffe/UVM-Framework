@@ -1,39 +1,47 @@
 from command_helper import *
 import os
+import sys
+
+class Vopt(Generator):
+  def __init__(self,v={}):
+    super(Vopt,self).__init__
+    self.keys = '''
+            cmd    arch     tops      work      out    coverage_build  visibility   vis_designfile extra    modelsimini  suppress  lib  logfile lint
+            '''.split()
+
+  def set_cmd(self,v={}):
+    return 'vopt'
+
+  def set_out(self,v={}):
+    if 'out' in v and v['out']:
+      return '-o '+v['out']
+    return ''
+
+  def set_lint(self,v={}):
+    if 'lint' in v and v['lint']:
+      return '-reporthrefs+hdl_top'
+    else:
+      return ''
+
+  def elaborate(self,v={}):
+    self.cmd                  = self.set_cmd(v)
+    self.arch                 = self.set_arch(v)
+    self.tops                 = self.set_tops(v)
+    self.work                 = self.set_work(v)
+    self.out                  = self.set_out(v)
+    self.visibility           = self.set_visibility(v)
+    self.extra                = self.set_extra(v)
+    self.modelsimini          = self.set_modelsimini(v)
+    self.suppress             = self.set_suppress(v)
+    self.lib                  = self.set_lib(v)
+    self.logfile              = self.set_logfile(v)
+    self.coverage_build       = self.set_coverage_build(v)
+    self.vis_designfile       = self.set_vis_designfile(v)
+    self.lint                 = self.set_lint(v)
 
 # Invoke vopt
 def generate_command(v=None):
-  cmds = []
-  if v['use_vis'] or v['use_vis_uvm']:
-    vis_args_str = "-designfile "+v['vis_design_filename']
-    if v['live']:
-      vis_args_str = vis_args_str+" -debug,livesim"
-    else:
-      vis_args_str = vis_args_str+" -debug"
-    if 'access' in v:
-      vis_args_str = vis_args_str+" "+v['access']
-  else:
-    if v['live']:
-      vis_args_str = "+acc"
-    else:
-      vis_args_str = ''
-  lib_str = ''
-  for l in v['lib'].split(' '):
-    if l: 
-      lib_str = lib_str + '-L '+l
-  work_str = ''
-  if 'work' in v:
-    work_str = '-work '+v['work']
-  arch_str = ''
-  if v['use_64_bit']:
-    arch_str = '-64'
-  modelsimini_str = ''
-  if v['modelsimini']:
-    modelsimini_str = '-modelsimini '+v['modelsimini']
-  suppress_str = ''
-  if v['suppress']:
-    suppress_str = "-suppress "+v['suppress']
-  cmds.append(clean_whitespace("vopt {} {} {} -o {} {} {} {} {} {} -l {}".format(arch_str,v['tops'],work_str,v['out'],vis_args_str,v['extra'],modelsimini_str,suppress_str,lib_str,v['log_filename'])))
-  return cmds
-
-
+  obj = Vopt()
+  obj.elaborate(v)
+  logger.debug(obj)
+  return obj.command(v)

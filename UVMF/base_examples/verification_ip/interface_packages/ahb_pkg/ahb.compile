@@ -1,5 +1,4 @@
 needs:
-  - ahb_hdl.compile
   - ahb_hvl.compile
-  - ahb_xrtl.compile
+  - ahb_hdl.compile
   

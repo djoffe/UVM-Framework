@@ -2,6 +2,9 @@
 {% block description %}
 {% endblock %}
 {% block contents %}
+incdir:
+  - ${uvm_path}/src
+  - .
 needs:
 {% if qvip_pkg_env_variables|length > 0 %}
   - $UVMF_HOME/common/utility_packages/qvip_utils_pkg/qvip_utils_pkg.compile

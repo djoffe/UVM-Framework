@@ -1,4 +1,10 @@
+incdir:
+  - .
+
 needs:
-  - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg_hdl.compile
+  - gpio_common.compile
+  
 src:
-  - gpio_pkg_hdl.sv
+  - src/gpio_if.sv
+  - src/gpio_driver_bfm.sv
+  - src/gpio_monitor_bfm.sv

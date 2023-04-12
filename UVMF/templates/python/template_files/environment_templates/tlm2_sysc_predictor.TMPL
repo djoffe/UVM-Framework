@@ -186,6 +186,9 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
      super.new(name,parent);
   endfunction
 
+  // pragma uvmf custom class_item_additional begin
+  // pragma uvmf custom class_item_additional end
+
   // FUNCTION: build_phase
   virtual function void build_phase (uvm_phase phase);
     // Ports/Exports for transactions coming into predictor

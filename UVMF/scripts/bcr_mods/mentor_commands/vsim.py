@@ -1,111 +1,74 @@
 from command_helper import *
 import os
+import sys
 
-# Invoke vsim 
-def generate_command(v=None):
-  if 'using_qvip' in v and v['using_qvip']:
-    if 'QUESTA_MVC_HOME' not in os.environ:
-      logger.error("using_qvip set True but $$QUESTA_MVC_HOME not set")
-      sys.exit(1)
-    mvc_switch = '-t 1ps -mvchome '+os.environ['QUESTA_MVC_HOME']
-  else:
-    mvc_switch = ''
-  if 'error_limit' in v and (v['error_limit'] > 0):
-    msglimit_str = '-msglimit error -msglimitcount '+str(v['error_limit'])
-  else:
-    msglimit_str = ''
-  if 'code_coverage_enable' in v and v['code_coverage_enable']:
-    coverage_run_str = '-coverage'
-  else:
-    coverage_run_str = ''
-  if 'verbosity' in v and v['verbosity'] != '':
-    verbosity_str = '+UVM_VERBOSOITY='+v['verbosity']
-  else:
-    verbosity_str = ''
-  lib_str = ''
-  if 'lib' in v and v['lib']:
-    lib_str = '-lib '+v['lib']
-  arch_str = ''
-  if v['use_64_bit']:
-    arch_str = '-64'
-  if v['live']:
-    mode_str = '-gui'
-    run_cmd = 'run 0'
-    debug_str = '-onfinish stop -classdebug'
-    if not(v['use_vis'] or v['use_vis_uvm']):
-      debug_str = debug_str + ' -uvmcontrol=all -msgmode both'
-    ## For live sim, turn on transaction logging by default unless explicitly asked to have it off (set to False)
-    if v['enable_trlog'] == '':
-      v['enable_trlog'] = True
-  else:
-    mode_str = v['mode']
-    run_cmd = 'run -all'
-    debug_str = ''
-  if v['use_vis'] or v['use_vis_uvm']:
-    if v['vis_wave']:
-      vis_wave_str = "-qwavedb="+v['vis_wave']
-    elif v['use_vis_uvm']:
-      vis_wave_str = "-qwavedb="+v['vis_wave_tb']
-    else:
-      vis_wave_str = "-qwavedb="+v['vis_wave_rtl']
-    if v['enable_trlog']:
-      vis_wave_str = vis_wave_str+"+transaction"
-  else:
-    vis_wave_str = ""
-  if v['enable_trlog']:
-    trlog_str = "+uvm_set_config_int=*,enable_transaction_viewing,1"
-  else:
-    trlog_str = ''
-  if v['run_command']:
-    run_command = v['run_command']
-  elif v['live']:
-    run_command = 'run 0'
-    if v['use_vis_uvm'] or v['use_vis']:
-      run_command = run_command+"; do viswave.do"
-    else:
-      run_command = run_command+"; do wave.do"
-    quit_command = ''
-  else:
-    run_command = "run -a"
-    if v['quit_command']:
-      quit_command = v['quit_command']
-    else:
-      quit_command = 'quit'
-  do_str = ''
-  for i in [v['extra_pre_do'],v['pre_do'],v['extra_do'],run_command,v['post_do'],quit_command]:
-    if i: 
-      do_str = do_str + i + ';'
-  full_do_str = ''
-  if do_str:
-    full_do_str = '-do \"'+do_str+'\"'
-  suppress_str = ''
-  if v['suppress']:
-    suppress_str = "-suppress "+v['suppress']
-  modelsimini_str = ''
-  if v['modelsimini']:
-    modelsimini_str = '-modelsimini '+v['modelsimini']
-  return [clean_whitespace("vsim {} {} {} -l {} -solvefaildebug +UVM_NO_RELNOTES \
-            -sv_seed {} {} {} {} +notimingchecks +UVM_TESTNAME={} {} {} {} {}  {} {} {} {} \
-            -stats=perf {} {} -permit_unmatched_virtual_intf".format(
-    arch_str,
-    mode_str,
-    v['tops'],
-    v['log_filename'],
-    str(v['seed']),
-    msglimit_str,
-    coverage_run_str,
-    lib_str,
-    v['test'],
-    verbosity_str,
-    v['extra'],
-    v['switches'],
-    mvc_switch,
-    debug_str,
-    vis_wave_str,
-    trlog_str,
-    full_do_str,
-    suppress_str,
-    modelsimini_str,
-    ))]
+class Vsim(Generator):
+  def __init__(self,v={}):
+    super(Vsim,self).__init__
+    self.keys = '''
+                 cmd         arch    mode         tops    logfile      seed     msglimit    coverage_run    lib           test                        vrm_in_use
+                 verbosity   extra   mvc_switch   vis_wave     trlog    full_do     suppress        modelsimini   permit_unmatched_virt_intf          lint
+                '''.split()
 
+  def set_cmd(self,v={}):
+    return 'vsim'
 
+  def set_lib(self,v={}):
+    if 'lib' in v and v['lib']:
+      return '-lib '+v['lib']
+    return ''
+
+  def set_lint(self,v={}):
+    if 'lint' in v and v['lint']:
+      return '-tbxhvllint'
+    else:
+      return ''
+
+  def set_mode_run_debug(self,v={}):
+    if 'live' in v and v['live']:
+      run_cmd = 'run 0'
+      debug_str = '-onfinish stop -classdebug'
+      if ('use_vis' in v and v['use_vis']) or ('use_vis_uvm' in v and v['use_vis_uvm']):
+        mode_str = '-visualizer'
+      else:
+        debug_str = debug_str + ' -uvmcontrol=all -msgmode both'
+        mode_str = '-gui'
+      if 'enable_trlog' not in v or v['enable_trlog']=='':
+        v['enable_trlog'] = True
+    else:
+      if 'mode' not in v:
+        logger.error("No mode specified in variables dict")
+        sys.exit(1)
+      mode_str = v['mode']
+      run_cmd = 'run -all'
+      debug_str = ''
+    return (mode_str, run_cmd, debug_str)
+
+  def elaborate(self,v={}):
+    self.cmd                         = self.set_cmd(v)
+    self.arch                        = self.set_arch(v)
+    self.tops                        = self.set_tops(v)
+    self.logfile                     = self.set_logfile(v)
+    self.seed                        = self.set_seed(v)
+    self.msglimit                    = self.set_msglimit(v)
+    self.coverage_run                = self.set_coverage_run(v)
+    self.lib                         = self.set_lib(v)
+    self.test                        = self.set_test(v)
+    self.verbosity                   = self.set_verbosity(v)
+    self.extra                       = self.set_extra(v)
+    self.mvc_switch                  = self.set_mvc_switch(v)
+    self.mode,self.run,self.debug    = self.set_mode_run_debug(v)
+    self.vis_wave                    = self.set_vis_wave(v)
+    self.trlog                       = self.set_trlog(v)
+    self.full_do                     = self.set_full_do(v)
+    self.suppress                    = self.set_suppress(v)
+    self.modelsimini                 = self.set_modelsimini(v)
+    self.permit_unmatched_virt_intf  = self.set_permit_unmatched_virt_intf(v)
+    self.vrm_in_use                  = self.set_vrm_in_use(v)
+    self.lint                        = self.set_lint(v)
+
+def generate_command(v={}):
+  obj = Vsim()
+  obj.elaborate(v)
+  logger.debug(obj)
+  return obj.command(v)

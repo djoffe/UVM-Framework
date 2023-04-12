@@ -49,6 +49,11 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
    typedef T expected_results_q_t[$];
    expected_results_q_t expected_results_q[ARRAY_DEPTH];
 
+   // Local data members for debug
+   T last_actual;
+   T last_expected;
+   bit last_mismatched = 0;
+
    // FUNCTION: new
    function new(string name, uvm_component parent );
       super.new(name, parent);
@@ -127,15 +132,19 @@ class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY
                   return;
                 end : comparison_disabled
             // Compare actual transaction to expected transaction
+            last_expected = expected_transaction;
+            last_actual = t;
             if (t.compare(expected_transaction)) 
                begin : compare_passed
                match_count++;
                `uvm_info("SCBD",compare_message("MATCH! - ",expected_transaction,t),UVM_MEDIUM)
+               last_mismatched = 0;
                end : compare_passed
             else 
                begin : compare_failed
                mismatch_count++;
                `uvm_error("SCBD",compare_message("MISMATCH! - ",expected_transaction,t))
+               last_mismatched = 1;
                end : compare_failed
             end : item_exists_in_selected_q
             end : in_write_actual

@@ -1,34 +1,64 @@
 from command_helper import *
+import os
+import sys
+from mentor_commands import velanalyze, velcomp
 
-# Command to build the HDL side of a Veloce setup
-# This will include the velanalyze commands and velcomp
+class VeloceHdlBuild(Generator):
+
+  def __init__(self,v={}):
+    super(VeloceHdlBuild,self).__init__()
+    self.velanalyze_hvl_uvm = velanalyze.Velanalyze(sysv=True,hvl=True,analyze_uvm_pkg=True)
+    self.velanalyze_hvl_vlog = velanalyze.Velanalyze(sysv=True,hvl=True)
+    self.velanalyze_hdl_vlog = velanalyze.Velanalyze(sysv=True,hvl=False)
+    self.velanalyze_hdl_vhdl = velanalyze.Velanalyze(sysv=False,hvl=False)
+    self.velcomp = velcomp.Velcomp()
+    self.objs = [self.velanalyze_hvl_uvm,self.velanalyze_hvl_vlog,self.velanalyze_hdl_vlog,self.velanalyze_hdl_vhdl,self.velcomp]
+
+  def elaborate(self,v={}):
+    vlog_d = {'extra':'','suppress':'','defines':''}
+    if v_val(v,'velanalyze_vlog_extra'):
+      vlog_d['extra'] = v['velanalyze_vlog_extra']
+    if v_val(v,'velanalyze_vlog_suppress'):
+      vlog_d['suppress'] = v['velanalyze_vlog_suppress']
+    if v_val(v,'velanalyze_vlog_defines'):
+      vlog_d['defines'] = v['velanalyze_vlog_defines']
+    vhdl_d = {'extra':'','suppress':'','defines':''}
+    if v_val(v,'velanalyze_vhdl_extra'):
+      vhdl_d['extra'] = v['velanalyze_vhdl_extra']
+    if v_val(v,'velanalyze_vhdl_suppress'):
+      vlog_d['suppress'] = v['velanalyze_vhdl_suppress']
+    if v_val(v,'velanalyze_vhdl_defines'):
+      vlog_d['defines'] = v['velanalyze_vhdl_defines']
+    extract_d = {'extra':'','suppress':'','defines':''}
+    if v_val(v,'velanalyze_extract_suppress'):
+      extract_d['suppress'] = v['velanalyze_extract_suppress']
+    if v_val(v,'velanalyze_extract_defines'):
+      extract_d['defines'] = v['velanalyze_extract_defines']
+    if v_val(v,'velanalyze_extract_extra'):
+      extract_d['defines'] = v['velanalyze_extract_extra']
+    self.velanalyze_hvl_uvm.elaborate(merge_dict(v,extract_d,{'filelists':''}))
+    self.velanalyze_hvl_vlog.elaborate(merge_dict(v,extract_d))
+    self.velanalyze_hdl_vlog.elaborate(merge_dict(v,vlog_d))
+    self.velanalyze_hdl_vhdl.elaborate(merge_dict(v,vhdl_d))
+    velcomp_d = {'extra':''}
+    if v_val(v,'velcomp_extra'):
+      velcomp_d['extra'] = v['velcomp_extra']
+    self.velcomp.elaborate(merge_dict(v,velcomp_d))
+
+  def command(self,v={}):
+    ret = []
+    for o in self.objs:
+      ret = ret + o.command(v)
+    return ret
+
+  def __repr__(self):
+    a = []
+    for o in self.objs:
+      a.append(repr(o))
+    return '\n'.join(a)
+
 def generate_command(v=None):
-  cmds = []
-  hdl_vhdl_flist_str = filelists(v['filelists'],assoc='vhdl',patt=r'.*hdl_vhdl.*')
-  hdl_vlog_flist_str = filelists(v['filelists'],assoc='vlog',patt=r'.*hdl_vlog.*')
-  hvl_vhdl_flist_str = filelists(v['filelists'],assoc='vhdl',patt=r'.*hvl_vhdl.*')
-  hvl_vlog_flist_str = filelists(v['filelists'],assoc='vlog',patt=r'.*hvl_vlog.*')
-
-  # HVL analysis
-  # Special velanalyze -extract_hvl_info command to compile UVM package
-  cmds.append(clean_whitespace("velanalyze -sv {} -extract_hvl_info +incdir+{} +define+QUESTA {}/uvm_pkg.sv {}".format(v['velanalyze_vlog_switches'],v['uvm_src_path'],v['uvm_src_path'],v['velanalyze_vlog_extra'])))
-  # hvl_vlog.qf gets passed into velanalyze using -extract_hvl_info
-  if hvl_vlog_flist_str:
-    cmds.append(clean_whitespace("velanalyze -sv {} -extract_hvl_info +incdir+{} {} {}".format(v['velanalyze_vlog_switches'],v['uvm_src_path'],hvl_vlog_flist_str,v['velanalyze_vlog_extra'])))
-  # hvl_vhdl.qf as well (if it exists)
-  if hvl_vhdl_flist_str:
-    cmds.append(clean_whitespace("velanalyze -hdl vhdl {} -extract_hvl_info +incdir+{} {} {}".format(v['velanalyze_vhdl_switches'],v['uvm_src_path'],hvl_vhdl_flist_str,v['velanalyze_vhdl_extra'])))
-
-  # HDL analysis
-  # hdl_vhdl.qf gets passed into velanalyze with VHDL setting
-  if hdl_vhdl_flist_str:
-    cmds.append(clean_whitespace("velanalyze -hdl vhdl {} {} {}".format(hdl_vhdl_flist_str,v['velanalyze_vhdl_switches'],v['velanalyze_vhdl_extra'])))
-  # hdl_vlog.qf gets passed into velanalyze with Verilog setting
-  if hdl_vlog_flist_str:
-    cmds.append(clean_whitespace("velanalyze -sv {} {} {}".format(hdl_vlog_flist_str,v['velanalyze_vlog_switches'],v['velanalyze_vlog_extra'])))
-  
-
-  # Velcomp
-  cmds.append(clean_whitespace("velcomp -top hdl_top {} {}".format(v['velcomp_switches'],v['velcomp_extra'])))
-
-  return cmds
+  obj = VeloceHdlBuild()
+  obj.elaborate(v)
+  logger.debug(obj)
+  return obj.command(v)
