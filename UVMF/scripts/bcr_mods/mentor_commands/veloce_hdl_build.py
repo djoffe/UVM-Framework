@@ -35,7 +35,7 @@ class VeloceHdlBuild(Generator):
     if v_val(v,'velanalyze_extract_defines'):
       extract_d['defines'] = v['velanalyze_extract_defines']
     if v_val(v,'velanalyze_extract_extra'):
-      extract_d['defines'] = v['velanalyze_extract_extra']
+      extract_d['extra'] = v['velanalyze_extract_extra']
     self.velanalyze_hvl_uvm.elaborate(merge_dict(v,extract_d,{'filelists':''}))
     self.velanalyze_hvl_vlog.elaborate(merge_dict(v,extract_d))
     self.velanalyze_hdl_vlog.elaborate(merge_dict(v,vlog_d))

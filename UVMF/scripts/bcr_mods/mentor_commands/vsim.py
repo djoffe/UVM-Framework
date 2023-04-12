@@ -6,8 +6,11 @@ class Vsim(Generator):
   def __init__(self,v={}):
     super(Vsim,self).__init__
     self.keys = '''
-                 cmd         arch    mode         tops    logfile      seed     msglimit    coverage_run    lib           test                        vrm_in_use
-                 verbosity   vsim_extra  vsim_overlay_extra mvc_switch   vis_wave     trlog    full_do     suppress        modelsimini   permit_unmatched_virt_intf          lint
+                 cmd         arch                mode         tops        logfile      seed     
+                 msglimit    coverage_run        lib          test        vrm_in_use   verbosity
+                 vsim_extra  vsim_overlay_extra  mvc_switch   vis_wave    trlog        full_do     
+                 suppress    modelsimini         permit_unmatched_virt_intf            lint
+                 cppinstall  profiler
                 '''.split()
 
   def set_cmd(self,v={}):
@@ -16,6 +19,8 @@ class Vsim(Generator):
   def set_lib(self,v={}):
     if 'lib' in v and v['lib']:
       return '-lib '+v['lib']
+    if 'outdir' in v and v['outdir']:
+      return '-lib '+v['outdir']
     return ''
 
   def set_lint(self,v={}):
@@ -79,9 +84,15 @@ class Vsim(Generator):
     self.permit_unmatched_virt_intf  = self.set_permit_unmatched_virt_intf(v)
     self.vrm_in_use                  = self.set_vrm_in_use(v)
     self.lint                        = self.set_lint(v)
+    self.cppinstall                  = self.set_cppinstall(v)
+    self.profiler                    = self.set_vsim_profiler(v)
 
 def generate_command(v={}):
   obj = Vsim()
   obj.elaborate(v)
   logger.debug(obj)
+  if 'compile_only' in v and v['compile_only']:
+    return []
+  if 'build_only' in v and v['build_only']:
+    return []
   return obj.command(v)

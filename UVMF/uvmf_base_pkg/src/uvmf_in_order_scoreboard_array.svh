@@ -41,9 +41,9 @@
 //                 Must be derived from uvmf_transaction_base.
 //   ARRAY_DEPTH - Specifies the number of expected transaction fifos.
 
-class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY_DEPTH = 1) extends uvmf_scoreboard_base#(T);
+class uvmf_in_order_scoreboard_array #(type T = uvmf_transaction_base, int ARRAY_DEPTH = 1, type BASE_T = uvmf_scoreboard_base#(T)) extends BASE_T;
 
-  `uvm_component_param_utils( uvmf_in_order_scoreboard_array #(T, ARRAY_DEPTH))
+  `uvm_component_param_utils( uvmf_in_order_scoreboard_array #(T, ARRAY_DEPTH,BASE_T))
 
    // Analysis fifo to queue up expected transactions.  This is required because of DUT latency.
    typedef T expected_results_q_t[$];

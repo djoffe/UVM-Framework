@@ -141,7 +141,7 @@ import {{name}}_pkg::*;
 {% if useDpiLink %}
       C_{{name}}_notify_transaction({
 {% for txn in transVars %}
-        {{txn.name}}{% if not loop.last %},
+        _{{txn.name}}{% if not loop.last %},
 {% endif %}
 {% endfor %}
 {% if useDpiLink %}
@@ -204,7 +204,7 @@ import {{name}}_pkg::*;
     //
     // Available struct members:
     // {% for txn in transVars %}
-    //    {{name}}_monitor_struct.{{txn.name}}
+    //    {{name}}_monitor_struct._{{txn.name}}
     // {% endfor %}
     //
     // Reference code;
@@ -228,7 +228,7 @@ import {{name}}_pkg::*;
     //
     // Available struct members:
     // {% for txn in transVars %}
-    //    monitored_trans.{{txn.name}}
+    //    monitored_trans._{{txn.name}}
     // {% endfor %}
     //
     // Reference code;
@@ -244,11 +244,11 @@ import {{name}}_pkg::*;
     // pragma uvmf custom do_monitor begin
 {% if veloceReady %}
 {% for txn in transVars %}
-       {{name}}_monitor_struct.{{txn.name}} = {{txn.name}}_i;
+       {{name}}_monitor_struct._{{txn.name}} = {{txn.name}}_i;
 {% endfor %}
 {% else %}
 {% for txn in transVars %}
-       monitored_trans.{{txn.name}} = {{txn.name}}_i;
+       monitored_trans._{{txn.name}} = {{txn.name}}_i;
 {% endfor %}
 {% endif %}
     // pragma uvmf custom do_monitor end

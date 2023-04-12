@@ -373,26 +373,26 @@ bit first_transfer=1;
        //    How to wait for signal value
        //      while (control_signal == 1'b1) @(posedge {{clock}}_i);
        //    
-       //    How to assign a responder struct member, named xyz, from a signal.   
+       //    How to assign a initiator struct member, named xyz, from a signal.   
        //    All available responder input and inout signals listed.
        //    Responder input signals
 {% for sig in outputPorts %}
-       //      {{name}}_responder_struct.xyz = {{sig.name}}_i;  //    {{sig.vector}} 
+       //      {{name}}_initiator_struct.xyz = {{sig.name}}_i;  //    {{sig.vector}} 
 {% endfor %}
        //    Responder inout signals
 {% for sig in inoutPorts %}
-       //      {{name}}_responder_struct.xyz = {{sig.name}}_i;  //    {{sig.vector}} 
+       //      {{name}}_initiator_struct.xyz = {{sig.name}}_i;  //    {{sig.vector}} 
 {% endfor %}
-       //    How to assign a signal, named xyz, from an initiator struct member.   
+       //    How to assign a signal, named xyz, from an responder struct member.   
        //    All available responder output and inout signals listed.
        //    Notice the _o.  Those are storage variables that allow for procedural assignment.
        //    Responder output signals
 {% for sig in inputPorts %}
-       //      {{sig.name}}_o <= {{name}}_initiator_struct.xyz;  //    {{sig.vector}} 
+       //      {{sig.name}}_o <= {{name}}_responder_struct.xyz;  //    {{sig.vector}} 
 {% endfor %}
        //    Responder inout signals
 {% for sig in inoutPorts %}
-       //      {{sig.name}}_o <= {{name}}_initiator_struct.xyz;  //    {{sig.vector}} 
+       //      {{sig.name}}_o <= {{name}}_responder_struct.xyz;  //    {{sig.vector}} 
 {% endfor %}    
 {% else %}  
   task respond_and_wait_for_next_transfer( {{name}}_transaction 

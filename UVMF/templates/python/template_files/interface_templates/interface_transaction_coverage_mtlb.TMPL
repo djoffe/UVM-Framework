@@ -53,7 +53,7 @@ class {{name}}_transaction_coverage {{macro.paramDeclare(paramDefs)|indent(6)}} 
       end else begin
          $fwrite(file,
          "{% for txn in transVars %}%d{% if not loop.last %},{% endif %}{% endfor %}\n",
-          {% for txn in transVars %}t.{{txn.name}}{% if not loop.last %},{% endif %}{% endfor %} 
+          {% for txn in transVars %}t._{{txn.name}}{% if not loop.last %},{% endif %}{% endfor %} 
           );
       end
   endfunction

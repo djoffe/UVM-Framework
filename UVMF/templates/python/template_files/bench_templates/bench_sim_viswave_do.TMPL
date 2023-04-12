@@ -16,6 +16,18 @@ wave group {{bfm.name}}_bus -collapse
 wave insertion [expr [wave index insertpoint] +1]
 {% endfor %}
 
+{% for qvip_hdl in qvip_hdl_modules %}
+wave spacer -backgroundcolor Salmon { {{qvip_hdl.unique_id_with_underscores}}qvip_hdl }
+{% for agent_name in qvip_hdl.agent_names %}
+wave spacer -backgroundcolor Salmon { {{qvip_hdl.unique_id_with_underscores}}qvip_hdl.{{agent_name}} }
+{% endfor %}
+wave group {{qvip_hdl.unique_id_with_underscores}}qvip_hdl_signals
+wave add -group {{qvip_hdl.unique_id_with_underscores}}qvip_hdl_signals hdl_top.{{qvip_hdl.unique_id_with_underscores}}qvip_hdl.* -radix hexadecimal -tag F0
+wave group {{qvip_hdl.unique_id_with_underscores}}qvip_hdl_signals -collapse
+wave insertion [expr [wave index insertpoint] +1]
+{% endfor %}
+
+
 wave update on
 WaveSetStreamView
 

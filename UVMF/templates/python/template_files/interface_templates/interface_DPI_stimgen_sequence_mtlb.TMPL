@@ -38,12 +38,12 @@ extends {{name}}_sequence_base {%if paramDefs|length > 0%} #(
 
 int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
 {% for DPIImport in DPIImports -%}
-{% if DPIImport.name.endswith('_output') %}
+{% if DPIImport.name.endswith('_output') or DPIImport.name.endswith(soName) %}
 {% for argument in DPIImport.arguments -%}
 {% if argument['unpacked_dimension'] and argument['dir'] == 'output' -%}
-{{argument['type']}}  {{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %};
+{{argument['type']}}  _{{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %};
 {% else %}
-{{argument['type']}}  {{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %};
+{{argument['type']}}  _{{argument['name']}} {% if argument['unpacked_dimension'] %}{{argument['unpacked_dimension']}}{% endif %};
 {% endif -%}
 {% endfor -%}
 {% endif %}
@@ -60,18 +60,18 @@ int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
   task gen_next_cycle();
                 start_item(req);
 {% for DPIImport in DPIImports %}
-{% if DPIImport.name.endswith('_output') %}
+{% if DPIImport.name.endswith('_output') or DPIImport.name.endswith(soName) %}
     // Calling output C function
     {{DPIImport.name}}(
 {%- for argument in DPIImport.arguments -%}
 {% if argument['unpacked_dimension'] -%}
    {% if argument['dir']=='input' or argument['dir']=='inout' %}
-       {{argument['name']}}{% else %}       {{argument['name']}}{% endif %}
+       _{{argument['name']}}{% else %}       _{{argument['name']}}{% endif %}
 {% else %}
    {% if argument['dir']=='input' or argument['dir']=='inout' -%}
         {% if argument['name'] != 'objhandle'%}
-    {% endif %}       {{argument['name']}}{% else %}
-    req.{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
+    {% endif %}       _{{argument['name']}}{% else %}
+    _{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
 {% endif -%}{% endfor -%}
     );
 {% endif %}
@@ -84,12 +84,12 @@ int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
 {%- for argument in DPIImport.arguments -%}
 {% if argument['unpacked_dimension'] -%}
    {% if argument['dir']=='input' or argument['dir']=='inout' %}
-       {{argument['name']}}{% else %}       {{argument['name']}}{% endif %}
+       _{{argument['name']}}{% else %}       _{{argument['name']}}{% endif %}
 {% else %}
    {% if argument['dir']=='input' or argument['dir']=='inout' -%}
         {% if argument['name'] != 'objhandle'%}
-    {% endif %}       {{argument['name']}}{% else %}
-    req.{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
+    {% endif %}       _{{argument['name']}}{% else %}
+    _{{argument['name']}}{% endif -%}{% endif -%}{% if not loop.last -%},
 {% endif -%}{% endfor -%}
     );
 {% endif %}
@@ -97,22 +97,22 @@ int cycles_to_run;   // 0: initiates forever loop.  !0: fixed number of cycles
 {% for DPIImport in DPIImports -%}{% for argument in DPIImport.arguments -%}
 {% if argument['unpacked_dimension'] and argument['dir'] == 'output' -%}
 {% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) %}
-    req.{{argument['name']}}_{{i}}  = {{argument['name']}}[{{i}}];
+    req._{{argument['name']}}_{{i}}  = _{{argument['name']}}[{{i}}];
 {% endfor -%}{% endif -%}{% endfor -%}{% endfor %} 
 
 {% for DPIImport in DPIImports %}
-{% if DPIImport.name.endswith('_output') %}
+{% if DPIImport.name.endswith('_output') or DPIImport.name.endswith(soName) %}
 {%- for argument in DPIImport.arguments -%}
 {% if argument['dir']!='input' %}
 {% if argument['unpacked_dimension'] and argument['unpacked_dimension'] %}
 
     // Entries = {{argument['unpacked_dimension']}}
 {% for i in range(argument['unpacked_dimension']|replace("]","")|replace("[","")|int) %}
-    req.{{argument['name']}}_{{i}}  = {{argument['name']}}[{{i}}];
+    req._{{argument['name']}}_{{i}}  = _{{argument['name']}}[{{i}}];
 {% endfor -%}
 
 {% else %}
-    req.{{argument['name']}}  = {{argument['name']}};
+    req._{{argument['name']}}  = _{{argument['name']}};
 {% endif %}
 {% endif %}
 {% endfor %}{% endif -%}{% endfor %}
@@ -135,7 +135,7 @@ endtask
 
       // Call DPI-C function to initialize the persistent DPI-C values
 {% for DPIImport in DPIImports %}{% if DPIImport.name.endswith('_initialize') %}
-     objhandle = {{DPIImport.name}}(objhandle);
+     _objhandle = {{DPIImport.name}}(_objhandle);
 {% endif %}{% endfor %}
 
       // Call DPI-C to produce stimulus values
@@ -147,7 +147,7 @@ endtask
     end
 
 {% for DPIImport in DPIImports %}{% if DPIImport.name.endswith('_terminate') %}
-    {{DPIImport.name}}(objhandle);
+    {{DPIImport.name}}(_objhandle);
 {% endif %}{% endfor %}
 
   endtask: body

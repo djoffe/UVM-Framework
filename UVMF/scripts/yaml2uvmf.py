@@ -117,6 +117,69 @@ class ConfigFileReader:
         self.files.append(line)
     self.fh.close()
 
+class Node:
+  def __init__(self, name, type, parent):
+    self.name = name
+    self.parent = parent
+    self.type = type
+    self.children = []
+    self.info = {}
+
+  def __repr__(self):
+    return 'Node '+repr(self.name)
+
+  def dic(self):
+    retval = {self:[]}
+    for i in self.children:
+      retval[self].append(i.dic())
+    return retval
+
+  def path(self):
+    if self.parent:
+      return self.parent.path()+'.'+self.name
+    else:
+      return self.name
+
+  def display(self):
+    pass
+
+  def has_children(self):
+    return bool(self.children)
+
+  def get_leaves(self):
+    if not self.has_children():
+      return [ self ]
+    retval = []
+    for c in self.children:
+      retval = retval + c.get_leaves()
+    return retval
+
+  def get_parent(self):
+    return self.parent
+
+  def printme(self,input="",level=0):
+    val = "%s// %s %s(%s) - [%s]\n" % (input, " "*level*3, self.name, self.type, self.path())
+    for i in self.children:
+      val = i.printme(val,level+1)
+    return val
+
+  def find_child(self,path):
+    if self.path() == path:
+      return self
+    for i in self.children:
+      c = i.find_child(path)
+      if c:
+        return c
+    return None
+
+  # Given current node as starting point, trace lineage upwards until a node is found with
+  # no parent (i.e. root node).  Return as a list of entire lineage. If called against
+  # the top node the list will only have one entry.
+  def find_lineage(self):
+    if not self.parent:
+      return  [ self ]
+    return [ self ] + self.parent.find_lineage()
+
 class DataClass:
   def __init__(self,parser,debug=False):
     self.data = {'interfaces':{},'environments':{},'benches':{},'util_components':{},'qvip_environments':{},'qvip_library':{},'global':{}}
@@ -124,6 +187,7 @@ class DataClass:
     self.debug = debug
     self.validators = {}
     self.used_ac_items = []
+    self.dest_dir_override = None
 
   def parseFile(self,fname):
     try:
@@ -225,6 +289,10 @@ class DataClass:
     compClass.relative_bench_from_cwd = self.calculateRelativeBenchToCwd(compClass)
     compClass.relative_interface_from_cwd = self.calculateRelativeInterfaceToCwd(compClass)
     compClass.relative_environment_from_cwd = self.calculateRelativeEnvironmentToCwd(compClass)
+    try:
+      compClass.elaborate_bfm_parameters = (self.data['global']['elaborate_bfm_parameters'] == "True")
+    except KeyError:
+      compClass.elaborate_bfm_parameters = False
     return compClass
 
   ## Generate everything from the data structures
@@ -411,8 +479,7 @@ class DataClass:
         except KeyError:
           veloce_ready = True
           pass
-        infact_ready = ('infact_ready' in self.data['interfaces'][a['type']].keys() and self.data['interfaces'][a['type']]['infact_ready'])
-
+        infact_ready = False
         alist = alist + [{ 'bfm_name': a['name'], 
                            'bfm_type': a['type'], 
                            'parent_type': env_type, 
@@ -454,6 +521,169 @@ class DataClass:
     except KeyError: pass
     return sblist
 
+  ## Given a list of environment pathing, return hash that provides
+  ## type information for each instance item  as a list of name/type pairs
+  ## The first entry in path is assumed to be topEnv (a type itself)
+  def getEnvTypes(self,topType,path):
+    ret = [topType]
+    parent = topType
+    for p in path:
+      try:
+        subenvs = self.data['environments'][parent]['subenvs']
+      except KeyError:
+        subenvs = []
+        break
+        pass
+      for s in subenvs:
+        if s['name'] == p:
+          ret = ret + [s['type']]
+          parent = s['type']
+          break
+    return ret
+
+  ## Goal is to elaborate the actual parameter values for each agent such that we can automatically
+  ## specify those same elaborated parameter values to the asssociated BFM for each agent. This eliminates
+  ## the need for the user to explicitly specify BFM-level parameterization to match that of the associated
+  ## agent.  Once the YAML configuration data has been read in, the following steps are taken:
+  ##   * Call getAllAgents(topEnv,'environment',0,'environment') to get a list of all agents, their associated
+  ##     BFM names, their full paths, etc.
+  ##   * For each agent, call getEnvTypes(topEnv,<path>) where <path> is the pathing information for that
+  ##     agent in order to get type information for all environment elements along that agent's hierarchy
+  ##   * For each agent...
+  ##      - For each agent's parameter, store the parameter name in a variable
+  ##        - Iterate up through agent's hierarchy, at each level do a string replacement of the variable parameter name
+  ##          with the associated variable parameter VALUE one level up.
+  ##        - If no parameter value one level up is found, BREAK
+  ##      - Record the elaborated parameter value 
+  ##   * If not explicitly called out in the bench with BFM params, use elaborated parameter values
+  ##     to build BFM instantiations
+
+  def elaborateAgentParameters(self,options,benchName):
+    topEnv = self.data['benches'][benchName]['top_env']
+    self.top_node = Node(benchName,benchName,None)
+    self.top_node.info = copy.deepcopy(self.data['benches'][benchName])
+    self.top_node.classification = 'ben'
+    top_env_node = Node(topEnv,topEnv,self.top_node)
+    top_env_node.info = copy.deepcopy(self.data['environments'][topEnv])
+    # Normalize the data structure
+    if 'top_env_params' in self.data['benches'][benchName]:
+      top_env_node.info['parameters'] = copy.deepcopy(self.data['benches'][benchName]['top_env_params'])
+    top_env_node.classification = 'env'
+    top_env_node.info['type'] = topEnv
+    self.top_node.children.append(top_env_node)
+    self.resolveDefaultParams(top_env_node,self.top_node)
+    self.buildNodes(top_env_node)
+    # print(self.top_node.printme());
+    # Top-down, perform string replacement of parameter names with the associated value one level down, across
+    # entire hierarchy. Traverse entire hierarchy using this approach. At each node, the "info" structure
+    # may contain a list of parameter name/value pairs associated with how that node was instantiated, i.e.
+    # the value came from one level up. Once the replacement is complete, the resulting agent-level parameter values
+    # can then be used to automatically assign associated BFM parameters.
+    self.traverseNodes(self.top_node)
+    # We now have parameter values at the agent level that are associated with how the upper level parameters
+    # were assigned, and we can use this to apply BFM-level parameters. Now go through the interface_params
+    # entry for the bench and fill in values for each BFM if they were not already specified.
+    if 'interface_params' not in self.data['benches'][benchName]:
+      self.data['benches'][benchName]['interface_params'] = []
+    # Iterate through the leaf nodes of the node tree, i.e. agents.
+    for node in self.top_node.get_leaves():
+      bfm_name = "_".join(node.path().split('.')[2:])
+      foundItem = False
+      for item in self.data['benches'][benchName]['interface_params']:
+        if (item['bfm_name'] == bfm_name):
+          foundItem = True
+          if not options.quiet:
+            print("In bench '%s' - Found explicit parameters for BFM %s, will not elaborate" % (benchName,bfm_name))
+          break
+      if not foundItem:
+        if 'parameters' in node.info:
+          if not options.quiet:
+            for p in node.info['parameters']:
+              print("In bench '%s' - Resolved unspecified BFM parameter %s:%s to value '%s'" % (benchName,bfm_name,p['name'],p['value']))
+          self.data['benches'][benchName]['interface_params'].append({ 'bfm_name' : bfm_name, 'value' : node.info['parameters'] })
+    return
+
+  def traverseNodes(self,starting_node):
+    self.elaborateNodeParameters(starting_node)
+    for node in starting_node.children:
+      self.traverseNodes(node)
+
+  def elaborateNodeParameters(self,node):
+    # At the given node, we may have some local parameters and associated values as well
+    # as some children with parameter values. For each local parameter prep for a substitution
+    # that will replace references of the parameter NAME with the parameter VALUE in a
+    # given string. Then, loop through each each child and child parameters, applying that
+    # replacement to each child parameter value, replacing parent parameter NAME with it's own VALUE.
+    if 'parameters' in node.info:
+      for parent_p in node.info['parameters']:
+        for child_node in node.children:
+          if 'parameters' in child_node.info:
+            for child_p in child_node.info['parameters']:
+              #print("BEFORE: %s:%s - %s" % (child_node.path(),child_p['name'],child_p['value']))
+              child_p['value'] = child_p['value'].replace(parent_p['name'],parent_p['value'])
+              #print("AFTER : %s:%s - %s" % (child_node.path(),child_p['name'],child_p['value']))
+
+  def resolveDefaultParams(self,child_node,parent_node):
+    if child_node.classification == 'agt':
+      c = 'interfaces'
+    else:
+      c = 'environments'
+    if 'parameters' not in self.data[c][child_node.info['type']]:
+      return
+    p_array = self.data[c][child_node.info['type']]['parameters']
+    for p_definition in p_array:
+      p_inst_found = False
+      if 'parameters' not in child_node.info:
+        child_node.info['parameters'] = []
+      for p_instance in child_node.info['parameters']:
+        if p_instance['name'] == p_definition['name']:
+          p_inst_found = True;
+          break
+      if p_inst_found:
+        continue
+      if 'value' in p_definition:
+        child_node.info['parameters'].append({'name':p_definition['name'],'value':p_definition['value']})
+        #print("DEBUG: Adding default parameter %s:%s value %s" % (child_node.path(),p_definition['name'],p_definition['value']))
+      else:
+        print("WARNING: No value found for parameter \"%s\" in component \"%s\" (type \"%s\")" % (p_definition['name'],child_node.path(),child_node.info['type']))
+
+  def buildNodes(self,node):
+    if 'agents' in self.data['environments'][node.type]:
+      ## Iterate through agents within this environment and log each one, creating
+      ## a new child node for each of type 'agt'
+      for a in self.data['environments'][node.type]['agents']:
+        this_node = Node(a['name'],a['type'],node);
+        this_node.info = copy.deepcopy(a)
+        this_node.classification = 'agt'
+        node.children.append(this_node)
+        self.resolveDefaultParams(this_node,node)
+    if 'subenvs' in self.data['environments'][node.type]:
+      ## Iterate through subenvironments within this environment and log each one, creating
+      ## a new child node for each of type 'env', then recursively call buildNodes for each
+      for e in self.data['environments'][node.type]['subenvs']:
+        this_node = Node(e['name'],e['type'],node)
+        this_node.info = copy.deepcopy(e)
+        this_node.classification = 'env'
+        node.children.append(this_node)
+        self.resolveDefaultParams(this_node,node)
+        self.buildNodes(this_node)
+
+  def findInstance(self,instList,inst):
+    for i in instList:
+      if i['name'] == inst:
+        return i
+    return None
+
+  def elaborateParameter(self,benchName,bfm,parameterName):
+    parameterValue = parameterName
+    currentItem = bfm['bfm_name']
+    currentItemType = 'agents'
+    currentParamName = parameterName
+    for envType,envInst in zip(reversed(bfm['env_types']),reversed(bfm['env_path'])):
+      instance = self.findInstance(self.data['environments'][envType][currentItemType],currentItem)
+      currentItemType = 'subenvs'
+      currentItem = envInst
+
   ## This method can be employed to return either a list of (non-QVIP) agents at the provided environment
   ## level or recursively, searching through all sub-environments and down. 
   def getAgents(self,topEnv,recursive=True,givePath=False,parentPath=[]):
@@ -477,7 +707,7 @@ class DataClass:
             vip_lib_env_variable = self.data['interfaces'][agent['type']]['vip_lib_env_variable']
           except KeyError: 
             vip_lib_env_variable = "UVMF_VIP_LIBRARY_HOME"
-          structure = structure + [{ 'envpath' : parentPath, 'agent' : agent, 'vip_lib_env_variable' : vip_lib_env_variable }]
+          structure = structure + [{ 'envpath' : parentPath, 'agent' : agent, 'vip_lib_env_variable' : vip_lib_env_variable, 'parent_env_type' : topEnv }]
     if not recursive:
       return structure
     try:
@@ -501,6 +731,7 @@ class DataClass:
 
   def generateEnvironment(self,name,build_existing=False,archive_yaml=True):
     env = EnvironmentClass(name)
+    env.dest_dir_override = self.dest_dir_override
     struct = self.data['environments'][name]
     qvip_agents_dot = []
     qvip_agents_und = []
@@ -602,6 +833,11 @@ class DataClass:
       for subenv in struct['subenvs']:
         ename,etype = self.dataExtract(['name','type'],subenv)
         try:
+          rm_block_instance_name = subenv['reg_block_instance_name']
+        except KeyError:
+          rm_block_instance_name = ename+"_rm"
+          pass
+        try:
           subextdef = ( subenv['extdef'] == 'True' )
           env_has_extdef_items = True
         except KeyError:
@@ -654,7 +890,7 @@ class DataClass:
           except KeyError:
             rm_block_class = etype+"_reg_model"
             pass
-        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_pkg,rm_block_class) 
+        env.addSubEnv(ename,etype,len(agents)+len(qvip_agents),eparams,rm_pkg,rm_block_class,rm_block_instance_name) 
         env_def = self.data['environments'][etype]
         try:
           env_ap_list = env_def['analysis_ports']
@@ -924,6 +1160,11 @@ class DataClass:
         reg_blk_class = name+"_reg_model"
         pass
       try:
+        reg_blk_name = regInfo['reg_block_instance_name']
+      except KeyError:
+        reg_blk_name = name+"_rm"
+        pass
+      try:
         maps = regInfo['maps']
       except KeyError:
         maps = None
@@ -935,7 +1176,8 @@ class DataClass:
         trans = None
         adapter = None
         mapName = None
-        qvip_agent = False
+        vip_type = "uvmf"
+        qvip_agent = "False"
       else:
         try:
           use_adapter = regInfo['use_adapter'] == "True"
@@ -958,7 +1200,18 @@ class DataClass:
         except KeyError:
           qvip_agent  = "False"
           pass
-        if qvip_agent == "False":
+        try:
+          vip_type = maps[0]['interface_type']
+          ## Notify user of contradictions between qvip_agent and type
+          if (qvip_agent == "True" and ( vip_type == "uvmf" or vip_type == "other" )) or (qvip_agent == "False" and vip_type == "qvip" ):
+            print("WARNING: Register model map named \""+maps[0]['name']+"\" has type set to \""+vip_type+"\" and qvip_agent set to \""+qvip_agent+"\". These settings are contradictory.  The type field overides the qvip_agent field and is used in generation." )
+        except KeyError:
+          if qvip_agent == "True":
+            vip_type = "qvip"
+          else:
+            vip_type = "uvmf"
+          pass
+        if vip_type == "uvmf":
           agent_list = self.getAgents(name,recursive=True)
           agent_type = ""
           for a in agent_list:
@@ -976,13 +1229,30 @@ class DataClass:
             raise UserError("For register map \""+maps[0]['name']+"\" in environment \""+name+"\" no interface \""+maps[0]['interface']+"\" was found")
           sequencer = maps[0]['interface']
           trans = agent_type+"_transaction"+agent_params
-          adapter = agent_type+"2reg_adapter"+agent_params
+          try:
+            adapter = regInfo['reg_adapter_class']
+          except KeyError:
+            adapter = agent_type+"2reg_adapter"+agent_params
+            pass
           mapName = maps[0]['name']
-        else:
+        elif vip_type == "qvip":
           sequencer = maps[0]['interface']
           trans = "uvm_sequence_item"
-          adapter = "uvm_reg_adapter"
+          try:
+            adapter = regInfo['reg_adapter_class']
+          except KeyError:
+            adapter = "uvm_reg_adapter"
+            pass
           mapName = maps[0]['name']
+        else: ## Other 
+          sequencer = maps[0]['interface']
+          trans = "uvm_sequence_item"
+          try:
+            adapter = regInfo['reg_adapter_class']
+          except KeyError:
+            raise UserError("For register map \""+maps[0]['name']+"\" in environment \""+name+"\" a reg_adapter_class must be specified when interface_type is set to 'other' ")
+          mapName = maps[0]['name']
+
       env.addRegisterModel(
         sequencer=sequencer,
         transactionType=trans,
@@ -990,9 +1260,11 @@ class DataClass:
         busMap=mapName,
         useAdapter=use_adapter,
         useExplicitPrediction=use_explicit_prediction,
+        vipType=vip_type,
         qvipAgent=qvip_agent,
         regModelPkg=reg_model_pkg,
-        regBlockClass=reg_blk_class)
+        regBlockClass=reg_blk_class,
+        regBlockInstance=reg_blk_name)
     try:
       dpi_def = struct['dpi_define']
       ca = ""
@@ -1085,6 +1357,7 @@ class DataClass:
     self.check_parameters('bench',name,'environment',top_env,'top_env',env_params_list,self.data['environments'][top_env])
     ## With this information we can create the bench class object
     ben = BenchClass(name,top_env,env_params)
+    ben.dest_dir_override = self.dest_dir_override
     ben = self.setupGlobalVars(ben)
     ## Look for clock and reset control settings (all optional)
     try:
@@ -1108,7 +1381,7 @@ class DataClass:
       ben.activePassiveDefault = 'ACTIVE'
       pass
     ## Check for inFact ready flag
-    ben.inFactEnabled = ('infact_enabled' in struct.keys() and struct['infact_enabled']=='True')
+    ben.inFactEnabled = False
 
     ## Use co-emulation clk/rst generator
     try:
@@ -1176,6 +1449,11 @@ class DataClass:
       except KeyError:
         ben.regBlockClass = top_env+"_reg_model"
         pass
+      try:
+        ben.regBlockInstance = e['register_model']['reg_block_instance_name']
+      except KeyError:
+        ben.regBlockInstance = top_env+"_rm"
+        pass
     except KeyError:
       ben.topEnvHasRegisterModel = False
       pass
@@ -1232,7 +1510,7 @@ class DataClass:
         except KeyError:
           aParams = {}
           pass
-        infact_ready = ('infact_ready' in a.keys() and a['infact_ready'])
+        infact_ready = False
         try:
           port_list = agentDef['ports']
         except KeyError:
@@ -1305,6 +1583,8 @@ class DataClass:
         existing_component = (struct['existing_library_component']=="True")
     except KeyError: 
       pass
+    if 'bench_plusargs' in struct:
+      ben.bench_plusargs = struct['bench_plusargs']
     if (existing_component == True):
       print("  Skipping generation of predefined component "+str(name))
     else:
@@ -1313,6 +1593,7 @@ class DataClass:
 
   def generateInterface(self,name,build_existing=False,archive_yaml=True):
     intf = InterfaceClass(name)
+    intf.dest_dir_override = self.dest_dir_override
     struct = self.data['interfaces'][name]
     intf.clock = struct['clock']
     intf.reset = struct['reset']
@@ -1366,7 +1647,7 @@ class DataClass:
         try:
           r = (port['reset_value'])
         except KeyError:
-          r = "'bz"
+          r = "'b0"
         intf.addPort(n,w,d,r)
     except KeyError: pass
     try:
@@ -1460,7 +1741,7 @@ class DataClass:
           intf.addDPIExport(exp)
       except KeyError: pass
     except KeyError: pass
-    intf.inFactReady = ('infact_ready' in struct.keys() and struct['infact_ready'])
+    intf.inFactReady = False
     try:
       intf.mtlbReady = (struct['mtlb_ready']=="True")
     except KeyError:
@@ -1587,10 +1868,15 @@ def run():
       raise UserError("No configuration YAML specified to parse, must provide at least one")
   if options.merge_source != None:
     if os.path.abspath(os.path.normpath(options.dest_dir)) == os.path.abspath(os.path.normpath(options.merge_source)):
-      raise UserError("Cannot merge changes into source directory \"{0}\" without specifying an alternate output directory with --dest_dir switch".format(os.path.abspath(os.path.normpath(options.dest_dir))))
+      # If merge_source == dest_dir, modify dest_dir to be unique, allowing the merge to proceed
+      options.dest_dir = options.dest_dir + "_tmp"
+      dataObj.dest_dir_override = options.dest_dir
   for cfg in configfiles:
     dataObj.parseFile(cfg)
   dataObj.validate()
+  if 'elaborate_bfm_parameters' in dataObj.data['global'] and dataObj.data['global']['elaborate_bfm_parameters'] == 'True':
+    for bench in dataObj.data['benches'].keys():
+      dataObj.elaborateAgentParameters(options,bench)
   dataObj.buildElements(options.gen_name,verify=options.merge_export_yaml==None,build_existing=options.build_existing_components,archive_yaml=(not options.no_archive_yaml))
   if options.merge_source or options.merge_import_yaml:
     if not options.merge_import_yaml:

@@ -120,6 +120,7 @@ class Generator(object):
       return ''
     if 'access' in v and v['access']:
       return v['access']
+    return ''
 
   def set_lib(self,v={}):
     lib_str = ''
@@ -168,8 +169,8 @@ class Generator(object):
       else:
         debug_str = debug_str + ' -uvmcontrol=all -msgmode both'
         mode_str = '-gui'
-      if 'enable_trlog' not in v or v['enable_trlog']=='':
-        v['enable_trlog'] = True
+      if 'enable_trlog' in v and v['enable_trlog']:
+        debug_str = debug_str + ' +uvm_set_config_int=*,enable_transaction_viewing,1'
     else:
       if 'mode' not in v:
         logger.error("No mode specified in variables dict")
@@ -180,6 +181,8 @@ class Generator(object):
       run_cmd = 'run -all'
       if ('use_vis' in v and v['use_vis']) or ('use_vis_uvm' in v and v['use_vis_uvm']):
         debug_str = ' -debug'
+        if ('use_vis_uvm' in v and v['use_vis_uvm']) and ('enable_trlog' in v and v['enable_trlog']):
+          debug_str = debug_str + ' +uvm_set_config_int=*,enable_transaction_viewing,1'
       else:
         debug_str = ''
     return (mode_str, run_cmd, debug_str)
@@ -211,6 +214,9 @@ class Generator(object):
         vis_wave_str = vis_wave_str+"+wavefile="+v['vis_wave_filename']
     else:
       vis_wave_str = ''
+    if 'signal_file' in v and v['signal_file']:
+      # Quick search/replace in vis_wave_str for +signal, adding the specified signal file
+      vis_wave_str = vis_wave_str.replace("+signal","+signal="+v['signal_file'])
     return vis_wave_str
 
   def set_trlog(self,v={}):
@@ -272,7 +278,7 @@ class Generator(object):
   def set_full_do(self,v={}):
     if ('build_only' in v and v['build_only']) or ('compile_only' in v and v['compile_only']):
       return ''
-    if 'do_override' in v and v['do_override'] != False:
+    if 'do_override' in v and v['do_override'] != '':
       return v['do_override']
     do_str = self.set_do(v)
     if do_str:
@@ -340,6 +346,36 @@ class Generator(object):
       if name in cfo:
         ret = ret + ' ' + cfo[name]
     return ret
+
+  def set_cppinstall(self,v={}):
+    if v_val(v,'cppinstall'):
+      return '-cppinstall '+v['cppinstall']
+    else:
+      return ''
+
+  def set_vopt_profiler(self,v={}):
+    if 'profile' in v and v['profile']:
+      return '+acc=l'
+    elif 'fprofile' in v and v['fprofile']:
+      return '-fprofile'
+    else:
+      return ''
+
+  def set_vsim_profiler(self,v={}):
+    if 'profile' in v and v['profile']:
+      if 'profile_database' not in v or not v['profile_database']:
+        logger.error("Must specify profile_database variable to use legacy profiler")
+        sys.exit(1)
+      return '-autoprofile='+v['profile_database']
+    elif 'fprofile' in v and v['fprofile']:
+      if 'fprofile_database' not in v or not v['fprofile_database']:
+        logger.error("Must specify fprofile_database variable to use Visualizer fprofiler")
+        sys.exit(1)
+      if 'fprofile_args' not in v:
+        v['fprofile_args'] = ''
+      return '-fprofile+file='+v['fprofile_database']+v['fprofile_args']
+    else:
+      return ''
 
 # Convenience function, returns true if a variable exists and is non-empty, True, etc
 def v_val(v,var):

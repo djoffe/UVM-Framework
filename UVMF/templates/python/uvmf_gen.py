@@ -377,6 +377,8 @@ class BaseGeneratorClass(BaseElementClass):
     self.year = time.strftime("%Y",lt)
     self.date = time.strftime("%Y %b %d",lt)
     # Determine root.  This is where we will be placing output.
+    if self.dest_dir_override != None:
+      self.options.dest_dir = self.dest_dir_override
     if (self.options.dest_dir != None):
       dest_dir = self.options.dest_dir
       if (os.path.isdir(os.path.abspath(self.options.dest_dir)) == False):
@@ -582,7 +584,7 @@ class AgentClass(BaseElementClass):
       self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
 class RegModelClass(BaseElementClass):
-  def __init__(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, qvipAgent=False,regModelPkg='',regBlockClass=''):
+  def __init__(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, vipType=False, qvipAgent=False,regModelPkg='',regBlockClass='',regBlockInstance=''):
     super(RegModelClass,self).__init__('')
     self.useAdapter = useAdapter
     self.useExplicitPrediction = useExplicitPrediction
@@ -590,9 +592,11 @@ class RegModelClass(BaseElementClass):
     self.transactionType = transactionType
     self.adapterType = adapterType
     self.busMap = busMap
+    self.vipType = vipType
     self.qvipAgent = qvipAgent
     self.regModelPkg = regModelPkg
     self.regBlockClass = regBlockClass
+    self.regBlockInstance = regBlockInstance
 
 class analysisComponentClass(BaseElementClass):
   def __init__(self,keyword,name,aeDict,apDict,qvipAeDict,parametersList,mtlbReady=False):
@@ -660,11 +664,12 @@ class StringInterfaceNamesClass(BaseElementClass):
     self.unique_id_with_underscores = unique_id_with_underscores
 
 class SubEnvironmentClass(BaseElementClass):
-  def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regModelPkg,regBlockClass):
+  def __init__(self,name,envPkg,numAgents,agent_index,parametersDict,regModelPkg,regBlockClass,regBlockInstance):
     super(SubEnvironmentClass,self).__init__(name)
     self.envPkg = envPkg
     self.regModelPkg = regModelPkg
     self.regBlockClass = regBlockClass
+    self.regBlockInstance = regBlockInstance
     self.numAgents = numAgents
     self.agentMinIndex = agent_index
     self.agentMaxIndex = agent_index+numAgents-1
@@ -774,6 +779,7 @@ class InterfaceClass(BaseGeneratorClass):
     self.responseVarNames = []
     self.enableFunctionalCoverage = False
     self.mtlbReady = False
+    self.dest_dir_override = None
 
   def initTemplateVars(self,template):
     template['sigs'] = self.ports
@@ -813,7 +819,7 @@ class InterfaceClass(BaseGeneratorClass):
     template['mtlbReady'] = self.mtlbReady
     return template
 
-  def addPort(self,name,width,dir,rstValue='\'bz', type='tri'):
+  def addPort(self,name,width,dir,rstValue='\'b0', type='tri'):
     """Add an interface port definition"""
     self.ports.append(PortClass(name,width,dir,rstValue,type))
 
@@ -996,6 +1002,7 @@ class EnvironmentClass(BaseGeneratorClass):
     self.analysis_ports = []
     self.analysis_exports = []
     self.mtlbReady = False
+    self.dest_dir_override = None
 
   def initTemplateVars(self,template):
     template['typedefs'] = self.typedefs
@@ -1066,9 +1073,13 @@ class EnvironmentClass(BaseGeneratorClass):
     if (ifPkg not in self.agent_packages):
       self.agent_packages.append(ifPkg)
 
-  def addSubEnv(self,name,envPkg,numAgents,parametersDict={}, regModelPkg=None,regBlockClass=None):
+  def addSubEnv(self,name,envPkg,numAgents,parametersDict={}, regModelPkg=None,regBlockClass=None,regBlockInstance=''):
+    if ( regBlockInstance == ''):
+      regBlkInst = name+"_rm"
+    else:
+      regBlkInst = regBlockInstance
     """Add a sub environment instantiation to the definition of this environment class"""
-    self.subEnvironments.append(SubEnvironmentClass(name,envPkg,numAgents,self.agentIndex,parametersDict,regModelPkg,regBlockClass))
+    self.subEnvironments.append(SubEnvironmentClass(name,envPkg,numAgents,self.agentIndex,parametersDict,regModelPkg,regBlockClass,regBlkInst))
     self.agentIndex = self.agentIndex+numAgents
     if (envPkg not in self.sub_env_packages):
       self.sub_env_packages.append(envPkg)
@@ -1127,10 +1138,14 @@ class EnvironmentClass(BaseGeneratorClass):
     for aeName in qvipExportDict:
       self.addImpDecl(aeName)
 
-  def addRegisterModel(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, qvipAgent=False,regModelPkg=None,regBlockClass=None):
+  def addRegisterModel(self,sequencer, transactionType, adapterType, busMap, useAdapter=True, useExplicitPrediction=True, vipType="uvmf",qvipAgent=False,regModelPkg=None,regBlockClass=None,regBlockInstance=''):
     """Adds a register model to the environment."""
+    if ( regBlockInstance == ''):
+      regBlkInst = self.name+"_rm"
+    else:
+      regBlkInst = regBlockInstance
     ## Register the desired analysis component on the types array
-    self.regModels.append(RegModelClass(sequencer,transactionType,adapterType, busMap,useAdapter,useExplicitPrediction,qvipAgent,regModelPkg,regBlockClass))
+    self.regModels.append(RegModelClass(sequencer,transactionType,adapterType, busMap,useAdapter,useExplicitPrediction,vipType,qvipAgent,regModelPkg,regBlockClass,regBlkInst))
 
   # addAnalysisComponent(instanceName, analysisComponentType)
   def addAnalysisComponent(self, name, pType, parametersList=[],extDef=False):
@@ -1179,7 +1194,8 @@ class EnvironmentClass(BaseGeneratorClass):
                                                      "adapterType":regModel.adapterType,
                                                      "busMap":regModel.busMap,
                                                      "regModelPkg":regModel.regModelPkg,
-                                                     "regBlockClass":regModel.regBlockClass})
+                                                     "regBlockClass":regModel.regBlockClass,
+                                                     "regBlockInstance":regModel.regBlockInstance})
     first = 0
     for DPIFile in self.DPIFiles:
       if (first==0):
@@ -1239,11 +1255,14 @@ class BenchClass(BaseGeneratorClass):
     self.topEnvHasRegisterModel = False
     self.regModelPkg = ''
     self.regBlockClass = ''
+    self.regBlockInstance = env_name+"_rm"
     self.using_qvip = False
     self.mtlbReady = False
     self.useBCR = False
+    self.bench_plusargs = []
     for parameterName in parametersDict:
       self.envParamDefs.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
+    self.dest_dir_override = None
 
   def initTemplateVars(self,template):
     template['env_name'] = self.env_name
@@ -1275,10 +1294,12 @@ class BenchClass(BaseGeneratorClass):
     template['topEnvHasRegisterModel'] = self.topEnvHasRegisterModel
     template['regModelPkg'] = self.regModelPkg
     template['regBlockClass'] = self.regBlockClass
+    template['regBlockInstance'] = self.regBlockInstance
     template['svLibNames'] = self.svLibNames
     template['using_qvip'] = self.using_qvip
     template['mtlbReady'] = self.mtlbReady
     template['useBCR'] = self.useBCR
+    template['bench_plusargs'] = self.bench_plusargs
     return template
 
   ## Overload of the create function - insert some conditional considerations

@@ -33,7 +33,7 @@ class {{name}}_env_sequence_base #(
   {% for regModel in regModels %}
 // Handle to the environments register model
 // This handle needs to be set before use.
-  {{regModel.regBlockClass}}  reg_model;
+  {{regModel.regBlockClass}}  {{regModel.regBlockInstance}};
 {% endfor %}
 
 // This {{name}}_env_sequence_base contains a handle to a {{name}}_env_configuration object 
@@ -72,16 +72,24 @@ class {{name}}_env_sequence_base #(
 
 {% endfor %}
 
+// This example shows how to use the environment sequence base for sub-environments
+// It can only be used on environments generated with UVMF_2022.3 and later.
+// Environment sequences generated with UVMF_2022.1 and earlier do not have the required 
+//    environment level virtual sequencer
 {% for sub_env in subEnvironments %}
-typedef {{sub_env.envPkg}}_env_sequence_base #(
-        .CONFIG_T({{sub_env.envPkg}}_env_configuration{{macro.paramUseNested(sub_env.parameters)|indent(16)}}){% if sub_env.parameters|length > 0 %}{% for param in sub_env.parameters -%}{% if loop.first %},
-{% endif %}
-        .{{param.name}}({{param.value}}){% if not loop.last %},
-{% endif %}{% endfor %}{% endif %}
+// typedef {{sub_env.envPkg}}_env_sequence_base #(
+//         .CONFIG_T({{sub_env.envPkg}}_env_configuration{% if sub_env.parameters|length > 0 %}#(
+{% for param in sub_env.parameters -%}
+//             .{{param.name}}({{param.value}}){% if not loop.last %},
+{% endif %}{% endfor %}),{% else %}){% endif %}
 
-        ) 
-        {{sub_env.name}}_sequence_base_t;
-rand {{sub_env.name}}_sequence_base_t {{sub_env.name}}_seq;
+{% if sub_env.parameters|length > 0 %}{% for param in sub_env.parameters -%}
+//         .{{param.name}}({{param.value}}){% if not loop.last %},
+{% else %}
+
+{% endif %}{% endfor %}{% endif %}//         ) 
+//         {{sub_env.name}}_sequence_base_t;
+// rand {{sub_env.name}}_sequence_base_t {{sub_env.name}}_seq;
 
 {% endfor %}
 
@@ -96,12 +104,18 @@ rand {{sub_env.name}}_sequence_base_t {{sub_env.name}}_seq;
 {% endif %}{% endfor %}
 
 {% for sub_env in subEnvironments %}
-    {{sub_env.name}}_seq = {{sub_env.name}}_sequence_base_t::type_id::create("{{sub_env.name}}_seq");
+//     {{sub_env.name}}_seq = {{sub_env.name}}_sequence_base_t::type_id::create("{{sub_env.name}}_seq");
 {% endfor %}
 
   endfunction
 
   virtual task body();
+
+  {% for regModel in regModels %}
+// Handle to the environments register model
+// This handle needs to be set before use.
+  {{regModel.regBlockInstance}} = configuration.{{regModel.regBlockInstance}} ;
+{% endfor %}
 
 {% for agent in agents %}{% if agent.initResp == "INITIATOR" %}
     if ( configuration.{{agent.name}}_config.sequencer != null )
@@ -109,7 +123,7 @@ rand {{sub_env.name}}_sequence_base_t {{sub_env.name}}_seq;
 {% endif %}{% endfor %}
 
 {% for sub_env in subEnvironments %}
-    {{sub_env.name}}_seq.start(configuration.{{sub_env.name}}_config.vsqr);
+//     {{sub_env.name}}_seq.start(configuration.{{sub_env.name}}_config.vsqr);
 {% endfor %}
 
   endtask

@@ -51,6 +51,7 @@ class Merge(Base):
     self.quiet = quiet
     self.new_directories = []
     self.yaml_imported = False
+    self.block_copied = False
 
   def load_yaml(self,fname):
     self.yaml_imported = True

@@ -70,7 +70,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% endfor %}
 {% for regModel in regModels %}
 {% if regModel.adapterType != None %}
-{% if regModel.qvipAgent == "True" %}
+{% if regModel.vipType == "qvip" %}
 // UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP: 
 // Identify the UVM reg adapter in the QVIP installation for the protocol agent.
 // Change the typedef below to reflect the reg adapter class type and any parameters.
@@ -82,7 +82,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
    reg_adapter_t    reg_adapter;
 {% endif %}
 {% if regModel.transactionType != None %}
-{% if regModel.qvipAgent == "True" %}
+{% if regModel.vipType == "qvip" %}
 // UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
 // Identify the sequence_item type, including any parameters, used by the reg adapter
 // type specified above.  Parameterize the uvm_reg_predictor to use this sequence item
@@ -209,20 +209,20 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     // Create register model adapter if required
     if (configuration.enable_reg_prediction ||
         configuration.enable_reg_adaptation)
-{% if regModel.qvipAgent == "True" %}
+{% if regModel.vipType == "qvip" %}
 // UVMF_CHANGE_ME: QVIP_AGENT_USED_FOR_REG_MAP:
 // Uncomment the construction of the reg adapter below.  This was commented so that the 
 // generated code would compile and run as generated.  The uvm_reg_adapter is a virtual
 // class so it can not be constructed.  Once the type is changed to a QVIP reg adapter
 // type, it must be constructed.
 {% endif %}
-      {% if regModel.qvipAgent == "True" %}//{% endif %}reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
+      {% if regModel.vipType == "qvip" %}//{% endif %}reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
     // Set sequencer and adapter in register model map
-    if ((configuration.enable_reg_adaptation) && ({{regModel.sequencer}}.{% if regModel.qvipAgent == "True" %}m_{% endif %}sequencer != null ))
-      configuration.{{name}}_rm.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}.{% if regModel.qvipAgent == "True" %}m_{% endif %}sequencer, reg_adapter);
+    if ((configuration.enable_reg_adaptation) && ({{regModel.sequencer}}{% if regModel.vipType == "qvip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %} != null ))
+      configuration.{{regModel.regBlockInstance}}.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}{% if regModel.vipType == "qvip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %}, reg_adapter);
     // Set map and adapter handles within uvm predictor
     if (configuration.enable_reg_prediction) begin
-      reg_predictor.map     = configuration.{{name}}_rm.{{regModel.busMap}};
+      reg_predictor.map     = configuration.{{regModel.regBlockInstance}}.{{regModel.busMap}};
       reg_predictor.adapter = reg_adapter;
       // The connection between the agent analysis_port and uvm_reg_predictor 
       // analysis_export could cause problems due to a uvm register package bug,

@@ -103,6 +103,7 @@ class GlobalValidator(BaseValidator):
       Optional('interface_location'): str,
       Optional('environment_location'): str,
       Optional('bench_location'): str,
+      Optional('elaborate_bfm_parameters'): Any('True','False'),
     }
     self.schema = Schema(mainSchema)
 
@@ -121,12 +122,19 @@ class BenchValidator(BaseValidator):
       Required('bfm_name'): str,
       Required('value'): [ self.parameterUseSchema ]
     }
+    plusargSchema = {
+      Required('name'): str,
+      Optional('default_value'): str,
+      Optional('var_type'): str,
+      Optional('plusarg_type'): str,
+      Optional('env_config'): str,
+    }
     mainSchema = {
       Required('top_env'): str,
       Optional('veloce_ready'): Any('True','False'),
       Optional('existing_library_component'): Any('True','False'),
       Optional('catapult_ready'): Any('True','False'),
-      Optional('infact_enabled'): Any('True','False'),
+      Optional('infact_enabled'): 'False',
       Optional('mtlb_ready'): Any('True','False'),
       Optional('clock_half_period'): str,
       Optional('use_coemu_clk_rst_gen'): Any('True','False'),
@@ -142,6 +150,7 @@ class BenchValidator(BaseValidator):
       Optional('imports'): [ self.importSchema ],
       Optional('additional_tops'): [ str ],
       Optional('use_bcr'): Any('True','False'),
+      Optional('bench_plusargs'): [plusargSchema ],
     }
     self.schema = Schema(mainSchema)
 
@@ -223,6 +232,7 @@ class EnvironmentValidator(BaseValidator):
     regModelMapSchema = {
       Required('name'): str,
       Required('interface'): str,
+      Optional('interface_type'): Any("uvmf","qvip","other"),
       Optional('qvip_agent'): Any("True","False")
     }
     regModelSchema = {
@@ -230,7 +240,8 @@ class EnvironmentValidator(BaseValidator):
       Optional('use_explicit_prediction'): Any("True","False"),
       Optional('maps'): [ regModelMapSchema ],
       Optional('reg_model_package'): str,
-      Optional('reg_block_class'): str
+      Optional('reg_block_class'): str,
+      Optional('reg_adapter_class'): str
     }
     scoreboardSchema = {
       Required('name'): str,
@@ -254,7 +265,8 @@ class EnvironmentValidator(BaseValidator):
       Required('type'): str,
       Optional('extdef'): Any('True','False'),
       Optional('parameters'): [ self.parameterUseSchema ],
-      Optional('use_register_model'): Any("True","False")
+      Optional('use_register_model'): Any("True","False"),
+      Optional('reg_block_instance_name'): str
     }
     qvipSubenvSchema = {
       Required('name'): str,
@@ -360,7 +372,7 @@ class InterfaceValidator(BaseValidator):
       Optional('config_constraints'): [ self.constraintSchema ],
       Optional('imports'): [ self.importSchema ],
       Optional('veloce_ready'): Any("True","False"),
-      Optional('infact_ready'): Any("True","False"),
+      Optional('infact_ready'): 'False',
       Optional('dpi_define'): self.dpiDefSchema,
       Optional('enable_functional_coverage'): Any("True","False"),
     }

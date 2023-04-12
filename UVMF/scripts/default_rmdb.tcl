@@ -91,7 +91,6 @@ proc vrmSetupDefaults {} {
   setIniVar tplan_merge_options "-testassociated" 1
   setIniVar no_rerun 1 1
   setIniVar rerun_limit 0 1
-  setIniVar use_infact 0 1
   setIniVar use_vis 0 1
   setIniVar use_vinfo 0 1
   setIniVar dump_waves 0 1
@@ -100,6 +99,7 @@ proc vrmSetupDefaults {} {
   setIniVar exclusionfile "" 1
   setIniVar pre_run_dofile {""} 1
   setIniVar pre_vsim_dofile {""} 1
+  setIniVar post_vsim_dofile {""} 1
   setIniVar run_exec "" 1
   setIniVar use_test_dofile 0 1
   setIniVar use_job_mgmt_run 0 1
@@ -150,7 +150,7 @@ proc vrmSetupDefaults {} {
   setIniVar use_bcr 0 1
   setIniVar bcr_exec_cmd_linux "uvmf_bcr.py" 1
   setIniVar bcr_exec_cmd_windows "python $::env(UVMF_HOME)/scripts/uvmf_bcr.py" 1
-  setIniVar bcr_flow "questa" 1
+  setIniVar bcr_flow {} 1
   setIniVar bcr_overlay {} 1
   setIniVar multiuser 1 1
   return 0
@@ -202,16 +202,6 @@ proc dumpIniVars {} {
   parray ini
 }
 
-## Returns a path to the inFact SDM .ini file if inFact is enabled.
-## Returns "" if inFact is disabled
-proc getInfactSdmIni {datadir} {
-  if {[getIniVar use_infact]} {
-	return [file join "+infact=$datadir" "infactsdm_info.ini"]
-  } else {
-    return ""
-  }
-}
-
 ## YAML-based testlist reader
 proc ReadYAMLTestlistFile { file_name invoc_dir {collapse 0} {debug 0} {init 0}} {
   global testlist_info
@@ -260,15 +250,20 @@ proc ReadYAMLTestlistFile { file_name invoc_dir {collapse 0} {debug 0} {init 0}}
       if {![dict exists $tb symlinks]} {
         dict append tb symlinks ""
       }
+      if {![dict exists $tb bcr_flow]} {
+        dict append tb bcr_flow ""
+      }
       dict set builddict $tb_name "buildcmd" [dict get $tb "extra_build_options"]
       dict set builddict $tb_name "runcmd" [dict get $tb "extra_run_options"]
       dict set builddict $tb_name "symlinks" [dict get $tb "symlinks"]
+      dict set builddict $tb_name "bcr_flow" [dict get $tb "bcr_flow"]
       dict set builddict $tb_name "builddir" $dir
       if {$debug==1} {
         puts [format "DEBUG: Registering testbench %s" $tb_name]
         puts [format "DEBUG:   buildcmd: %s" [dict get $tb "extra_build_options"]]
         puts [format "DEBUG:   runcmd: %s" [dict get $tb "extra_run_options"]]
         puts [format "DEBUG:   symlinks: %s" [dict get $tb "symlinks"]]
+        puts [format "DEBUG:   bcr_flow: %s" [dict get $tb "bcr_flow"]]
         puts [format "DEBUG:   builddir: %s" $dir]
       }
       lappend testlist_info $tb
@@ -424,23 +419,6 @@ proc GetMapInfo { build_name key } {
   return [dict get $builddict $build_name "mapinfo" $key]
 }
 
-# proc process_yaml_test_entry {entry {debug 1}} {
-#   global builddict
-#   global tcdict
-#   global current_tb
-#   if {[dict exits $entry testbench]} {
-#     set current_tb [dict get $entry testbench]
-#     if {$debug} {
-#       puts [format "DEBUG: Setting current testbench to %s" $current_tb]
-#     }
-#   } elseif {$current_tb == ""} {
-#     puts [format "ERROR: No testbench setting found before encountering test entries"]
-#     ex 88
-#   }
-
-
-# }
-
 proc ex {code} {
   exit $code
 }
@@ -487,6 +465,7 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
           dict set builddict [lindex $line 1] "buildcmd" [lindex $line 2]
           dict set builddict [lindex $line 1] "runcmd" [lindex $line 3]
           dict set builddict [lindex $line 1] "symlinks" ""
+          dict set builddict [lindex $line 1] "bcr_flow" ""
           dict set builddict [lindex $line 1] "builddir" $dir
           if {$debug==1} {
             puts [format "DEBUG: Registering testbench %s" [lindex $line 1]]
@@ -666,6 +645,21 @@ proc GetBuilds {args} {
 proc GetBuildCmd {build} {
   global builddict
   return [dict get $builddict $build "buildcmd"]
+}
+
+proc GetBCRFlow {build} {
+  global builddict
+  return [dict get $builddict $build "bcr_flow"]
+}
+
+proc ResolveBCRFlow {bcr_flow_ini bcr_flow_testlist} {
+  if {$bcr_flow_ini != ""} {
+    return $bcr_flow_ini
+  }
+  if {$bcr_flow_testlist != ""} {
+    return $bcr_flow_testlist
+  }
+  return questa
 }
 
 ## Called by the runnables, returns the run command for this particular build.

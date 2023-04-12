@@ -37,9 +37,9 @@
 //       T - Specifies the type of transactions to be compared.
 //           Must be derived from uvmf_transaction_base.
 
-class uvmf_in_order_scoreboard #(type T = uvmf_transaction_base) extends uvmf_scoreboard_base#(T);
+class uvmf_in_order_scoreboard #(type T = uvmf_transaction_base, type BASE_T = uvmf_scoreboard_base#(T)) extends BASE_T;
 
-  `uvm_component_param_utils( uvmf_in_order_scoreboard #(T))
+  `uvm_component_param_utils( uvmf_in_order_scoreboard #(T,BASE_T))
 
    // queue for expected transactions. This is required because of DUT latency.
    T expected_results_q[$];

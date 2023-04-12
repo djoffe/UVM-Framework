@@ -65,7 +65,7 @@ def getCFiles(directory):
 
 def parseLine(s):
     res={}
-    sr = re.match(r"\s*(input|inout)\s+", s)
+    sr = re.match(r"\s*(input|inout|output)\s+", s)
     if sr != None:
         res['direction'] = sr.group(1)
     else:
@@ -98,8 +98,11 @@ def parseLine(s):
 
 def parseFunction(funcitonDef):
     res = {}
-    o = re.match(r"import \"DPI-C\" function (\w+) (\w+)\(([\S\s]*?)\)", funcitonDef)
-    res['returnType'] = o.group(1)
+    o = re.match(r"import \"DPI-C\" function (\w+ *\**) (\w+)\(([\S\s]*?)\)", funcitonDef)
+    if "*" in o.group(1):
+        res['returnType'] = "chandle"
+    else:
+        res['returnType'] = o.group(1)
     res['name'] = o.group(2)
     res['parms']=[]
     for parm in o.group(3).split(','):
@@ -116,7 +119,7 @@ def parseDpiParms(parms):
 def parseDpiFunctions(functionDef):
     res = {}
     #DPI_LINK_DECL DPI_DLL_EXPORT <type> [*] <function name> [Parms_type  [*] variable ...]
-    o = re.match(r"DPI_LINK_DECL DPI_DLL_EXPORT\s(\w+[\*\s])\s*(\w+)\((.*)\);", functionDef )
+    o = re.match(r"DPI_LINK_DECL\s+DPI_DLL_EXPORT\s(\w+ *\**)\s*(\w+)\((.*)\);", functionDef )
     if(o != None):
         res['cReturnType'] = o.group(1)
         res['cFunctionName'] = o.group(2)
@@ -150,9 +153,12 @@ with open(c_header, 'r') as i:
     lines = i.readlines()
     # print(text)
     for line in lines:
-        if(line.startswith("DPI_LINK_DECL")):
+        o = re.match(r"DPI_LINK_DECL\s+DPI_DLL_EXPORT", line )
+        if(o != None):
             dpiFunctions['cFunctions'].append(parseDpiFunctions(line))
-            # print(dpiFunctions)
+        elif(line.startswith("DPI_DLL_EXPORT")):
+            dpiFunctions['cFunctions'].append(parseDpiFunctions("DPI_LINK_DECL "+line))
+        # print(dpiFunctions)
 
 #sv package
 with open(sv_pkg, 'r') as i:
@@ -163,7 +169,7 @@ with open(sv_pkg, 'r') as i:
     for line in lines:
         if(line.startswith("import")):
             functions.append(line)
-        elif(line.startswith("input") or line.startswith("inout")):
+        elif(line.startswith("input") or line.startswith("inout") or line.startswith("output")):
             functions[len(functions)-1] = functions[len(functions)-1] + line
 
 for fcn in functions:
@@ -191,9 +197,12 @@ if(stim_name != None):
         lines = i.readlines()
         # print(text)
         for line in lines:
-            if(line.startswith("DPI_LINK_DECL")):
+            o = re.match(r"DPI_LINK_DECL\s+DPI_DLL_EXPORT", line )
+            if(o != None):
                 stimDpiFunctions['cFunctions'].append(parseDpiFunctions(line))
-                # print(dpiFunctions)
+            elif(line.startswith("DPI_DLL_EXPORT")):
+                stimDpiFunctions['cFunctions'].append(parseDpiFunctions("DPI_LINK_DECL "+line))
+            # print(dpiFunctions)
 
     #sv package
     with open(stim_sv_pkg, 'r') as i:
@@ -204,7 +213,7 @@ if(stim_name != None):
         for line in lines:
             if(line.startswith("import")):
                 functions.append(line)
-            elif(line.startswith("input") or line.startswith("inout")):
+            elif(line.startswith("input") or line.startswith("inout") or line.startswith("output")):
                 functions[len(functions)-1] = functions[len(functions)-1] + line
 
     for fcn in functions:
@@ -297,7 +306,7 @@ output_if['ports'] = []
 output_if['transaction_vars'] = []
 first = 1
 for i in dpiFunctions['svFunctions'][2]['parms']:
-    if(first == 0 and i['direction'] == 'inout'):
+    if(first == 0 and i['direction'] != 'input'):
         #TODO will need to change sizeofentry paramter to accept multiple unpacked if needed
         if i['unpacked-size'] == []:
             output_if['ports'].append({'name':i['name'],
