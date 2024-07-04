@@ -1,0 +1,14 @@
+STANDARD_VIP_DIR_NAME=$(pwd)/../uvmf
+export STANDARD_VIP_DIR_NAME
+
+echo "Setting up work directory"
+vlib work
+
+vlog -f standard_vip_test_filelist.f \
+    ../uvmf/hdl_standard_vip.sv \
+    ../uvmf/hvl_standard_vip.sv 
+echo "Optimisation step"
+vopt -o top_opt hdl_standard_vip hvl_standard_vip -debug -designfile design.bin
+
+echo "Running test"
+vsim -c -mvchome ${QUESTA_MVC_HOME} top_opt +nowarnTSCALE -t 1ns -do "run -all; quit" +UVM_TESTNAME=standard_vip_test_base +SEQ=standard_vip_vseq_base -qwavedb=+signal+transaction+class+uvm_schematic

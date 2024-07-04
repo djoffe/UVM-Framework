@@ -187,6 +187,8 @@ class DataClass:
     self.debug = debug
     self.validators = {}
     self.used_ac_items = []
+    self.used_uvmf_envs = []
+    self.used_qvip_envs = []
     self.dest_dir_override = None
 
   def parseFile(self,fname):
@@ -433,6 +435,8 @@ class DataClass:
         env = struct[env_type]
       except KeyError:
         raise UserError("Unable to find QVIP environment \""+env_type+"\" in defined QVIP environments (available list is "+str(struct.keys())+")")
+      if env_type not in self.used_qvip_envs:
+        self.used_qvip_envs = self.used_qvip_envs + [env_type]      
       for a in env['agents']:
         # Retrieve sequencer type if icvip.  Otherwise sequencer type is mvc_sequencer
         try:
@@ -464,6 +468,8 @@ class DataClass:
       env = struct[env_type]
     except KeyError:
       raise UserError("Unable to find environment \""+env_type+"\" in defined environments (available list is "+str(struct.keys()))
+    if env_type not in self.used_uvmf_envs:
+      self.used_uvmf_envs = self.used_uvmf_envs + [env_type]      
     ## We're looking at a non-QVIP environment. This can have underlying QVIP and/or non-QVIP sub-environments as well as local agents.
     ## Look for underlying QVIP subenvs first, then non-QVIP sub-envs, then local agents.
     try:
@@ -1378,6 +1384,9 @@ class DataClass:
     return fs
 
   def generateBench(self,name,build_existing=False,archive_yaml=True):
+    ## Initialize list of environment types used in this bench
+    self.used_uvmf_envs = []
+    self.used_qvip_envs = []
     ## Isolate the YAML structure for this bench
     struct = self.data['benches'][name]
     ## Get the name of the top-level environment
@@ -1627,6 +1636,9 @@ class DataClass:
       pass
     if 'bench_plusargs' in struct:
       ben.bench_plusargs = struct['bench_plusargs']
+    ben.used_uvmf_envs = self.used_uvmf_envs
+    if len(self.used_qvip_envs)>0:
+      ben.used_qvip_envs = self.used_qvip_envs
     if (existing_component == True):
       print("  Skipping generation of predefined component "+str(name))
     else:

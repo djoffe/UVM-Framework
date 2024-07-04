@@ -1,0 +1,19 @@
+echo "Setting up work directory"
+vlib work
+
+vlog ${QUESTA_MVC_HOME}/include/questa_mvc_svapi.sv \
+    +incdir+${QUESTA_MVC_HOME}/questa_mvc_src/sv +define+MAP_PROT_ATTR ${QUESTA_MVC_HOME}/questa_mvc_src/sv/mvc_pkg.sv \
+    +incdir+${QUESTA_MVC_HOME}/questa_mvc_src/sv/axi4 ${QUESTA_MVC_HOME}/questa_mvc_src/sv/axi4/mgc_axi4_v1_0_pkg.sv \
+    +incdir+../config_policies ../config_policies/standard_vip_params_pkg.sv \
+    standard_vip_pkg.sv \
+    +incdir+${QUESTA_MVC_HOME}/questa_mvc_src/sv/axi4/modules ${QUESTA_MVC_HOME}/questa_mvc_src/sv/axi4/modules/axi4_master.sv \
+    default_clk_gen.sv \
+    default_reset_gen.sv \
+    hdl_standard_vip.sv \
+    hvl_standard_vip.sv
+
+echo "Optimisation step"
+vopt -o top_opt hdl_standard_vip hvl_standard_vip -debug -designfile design.bin
+
+echo "Running test"
+vsim -c -mvchome ${QUESTA_MVC_HOME} top_opt +nowarnTSCALE -t 1ns -do "run -all; quit" +UVM_TESTNAME=standard_vip_test_base +SEQ=standard_vip_vseq_base -qwavedb=+signal+transaction+class+uvm_schematic

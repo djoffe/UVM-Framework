@@ -11,6 +11,10 @@ flows:
     incassoc:
       vlog: "+incdir+"    
     variables:
+      pre_run: ''
+      pre_run_extra: ''
+      post_run: ''
+      post_run_extra: ''
       uvm_path: ${uvm_location}/${uvm_version}
       code_cov_enable: False
       log_filename: run.log
@@ -76,6 +80,10 @@ flows:
       fprofile_args: '+perf=high'
       fprofile_database: 'profile.fdb'
     variable_descriptions:
+      pre_run: "Variable to identify script to be executed prior to bcr execution"
+      pre_run_extra: "Arguments for the pre_run script"
+      post_run: "Variable to identify script to be executed after bcr execution"
+      post_run_extra: "Arguments for the post_run script"
       live: "Run interactive mode simulation instead of batch-mode"
       test: "Specify which UVM test to invoke"    
       seed: "Specify the random seed for the run"
@@ -131,6 +139,12 @@ flows:
       clean:
         command_package: 'mentor_commands'
         command_module: 'clean'
+      run_pre_script:
+        command_package: 'mentor_commands'
+        command_module: 'run_pre_script'
+      run_post_script:
+        command_package: 'mentor_commands'
+        command_module: 'run_post_script'
 
   questa:
     order: 1

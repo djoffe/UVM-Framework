@@ -4,7 +4,8 @@ import re
 import sys
 import os
 
-sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2")
+if sys.version_info[0] < 3:
+    sys.path.insert(0,os.path.dirname(os.path.dirname(os.path.realpath(__file__)))+"/templates/python/python2")
 
 try:
     component_name = sys.argv[1]

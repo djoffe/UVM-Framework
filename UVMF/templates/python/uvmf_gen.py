@@ -1266,6 +1266,8 @@ class BenchClass(BaseGeneratorClass):
     self.mtlbReady = False
     self.useBCR = False
     self.bench_plusargs = []
+    self.used_uvmf_envs = []
+    self.used_qvip_envs = []
     for parameterName in parametersDict:
       self.envParamDefs.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
     self.dest_dir_override = None
@@ -1307,6 +1309,8 @@ class BenchClass(BaseGeneratorClass):
     template['mtlbReady'] = self.mtlbReady
     template['useBCR'] = self.useBCR
     template['bench_plusargs'] = self.bench_plusargs
+    template['usedUvmfEnvs'] = self.used_uvmf_envs
+    template['usedQvipEnvs'] = self.used_qvip_envs
     return template
 
   ## Overload of the create function - insert some conditional considerations
