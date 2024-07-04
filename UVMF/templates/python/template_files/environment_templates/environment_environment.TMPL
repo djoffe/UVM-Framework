@@ -158,7 +158,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 {% if regModel.transactionType != None %}
   // Build register model predictor if prediction is enabled
   if (configuration.enable_reg_prediction) begin
-    reg_predictor = reg_predictor_t::type_id::create("reg_predictor", this);
+    reg_predictor = new("reg_predictor", this);
   end
 {% endif %}
 // pragma uvmf custom reg_model_build_phase end
@@ -186,15 +186,15 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
     {{conn.name}}.{{conn.pName}}.connect({{conn.subscriberName}}.{{conn.aeName}});
 {% endfor %}
 {% for agent in qvip_ap_names %}
-    {{agent.name}}_{{agent.agent}}_ap = {{agent.name}}.{{agent.agent}}.ap; 
+     {{agent.name}}_{{agent.agent}}_ap = {{agent.name}}.{{agent.agent}}.ap; 
 {% endfor %}
 {% for connection in qvipConnections %}
     {{connection.output_component}}_ap["{{connection.output_port_name}}"].connect({{connection.input_component}}.{{connection.input_component_export_name}});
 {% endfor %}
 {% for sub_env in qvipSubEnvironments %}
-{% for agent in sub_env.qvip_if_name %}
+{% for agent in sub_env.agentList %}
     if ( configuration.{{sub_env.name}}_interface_activity[{{loop.index0}}] == ACTIVE )
-       uvm_config_db #(mvc_sequencer)::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent}}.m_sequencer  );
+       uvm_config_db #({{agent.sequencer}})::set(null,UVMF_SEQUENCERS,configuration.{{sub_env.name}}_interface_names[{{loop.index0}}],{{sub_env.name}}.{{agent.name}}.{% if agent.type == "qvip" %}m_{% endif %}sequencer  );
 {% endfor %}
 {% endfor %}
 {% for ap in analysis_ports %}
@@ -216,7 +216,7 @@ class {{name}}_environment {{macro.paramDeclare(paramDefs)|indent(2)}} extends u
 // class so it can not be constructed.  Once the type is changed to a QVIP reg adapter
 // type, it must be constructed.
 {% endif %}
-      {% if regModel.vipType == "qvip" %}//{% endif %}reg_adapter = reg_adapter_t::type_id::create("reg_adapter");
+      {% if regModel.vipType == "qvip" %}//{% endif %}reg_adapter = new("reg_adapter");
     // Set sequencer and adapter in register model map
     if ((configuration.enable_reg_adaptation) && ({{regModel.sequencer}}{% if regModel.vipType == "qvip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %} != null ))
       configuration.{{regModel.regBlockInstance}}.{{regModel.busMap}}.set_sequencer({{regModel.sequencer}}{% if regModel.vipType == "qvip" %}.m_sequencer{% elif regModel.vipType == "uvmf" %}.sequencer{% endif %}, reg_adapter);

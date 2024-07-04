@@ -264,6 +264,7 @@ class {{name}} {{macro.paramDeclare(parameters)|indent(2)}} extends uvm_componen
       $display("");
     end
     phase = END_RESP;
+    // return UVM_TLM_COMPLETED;                                                    \
   endfunction: nb_transport_fw_gp_{{port.name}}
 
 {% endfor %}

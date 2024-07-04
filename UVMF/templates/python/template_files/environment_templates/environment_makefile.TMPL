@@ -9,7 +9,7 @@
 include $(UVMF_VIP_LIBRARY_HOME)/{{environment_location}}/{{sub_env}}_env_pkg/Makefile
 {% endfor %}
 
-{{name}}_ENV_PKG =\
+{{name}}_ENV_PKG ?=\
 {% for regModel in regModels %}
 		 $(UVMF_VIP_LIBRARY_HOME)/{{environment_location}}/{{name}}_env_pkg/registers/{{regModel.regModelPkg}}.sv \
 {% endfor %}
@@ -39,12 +39,12 @@ endif
 
 export {{name}}_ENV_DPI_SRC ?= $(UVMF_VIP_LIBRARY_HOME)/{{environment_location}}/{{name}}_env_pkg/dpi
 
-C_FILE_COMPILE_LIST_{{name}}_env_pkg	= \
+C_FILE_COMPILE_LIST_{{name}}_env_pkg	?= \
 {% for cFile in DPIFiles %}
 	$({{name}}_ENV_DPI_SRC)/{{cFile}} \
 {% endfor %}
 
-O_FILE_COMPILE_LIST_{{name}}_env_pkg = $(notdir $(C_FILE_COMPILE_LIST_{{name}}_env_pkg:.c=.o))
+O_FILE_COMPILE_LIST_{{name}}_env_pkg ?= $(notdir $(C_FILE_COMPILE_LIST_{{name}}_env_pkg:.c=.o))
 
 GCC_COMP_ARGS_{{name}}_env_pkg	+= -I$({{name}}_ENV_DPI_SRC) \
 	-fPIC {{DPICompArgs}}

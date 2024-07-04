@@ -646,12 +646,13 @@ class BfmPkgClass(BaseElementClass):
     self.vipLibEnvVariable = vipLibEnvVariable
 
 class QvipAgentClass(BaseElementClass):
-  def __init__(self,name,ifPkg,activity,unique_id,unique_id_with_underscores):
+  def __init__(self,name,ifPkg,activity,unique_id,unique_id_with_underscores,sequencer):
     super(QvipAgentClass,self).__init__(name)
     self.ifPkg = ifPkg
     self.activity = activity
     self.unique_id = unique_id
     self.unique_id_with_underscores = unique_id_with_underscores
+    self.sequencer = sequencer
 
 class StringInterfaceNamesClass(BaseElementClass):
   def __init__(self,name,value,agent_name,ifPkg,activity,unique_id,unique_id_with_underscores):
@@ -678,15 +679,18 @@ class SubEnvironmentClass(BaseElementClass):
       self.parameters.append(ParameterValueClass(parameterName,parametersDict[parameterName]))
 
 class QvipSubEnvironmentClass(BaseElementClass):
-  def __init__(self,name,envPkg,numAgents,agent_index,agentList):
+  def __init__(self,name,envPkg,numAgents,agent_index,agentList,envHasICVIP,envHasQVIP):
     super(QvipSubEnvironmentClass,self).__init__(name)
     self.envPkg = envPkg
+    self.envHasICVIP = envHasICVIP
+    self.envHasQVIP = envHasQVIP
+    self.agentList = agentList
     self.numAgents = numAgents
     self.agentMinIndex = agent_index
     self.agentMaxIndex = agent_index+numAgents-1
     self.qvip_if_name = []
     for element in agentList:
-      self.qvip_if_name.append(element)
+      self.qvip_if_name.append(element['name'])
 
 class QvipHdlModuleClass(BaseElementClass):
   def __init__(self,name,envPkg,unique_id,unique_id_with_underscores):
@@ -1086,16 +1090,17 @@ class EnvironmentClass(BaseGeneratorClass):
     if (regModelPkg != None and regModelPkg not in self.subEnvironmentRegPackages):
       self.subEnvironmentRegPackages.append(regModelPkg)
 
-  def addQvipSubEnv(self,name,envPkg,agentList):
+  def addQvipSubEnv(self,name,envPkg,agentList,envHasICVIP,envHasQVIP):
     """Add a sub environment instantiation to the definition of this environment class"""
     self.numAgents = agentList.__len__()
-    self.qvipSubEnvironments.append(QvipSubEnvironmentClass(name,envPkg,self.numAgents,self.agentIndex,agentList))
+    self.qvipSubEnvironments.append(QvipSubEnvironmentClass(name,envPkg,self.numAgents,self.agentIndex,agentList,envHasICVIP,envHasQVIP))
     # line below updates agentIndex after appending info to qvip_if_name array 
     self.agentIndex = self.agentIndex+self.numAgents
     if (envPkg not in self.qvip_sub_env_packages):
       self.qvip_sub_env_packages.append(envPkg)
     for element in agentList:
-      self.qvip_ap_names.append(QvipAPClass(name,element))
+      if element['type'] == 'qvip':
+        self.qvip_ap_names.append(QvipAPClass(name,element['name']))
 
   def addAnalysisPort(self,name,tType,connection=""):
     """Build and connect an analysis port connection of the given name and transaction type"""
@@ -1235,6 +1240,7 @@ class BenchClass(BaseGeneratorClass):
     self.vipLibEnvVariableNames = []
     self.qvip_bfms = []
     self.qvip_bfm_packages = []
+    self.vip_packages = []
     self.qvip_hdl_modules = []
     self.qvip_hdl_module_list = []
     self.qvip_pkg_env_variables = []
@@ -1276,6 +1282,7 @@ class BenchClass(BaseGeneratorClass):
     template['qvip_bfms'] = self.qvip_bfms
     template['qvip_hdl_modules'] = self.qvip_hdl_modules
     template['qvip_bfm_pkgs'] = self.qvip_bfm_packages
+    template['vip_packages'] = self.vip_packages
     template['qvip_pkg_env_variables'] = self.qvip_pkg_env_variables
     template['veloceReady'] = self.veloceReady
     template['useCoEmuClkRstGen'] = self.useCoEmuClkRstGen
@@ -1341,7 +1348,7 @@ class BenchClass(BaseGeneratorClass):
       if (vipLibEnvVariable not in self.vipLibEnvVariableNames):
         self.vipLibEnvVariableNames.append(vipLibEnvVariable)
 
-  def addQvipBfm(self,name,ifPkg,activity,unique_id=""):
+  def addQvipBfm(self,name,ifPkg,activity,unique_id="",sequencer="",vipPkg=""):
     """Instantiate the qvip BFMs to the definition of this bench class"""
     package_name=name
     value_name=name
@@ -1355,7 +1362,9 @@ class BenchClass(BaseGeneratorClass):
       else:
         unique_id_with_underscores = unique_id_with_underscores+"_"+segment
     self.resource_parameter_names.append(StringInterfaceNamesClass(package_name,value_name,name,ifPkg,activity,unique_id,unique_id_with_underscores))
-    self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity,unique_id,unique_id_with_underscores))
+    self.qvip_bfms.append(QvipAgentClass(name,ifPkg,activity,unique_id,unique_id_with_underscores,sequencer))
+    if (vipPkg not in self.vip_packages):
+      self.vip_packages.append(vipPkg)
     if (ifPkg not in self.qvip_bfm_packages):
       self.qvip_bfm_packages.append(ifPkg)
       self.qvip_pkg_env_variables.append(str(ifPkg).upper())    ## PYTHON3

@@ -22,11 +22,25 @@ try:
   import logging
   from bcr_mods import *
   import subprocess
-  import collections
 except ImportError as ie:
   print("ERROR:Missing library: %s" % str(ie))
   print("path: "+str(sys.path))
   sys.exit(1)
+
+if sys.version_info[0] < 3:
+  try:
+    import collections
+  except ImportError as ie:
+    print("ERROR:Missing library: %s" % str(ie))
+    print("path: "+str(sys.path))
+    sys.exit(1)
+else:
+  try:
+    import collections.abc
+  except ImportError as ie:
+    print("ERROR:Missing library: %s" % str(ie))
+    print("path: "+str(sys.path))
+    sys.exit(1)
 
 class OptionOverrideAction(argparse.Action):
   def __init__(self,**kwargs):
@@ -271,9 +285,13 @@ def run():
   if 'options' in flow.data and 'env_vars' in flow.data['options']:
     for k,v in flow.data['options']['env_vars'].items():
       override = False
+      if sys.version_info[0] < 3:
+        isinstance_mapping = isinstance(v,collections.Mapping)
+      else:
+        isinstance_mapping = isinstance(v,collections.abc.Mapping)
       if isinstance(v,str):
         envvar = v
-      elif isinstance(v,collections.Mapping):
+      elif isinstance_mapping:
         if 'value' not in v or type(v['value']) != str:
           logger.error("Dictionary format for environment variable \"{}\" in flow file is invalid".format(k))
           sys.exit(1)

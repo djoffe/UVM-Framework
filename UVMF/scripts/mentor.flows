@@ -18,6 +18,7 @@ flows:
       use_64_bit: True
       code_cov_target: '/hdl_top/dut_verilog.'
       code_cov_types: 'bsf'
+      code_cov_file: ''
       seed: 0
       test: test_top
       multiuser: True
@@ -96,6 +97,7 @@ flows:
       code_cov_enable: "Enable the collection of code coverage"
       code_cov_target: "Specify the hierarchy to instrument for code coverage"
       code_cov_types: "Specify which types of code coverage to collect"
+      code_cov_file: "Specify a file to be used with -f to specify more complex coverage options"
       extra_pre_do: "Call additional Tcl commands at the very beginning of the -do command set"
       extra_do: "Call additional Tcl commands prior to the run command(s)"
       do_override: "If specified, value will be used for entire \"-do\" switch input"
@@ -202,9 +204,10 @@ flows:
       compile_extra: "Additional compile switches"
       ucdb_filename: "UCDB file passed into CoverCheck, can be left blank to skip step"
       ## Clear these variable descriptions so they don't show up in the list
-      code_coverage_enable: ''
-      code_coverage_target: ''
-      code_coverage_types: ''
+      code_cov_enable: ''
+      code_cov_target: ''
+      code_cov_types: ''
+      code_cov_file: ''
       error_limit: ''
       enable_trlog: ''
       extra_do: ''

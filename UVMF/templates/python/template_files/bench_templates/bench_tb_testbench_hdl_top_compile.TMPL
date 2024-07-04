@@ -3,9 +3,13 @@
 {% endblock %}
 {% block contents %}
 incdir:
+# pragma uvmf custom incdir_additional begin
+# pragma uvmf custom incdir_additional end
   - ${uvm_path}/src
   - .
 needs:
+# pragma uvmf custom needs_additional begin
+# pragma uvmf custom needs_additional end
   - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg_hdl.compile
   - ../parameters/{{name}}_parameters_pkg.compile
 {% if useCoEmuClkRstGen %}
@@ -15,5 +19,9 @@ needs:
   - ../../../{{relative_bench_from_cwd}}/{{vip_location}}/{{interface_location}}/{{bfm}}_pkg/{{bfm}}_hdl.compile
 {% endfor %}
 src:
+# pragma uvmf custom src_additional begin
+# pragma uvmf custom src_additional end
   - hdl_top.sv
+# pragma uvmf custom compile_additional begin
+# pragma uvmf custom compile_additional end
 {% endblock %}

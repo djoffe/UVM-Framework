@@ -142,11 +142,11 @@ class BooleanInvalid(Invalid):
 
 
 class UrlInvalid(Invalid):
-    """The value is not a url."""
+    """The value is not a URL."""
 
 
 class EmailInvalid(Invalid):
-    """The value is not a email."""
+    """The value is not an email address."""
 
 
 class FileInvalid(Invalid):
@@ -186,4 +186,14 @@ class NotInInvalid(Invalid):
 
 
 class ExactSequenceInvalid(Invalid):
+    pass
+
+
+class NotEnoughValid(Invalid):
+    """The value did not pass enough validations."""
+    pass
+
+
+class TooManyValid(Invalid):
+    """The value passed more than expected validations."""
     pass

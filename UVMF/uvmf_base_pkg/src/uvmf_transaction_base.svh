@@ -33,6 +33,8 @@
 // described below.
 class uvmf_transaction_base #(type BASE_T = uvm_sequence_item) extends BASE_T;
 
+  `uvm_object_param_utils( uvmf_transaction_base #(BASE_T))
+
   // STRING: report_id
   // This needs to be the full name of the transaction and can be used for debug
   string report_id;

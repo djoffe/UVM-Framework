@@ -2,6 +2,21 @@ UVMF Release Notes
 
 Version   Date        Updates
 -------   ---------   -----------------------------------------------------------------------------
+2023.3    08/31/2023  General Updates:
+                        - Testplan runnable in RMDB now griddable
+                        - Validator updated to support ICVIP YAML fields
+                        
+                      Generator Updates:
+                        - Initial integration for ICVIP 2023.3
+                        - dpi_define YAML structure supports C functions that have no arguments
+
+                      BCR Updates:
+                        - Merge pragmas added to .compile files
+
+                      Deprecation notice: 
+                        - Deprecating qvip memory agents type allong with qvip_utils_pkg
+
+
 2023.1    02/14/2023  General Updates:
                         - Added BASE_T type parameter to scoreboard classes to allow insertion
                           of user base class.  Added supper.xxx_phase calls to classes with 

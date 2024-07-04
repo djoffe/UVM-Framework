@@ -3,6 +3,8 @@
 {% endblock %}
 {% block contents %}
 needs:
+# pragma uvmf custom needs_additional begin
+# pragma uvmf custom needs_additional end
   - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.compile
 {% for bfm in bfm_pkgs %}
   - ../../../{{relative_bench_from_cwd}}/{{vip_location}}/{{interface_location}}/{{bfm}}_pkg/{{bfm}}.compile
@@ -11,5 +13,9 @@ needs:
   - ../parameters/{{name}}_parameters_pkg.compile
   - ../sequences/{{name}}_sequences_pkg.compile
 src:
+# pragma uvmf custom src_additional begin
+# pragma uvmf custom src_additional end
   - {{name}}_tests_pkg.sv
+# pragma uvmf custom compile_additional begin
+# pragma uvmf custom compile_additional end
 {% endblock %}

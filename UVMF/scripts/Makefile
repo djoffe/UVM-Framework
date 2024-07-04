@@ -432,6 +432,7 @@ clean::
 	@-rm -rfv *.o *.so
 	@-rm -rfv covercheck_results
 	@-rm -rfv qrun.out *.qf *.vf
+	@-rm -rfv .visualizer
 
 realclean:: clean
 	@-rm -rfv modelsim.ini
@@ -482,10 +483,17 @@ VEL_COMP  = $(VEL_COMP_$(USE_VELOCE))
 CODE_COVERAGE_ENABLE ?= 0
 CODE_COVERAGE_TYPES ?= bsf
 CODE_COVERAGE_TARGET ?= /hdl_top/DUT.
-VOPT_CODE_COV_ARGS_0 = 
-VOPT_CODE_COV_ARGS_1 = +cover=$(CODE_COVERAGE_TYPES)+$(CODE_COVERAGE_TARGET)
-VOPT_CODE_COV_ARGS ?= $(VOPT_CODE_COV_ARGS_$(CODE_COVERAGE_ENABLE))
-VSIM_CODE_COV_ARGS_0 =
+CODE_COVERAGE_FILE ?=
+ifeq ($(CODE_COVERAGE_ENABLE),1)
+	ifneq ($(CODE_COVERAGE_FILE),)
+		VOPT_CODE_COV_ARGS = -f $(UVMF_PROJECT_DIR)/sim/$(CODE_COVERAGE_FILE)
+	else
+    VOPT_CODE_COV_ARGS = +cover=$(CODE_COVERAGE_TYPES)+$(CODE_COVERAGE_TARGET)
+  endif
+else
+	VOPT_CODE_COV_ARGS = 
+endif
+VSIM_CODE_COV_ARGS_0 = 
 VSIM_CODE_COV_ARGS_1 = -coverage
 VSIM_CODE_COV_ARGS ?= $(VSIM_CODE_COV_ARGS_$(CODE_COVERAGE_ENABLE))
 

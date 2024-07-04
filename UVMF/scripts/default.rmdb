@@ -21,6 +21,7 @@
       <parameter name="CODE_COVERAGE_ENABLE" type="tcl">[getIniVar code_coverage_enable]</parameter>
       <parameter name="CODE_COVERAGE_TYPES" type="tcl">[getIniVar code_coverage_types]</parameter>
       <parameter name="CODE_COVERAGE_TARGET" type="tcl">[getIniVar code_coverage_target]</parameter>
+      <parameter name="CODE_COVERAGE_FILE" type="tcl">[getIniVar code_coverage_file]</parameter>
       <parameter name="EXTRA_MERGE_OPTIONS" type="tcl">[getIniVar extra_merge_options]</parameter>
       <parameter name="CODE_COVERAGE_MAP" type="tcl">[getIniVar code_coverage_map]</parameter>
       <parameter name="MERGE_MULTIUSER_STR" type="tcl">[if {(%MULTIUSER%)==1} { return "-multiuserenv" } else { return "" }]</parameter>
@@ -50,12 +51,14 @@
       <parameter name="USE_JOB_MGMT_COVERCHECK" type="tcl">[getIniVar use_job_mgmt_covercheck]</parameter>
       <parameter name="USE_JOB_MGMT_EXCLUSION" type="tcl">[getIniVar use_job_mgmt_exclusion]</parameter>
       <parameter name="USE_JOB_MGMT_REPORT" type="tcl">[getIniVar use_job_mgmt_report]</parameter>
+      <parameter name="USE_JOB_MGMT_TESTPLAN" type="tcl">[getIniVar use_job_mgmt_testplan]</parameter>
       <parameter name="GRIDTYPE" type="tcl">[getIniVar gridtype]</parameter>
       <parameter name="GRIDCOMMAND_RUN" type="tcl">[getIniVar gridcommand_run]</parameter>
       <parameter name="GRIDCOMMAND_BUILD" type="tcl">[getIniVar gridcommand_build]</parameter>
       <parameter name="GRIDCOMMAND_COVERCHECK" type="tcl">[getIniVar gridcommand_covercheck]</parameter>
       <parameter name="GRIDCOMMAND_EXCLUSION" type="tcl">[getIniVar gridcommand_exclusion]</parameter>
       <parameter name="GRIDCOMMAND_REPORT" type="tcl">[getIniVar gridcommand_report]</parameter>
+      <parameter name="GRIDCOMMAND_TESTPLAN" type="tcl">[getIniVar gridcommand_testplan]</parameter>
       <parameter name="USE_COVERCHECK" type="tcl">[getIniVar use_covercheck]</parameter>
       <parameter name="TOP_DU_NAME" type="tcl">[getIniVar top_du_name]</parameter>
       <parameter name="COVERCHECK_BUILD" type="tcl">[getIniVar covercheck_build]</parameter>
@@ -70,11 +73,13 @@
       <parameter name="EXCLUSION_TIMEOUT" type="tcl">[getTimeoutVal (%TIMEOUT%) [getIniVar exclusion_timeout]]</parameter>
       <parameter name="COVERCHECK_TIMEOUT" type="tcl">[getTimeoutVal (%TIMEOUT%) [getIniVar covercheck_timeout]]</parameter>
       <parameter name="REPORT_TIMEOUT" type="tcl">[getTimeoutVal (%TIMEOUT%) [getIniVar report_timeout]]</parameter>
+      <parameter name="TESTPLAN_TIMEOUT" type="tcl">[getTimeoutVal (%TIMEOUT%) [getIniVar testplan_timeout]]</parameter>
       <parameter name="BUILD_QUEUE_TIMEOUT" type="tcl">[getTimeoutVal (%QUEUE_TIMEOUT%) [getIniVar build_queue_timeout]]</parameter>
       <parameter name="RUN_QUEUE_TIMEOUT" type="tcl">[getTimeoutVal (%QUEUE_TIMEOUT%) [getIniVar run_queue_timeout]]</parameter>
       <parameter name="EXCLUSION_QUEUE_TIMEOUT" type="tcl">[getTimeoutVal (%QUEUE_TIMEOUT%) [getIniVar exclusion_queue_timeout]]</parameter>
       <parameter name="COVERCHECK_QUEUE_TIMEOUT" type="tcl">[getTimeoutVal (%QUEUE_TIMEOUT%) [getIniVar covercheck_queue_timeout]]</parameter>
       <parameter name="REPORT_QUEUE_TIMEOUT" type="tcl">[getTimeoutVal (%QUEUE_TIMEOUT%) [getIniVar report_queue_timeout]]</parameter>
+      <parameter name="TESTPLAN_QUEUE_TIMEOUT" type="tcl">[getTimeoutVal (%QUEUE_TIMEOUT%) [getIniVar testplan_queue_timeout]]</parameter>
       <parameter name="EMAIL_RECIPIENTS" type="tcl">[getIniVar email_recipients]</parameter>
       <parameter name="EMAIL_SERVERS" type="tcl">[getIniVar email_servers]</parameter>
       <parameter name="EMAIL_SECTIONS" type="tcl">[getIniVar email_sections]</parameter>
@@ -141,7 +146,7 @@
       <parameter name="EXTRABUILDCMD" type="tcl">[GetBuildCmd (%build%)]</parameter>
       <parameter name="VRUN_EXTRA_BUILD_CMD"></parameter>
       <parameter name="BUILDDIR" type="tcl">[GetBuildDir (%build%)]</parameter>
-      <parameter name="CODE_COVERAGE_STR" type="tcl">[GetCodeCovBuildString (%USE_BCR%) (%CODE_COVERAGE_ENABLE%) (%CODE_COVERAGE_TYPES%) (%CODE_COVERAGE_TARGET%)]</parameter>
+      <parameter name="CODE_COVERAGE_STR" type="tcl">[GetCodeCovBuildString (%USE_BCR%) (%CODE_COVERAGE_ENABLE%) (%CODE_COVERAGE_TYPES%) (%CODE_COVERAGE_TARGET%) (%CODE_COVERAGE_FILE%)]</parameter>
       <parameter name="BCR_DEBUG" type="tcl">[ if { (%DEBUG%)==1} { return "--debug"} else {return ""}]</parameter>
       <parameter name="FLOW_CONTROL">build_only:True</parameter>
       <parameter name="BCR_FLOW" type="tcl">[ResolveBCRFlow {(%BCR_FLOW_INI%)} [GetBCRFlow (%build%)]]</parameter>
@@ -341,7 +346,10 @@
   </runnable>
 
   <runnable name="testplan_if" type="task" unless="&quot;(%TESTPLAN_FILE%)&quot;==&quot;&quot;">
-    <execScript launch="vsim">
+    <method if="(%USE_JOB_MGMT_TESTPLAN%)" gridtype="(%GRIDTYPE%)" mintimeout="(%TESTPLAN_QUEUE_TIMEOUT%)">
+      <command>(%GRIDCOMMAND_TESTPLAN%)</command>
+    </method>
+    <execScript launch="vsim" mintimeout="(%TESTPLAN_TIMEOUT%)">
       <command>if {[file extension (%TESTPLAN_FILE%)]==".ucdb"} {</command>
       <command>  vcover merge (%TESTPLAN_MERGE_OPTIONS%) (%MERGE_MULTIUSER_STR%) (%mergefile%) (%TESTPLAN_FILE%) (%mergefile%)</command>
       <command>} else {</command>

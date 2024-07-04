@@ -421,6 +421,8 @@ class DataClass:
   ##   - QVIP/Non-QVIP flag ('is_qvip')
   ##   - Initiator/Responder info ('initiator_responder')
   ##   - VeloceReady flag ('veloce_ready')
+  ##   - Sequencer_type - Needed now that icvip does not use mvc_sequencer but uses protocol specific sequencer
+  ##   - vip_pkg - package that contains the icvip sequencer type, and sequence item type
   def getAllAgents(self,env_type,env_inst,isQVIP,envPath):
     alist = []
     if (isQVIP==1):
@@ -432,6 +434,17 @@ class DataClass:
       except KeyError:
         raise UserError("Unable to find QVIP environment \""+env_type+"\" in defined QVIP environments (available list is "+str(struct.keys())+")")
       for a in env['agents']:
+        # Retrieve sequencer type if icvip.  Otherwise sequencer type is mvc_sequencer
+        try:
+          vip_type = a['type']
+          if vip_type == 'qvip':
+            vip_sequencer = 'mvc_sequencer'
+          elif vip_type == 'icvip':
+            vip_sequencer = a['sequencer']
+        except KeyError:
+          vip_sequencer = 'mvc_sequencer'
+          pass
+        vip_package = a['imports'][-1]
         ## All we have is the name of each BFM.
         alist = alist + [{ 'bfm_name': a['name'], 
                            'bfm_type': 'unknown', 
@@ -440,7 +453,9 @@ class DataClass:
                            'lib_env_var_name':'unknown',
                            'is_qvip': 1 ,
                            'initiator_responder':'UNKNOWN',
-                           'veloce_ready':False }]
+                           'veloce_ready': 'False',
+                           'sequencer_type': vip_sequencer,
+                           'vip_pkg': vip_package }]
       ## No nesting with QVIP environments so safe to just return here
       return alist  
     else:
@@ -488,7 +503,9 @@ class DataClass:
                            'is_qvip': 0, 
                            'initiator_responder':init_resp ,
                            'veloce_ready':veloce_ready,
-                           'infact_ready':infact_ready }]
+                           'infact_ready':infact_ready,
+                           'sequencer_type':'',
+                           'vip_pkg': '' }]
     except KeyError: pass
     return alist
 
@@ -820,13 +837,38 @@ class DataClass:
           qvipStruct = self.data['qvip_environments'][t]
         except KeyError:
           raise UserError("QVIP environment \""+t+"\" in environment \""+name+"\" is not defined")
+        qvip_subenv_has_icvip = 'False'
+        qvip_subenv_has_qvip = 'False'
         alist = []
         for a in qvipStruct['agents']:
-          alist = alist + [a['name']]
+          try:
+            qvip_icvip = a['type']
+          except KeyError:
+            a['type'] = 'qvip'
+            qvip_icvip = 'qvip'
+            pass
+          if qvip_icvip == 'icvip':
+            qvip_subenv_has_icvip = 'True'
+          if qvip_icvip == 'qvip':
+            qvip_subenv_has_qvip = 'True'
+          try: a['sequencer']
+          except KeyError:
+            a['sequencer'] = 'mvc_sequencer'
+            pass
           qvip_agents_dot = qvip_agents_dot + [n+"."+a['name']]
           qvip_agents_und = qvip_agents_und + [n+"_"+a['name']]
+          if a['type'] == 'qvip':
+            alist = alist + [{ 'name': a['name'],
+                             'sequencer': a['sequencer'],
+                             'type': a['type']
+                            }]
+          elif a['type'] == 'icvip':
+            alist = alist + [{ 'name': a['name'],
+                             'sequencer': a['sequencer'],
+                             'type': a['type']
+                            }]
         valid_qsubenv_list = valid_qsubenv_list + [n] 
-        env.addQvipSubEnv(name=n,envPkg=t,agentList=alist)
+        env.addQvipSubEnv(name=n,envPkg=t,agentList=alist,envHasICVIP=qvip_subenv_has_icvip,envHasQVIP=qvip_subenv_has_qvip)
     except KeyError: pass
     ## Look for defined sub-environments and add them
     try:
@@ -1495,7 +1537,7 @@ class DataClass:
         active_passive = ben.activePassiveDefault
       if a['is_qvip']==1:
         ## Add each QVIP BFM instantiation. Function API is slightly different for QVIP vs. non-QVIP
-        ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity=active_passive,unique_id=self.getUniqueID(a['env_path']))
+        ben.addQvipBfm(name=a['bfm_name'],ifPkg=a['parent_type'],activity=active_passive,unique_id=self.getUniqueID(a['env_path']),sequencer=a['sequencer_type'],vipPkg=a['vip_pkg'])
       else:
         ## Name of each BFM is simplified if they live under the top-level env
         ## Determine this by inspecting the env_path entry for each item and counting
@@ -1877,6 +1919,16 @@ def run():
   if 'elaborate_bfm_parameters' in dataObj.data['global'] and dataObj.data['global']['elaborate_bfm_parameters'] == 'True':
     for bench in dataObj.data['benches'].keys():
       dataObj.elaborateAgentParameters(options,bench)
+  ## Check that all gen_name entries are valid components
+  if options.gen_name:
+    for name in options.gen_name:
+      name_found = False
+      for key in ('benches','environments','interfaces','qvip_environments','util_components'):
+        if name in dataObj.data[key]:
+          name_found = True
+          break
+      if not name_found:
+        raise UserError("Requested component '{0}' undefined".format(name))
   dataObj.buildElements(options.gen_name,verify=options.merge_export_yaml==None,build_existing=options.build_existing_components,archive_yaml=(not options.no_archive_yaml))
   if options.merge_source or options.merge_import_yaml:
     if not options.merge_import_yaml:

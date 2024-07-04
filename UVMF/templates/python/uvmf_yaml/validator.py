@@ -20,8 +20,8 @@ class BaseValidator(object):
       Required('sv_return_type'): str,
       Required('c_return_type'): str,
       Required('name'): str,
-      Required('c_args'): str,
-      Required('sv_args'): [ self.dpiArgumentSchema ]
+      Optional('c_args'): str,
+      Optional('sv_args'): [ self.dpiArgumentSchema ]
     }
     self.dpiDefSchema = {
       Required('name'): str ,
@@ -184,9 +184,8 @@ class QVIPEnvValidator(BaseValidator):
 
   def initializeSchema(self):
     apInfoSchema = {
-      Required('port_name'): str,
-      Required('key'): str,
-      Required('type'): str
+      Required('name'): str,
+      Required('transaction'): str
     }
     directoryVariableSchema = {
       Required('name'): str,
@@ -194,17 +193,19 @@ class QVIPEnvValidator(BaseValidator):
     }
     agentsSchema = {
       Required('name'): str,
-      Optional('active_passive'): Any("ACTIVE","PASSIVE"),
-      Optional('initial_sequence'): str,
+      Optional('type'): Any("qvip","icvip"),
       Optional('imports'): [ str ],
-      Optional('ap_info'): [ apInfoSchema ],
+      Optional('sequencer'): str,
+      Optional('analysis_ports'): [ apInfoSchema ],
       Optional('emulation_vip_libs'): [ str ],
-      Optional('directory_variables'): [ directoryVariableSchema ]
+      Optional('directory_variables'): [ directoryVariableSchema ],
+      Optional('active_passive'): Any("ACTIVE","PASSIVE"),
+      Optional('initial_sequence'): str
+
 
     }
     mainSchema = {
       Required('agents'): [ agentsSchema ],
-      Optional('type'): Any("qvip","cvip"),
       Optional('location'): str
     }
     self.schema = Schema(mainSchema)

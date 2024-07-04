@@ -3,6 +3,8 @@
 {% endblock %}
 {% block contents %}
 needs:
+# pragma uvmf custom needs_additional begin
+# pragma uvmf custom needs_additional end
   - $UVMF_HOME/uvmf_base_pkg/uvmf_base_pkg.compile
 {% for agent in agent_pkgs %}
   - ../{{relative_environment_from_cwd}}/{{vip_location}}/{{interface_location}}/{{agent}}_pkg/{{agent}}_hvl.compile
@@ -14,6 +16,8 @@ needs:
 # pragma uvmf custom extra_needs end
 
 src:
+# pragma uvmf custom src_additional begin
+# pragma uvmf custom src_additional end
 {% for regModel in regModels %}
   - registers/{{regModel.regModelPkg}}.sv
 {% endfor %}
@@ -23,5 +27,7 @@ src:
 {% endfor %}{% endblock %}
 # pragma uvmf custom extra_src begin
 # pragma uvmf custom extra_src end
+# pragma uvmf custom compile_additional begin
+# pragma uvmf custom compile_additional end
 
 

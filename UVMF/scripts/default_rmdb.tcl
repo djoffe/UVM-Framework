@@ -45,9 +45,11 @@ proc initTcl {rd {master_seed 0} {dbg 0}} {
   global ini
   global rerun_count
   global mseed
+  global tops
   set debug $dbg
   set file_read 0
   set root_dir $rd
+  set tops ""
   if {$master_seed=="random"} {
     puts "NOTE: Using random master seed"
     set ms [clock seconds]
@@ -83,6 +85,7 @@ proc vrmSetupDefaults {} {
   setIniVar code_coverage_enable 0 1
   setIniVar code_coverage_types "bsf" 1
   setIniVar code_coverage_target "/hdl_top/DUT." 1
+  setIniVar code_coverage_file {""} 1
   setIniVar code_coverage_map 0 1
   setIniVar extra_merge_options "" 1
   setIniVar extra_run_options "" 1
@@ -107,6 +110,7 @@ proc vrmSetupDefaults {} {
   setIniVar use_job_mgmt_covercheck 0 1
   setIniVar use_job_mgmt_exclusion 0 1
   setIniVar use_job_mgmt_report 0 1
+  setIniVar use_job_mgmt_testplan 0 1
   setIniVar gridtype "lsf" 1
 # Use of older switches "-source" and "-htmldir" have been replaced with "-annotate" and "-output" respectively.
 # May need to use this alternative set of switches if using an older release of Questa
@@ -117,6 +121,7 @@ proc vrmSetupDefaults {} {
   setIniVar gridcommand_covercheck "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar gridcommand_exclusion "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar gridcommand_report "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
+  setIniVar gridcommand_testplan "bsub -J (%INSTANCE%) -oo (%TASKDIR%)/(%SCRIPT%).o%J -eo (%TASKDIR%)/(%SCRIPT%).e%J (%WRAPPER%)" 1
   setIniVar use_covercheck 0 1
   setIniVar top_du_name "top_du_name" 1
   setIniVar covercheck_build "covercheck_build" 1
@@ -136,6 +141,8 @@ proc vrmSetupDefaults {} {
   setIniVar covercheck_queue_timeout -1 1
   setIniVar report_timeout -1 1
   setIniVar report_queue_timeout -1 1
+  setIniVar testplan_timeout -1 1
+  setIniVar testplan_queue_timeout -1 1
   setIniVar email_servers {} 1
   setIniVar email_recipients {} 1
   setIniVar email_sections "all" 1
@@ -429,7 +436,7 @@ proc ReadTestlistFile_int {file_name invoc_dir collapse {debug 1} {init 0}} {
   global tcdict
   global builddict
   global root_dir
-  set tops ""
+  global tops
   ## Elaborate "^" at beginning of $file_name and expand with $root_dir
   regsub -- {^\^} $file_name $root_dir file_name
   ## Derive full path for filename
@@ -811,23 +818,31 @@ proc OkToRerun {userdata} {
   return 0 ;# just in case -- shouldn't reach here
 }
 
-proc GetCodeCovBuildString {bcr enable types target} {
+proc GetCodeCovBuildString {bcr enable types target file} {
   if { $enable } {
     if { $bcr } {
       set str "code_cov_enable:True"
-      if { $types != "" } {
-        set str [concat $str " code_cov_types:$types"]
-      }
-      if { $target != "" } {
-        set str [concat $str " code_cov_target:$target"]
+      if { $file != "" } {
+        set str [concat $str " code_cov_file:$file"]
+      } else {
+        if { $types != "" } {
+          set str [concat $str " code_cov_types:$types"]
+        }
+        if { $target != "" } {
+          set str [concat $str " code_cov_target:$target"]
+        }
       }
     } else {
       set str "CODE_COVERAGE_ENABLE=1"
-      if { $types != "" } {
-        set str [concat $str " CODE_COVERAGE_TYPES=$types"]
-      }
-      if { $target != "" } {
-        set str [concat $str " CODE_COVERAGE_TARGET=$target"]
+      if { $file != "" } {
+        set str [concat $str " CODE_COVERAGE_FILE=$file"]
+      } else {
+        if { $types != "" } {
+          set str [concat $str " CODE_COVERAGE_TYPES=$types"]
+        }
+        if { $target != "" } {
+          set str [concat $str " CODE_COVERAGE_TARGET=$target"]
+        }
       }
     }
   } else {

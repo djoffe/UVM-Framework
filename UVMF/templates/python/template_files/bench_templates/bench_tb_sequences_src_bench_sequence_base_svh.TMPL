@@ -69,7 +69,7 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
 {% if qvip_bfms|length > 0 %}
   // Sequencer handles for each QVIP interface
 {% for agent in qvip_bfms %}
-  mvc_sequencer {{agent.unique_id_with_underscores}}{{agent.name}}_sqr;
+  {{agent.sequencer}} {{agent.unique_id_with_underscores}}{{agent.name}}_sqr;
 {% endfor %}
 {% endif %}
 
@@ -132,8 +132,8 @@ class {{name}}_bench_sequence_base extends uvmf_sequence_base #(uvm_sequence_ite
     // Retrieve QVIP sequencer handles from the uvm_config_db
 {% for agent in qvip_bfms %}
 {% if  agent.activity == 'ACTIVE' %}
-    if( !uvm_config_db #(mvc_sequencer)::get( null,UVMF_SEQUENCERS,"{{agent.unique_id}}{{agent.name}}", {{agent.unique_id_with_underscores}}{{agent.name}}_sqr) ) 
-      `uvm_warning("CFG" , "uvm_config_db #( mvc_sequencer )::get cannot find resource {{agent.name}}" ) 
+    if( !uvm_config_db #({{agent.sequencer}})::get( null,UVMF_SEQUENCERS,"{{agent.unique_id}}{{agent.name}}", {{agent.unique_id_with_underscores}}{{agent.name}}_sqr) ) 
+      `uvm_warning("CFG" , "uvm_config_db #( {{agent.sequencer}} )::get cannot find resource {{agent.name}}" ) 
 {% endif %}
 {% endfor %}
 {% endif %}

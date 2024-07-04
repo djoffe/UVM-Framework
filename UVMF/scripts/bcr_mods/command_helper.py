@@ -3,6 +3,7 @@ import pprint
 import re
 import os
 import sys
+from common import resolve_path
 
 __all__ = ['logger','generate_command','vars_string','clean_whitespace','filelists','library_mappings','merge_dict','Generator','v_val']
 
@@ -99,10 +100,12 @@ class Generator(object):
     if ('compile_only' in v and v['compile_only']) or ('sim_only' in v and v['sim_only']):
       return ''
     if 'code_cov_enable' in v and v['code_cov_enable']:
-      try:
+      if 'code_cov_file' in v and v['code_cov_file']:
+        coverage_build_str = '-f '+resolve_path(v['code_cov_file'],v['sim_dir'])
+      elif 'code_cov_types' in v and 'code_cov_target' in v:
         coverage_build_str = '+cover='+v['code_cov_types']+'+'+v['code_cov_target']
-      except KeyError:
-        logger.error("Unable to enable code coverage, types and/or target are undefined")
+      else:
+        logger.error("Unable to enable code coverage, coverage file, types, and/or target are undefined")
         sys.exit(1)
       return coverage_build_str
     else:
@@ -309,7 +312,7 @@ class Generator(object):
         modelsimini_str = '-modelsimini '+v['modelsimini']
       else:
         modelsimini_str = ''
-      for m in library_mappings(v['mappings']):
+      for m in library_mappings(self,v['mappings']):
         cmds.append(clean_whitespace('vmap {} {} {}'.format(m[0],m[1],modelsimini_str)))
     return cmds
 
